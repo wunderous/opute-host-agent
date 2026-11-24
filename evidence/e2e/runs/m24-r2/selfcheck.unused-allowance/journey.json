@@ -1,0 +1,41 @@
+{
+ "cleanup": [
+  {
+   "guest": "rm -f /etc/opute-e2e-unused-probe",
+   "id": "rm"
+  }
+ ],
+ "description": "Negative control for m24: the declared change happens, but a second allow pattern matches nothing the run changed.",
+ "effects": {
+  "allow": [
+   "files//etc/opute-e2e-unused-probe",
+   "files//etc/opute-e2e-never-written"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-0",
+ "id": "selfcheck.unused-allowance",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "touch"
+    }
+   ],
+   "requirement": "Harness: an allowance the run never uses fails",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "steps": [
+  {
+   "guest": "touch /etc/opute-e2e-unused-probe",
+   "id": "touch"
+  }
+ ]
+}

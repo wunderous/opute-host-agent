@@ -1,0 +1,134 @@
+{
+ "effects": {
+  "changed": [
+   "files//etc/systemd/system/dbus-org.freedesktop.timesync1.service",
+   "files//etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service",
+   "system/unitFiles/dbus-org.freedesktop.timesync1.service",
+   "system/unitFiles/e2e-agent-clk.service",
+   "system/unitFiles/systemd-timesyncd.service",
+   "system/units/e2e-agent-clk.service",
+   "system/units/systemd-timesyncd.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.clock",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "stepBack"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "bootstrapAfter"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "issuedAfter"
+    },
+    {
+     "actual": {
+      "count": 1,
+      "cpuCores": 0.25,
+      "memoryBytes": 268435456,
+      "tasks": 1
+     },
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.reservations",
+      "step": "capBefore"
+     },
+     "ok": true,
+     "other": {
+      "count": 1,
+      "cpuCores": 0.25,
+      "memoryBytes": 268435456,
+      "tasks": 1
+     },
+     "path": "response.body.result.structuredContent.reservations",
+     "step": "capAfter"
+    },
+    {
+     "actual": {
+      "count": 1,
+      "cpuCores": 0.25,
+      "memoryBytes": 268435456,
+      "tasks": 1
+     },
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.reservations",
+     "step": "capBefore"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "heldDone"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "heldDone"
+    },
+    {
+     "actual": "after step\n",
+     "equals": "after step\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "newWorkDone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A clock stepped back does not break the agent",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "bootstrapAfter": 299,
+   "capAfter": 222,
+   "capBefore": 233,
+   "clkAgent": 556,
+   "cred": 140,
+   "held": 220,
+   "heldDone": 38624,
+   "issuedAfter": 278,
+   "list": 523,
+   "newWork": 223,
+   "newWorkDone": 203,
+   "stepBack": 372,
+   "token": 214,
+   "tool": 283,
+   "wire": 285
+  },
+  "stepsSeconds": 87.5
+ },
+ "uncheckedOutcomes": [],
+ "unverified": []
+}

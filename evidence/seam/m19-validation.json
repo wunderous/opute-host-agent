@@ -1,14 +1,16 @@
 {
  "stage": "m19",
- "reportSha256": "1d5454e6fc97946f08b5806f36e12c450b57c779596466d21735df8a958e98bf",
- "verifierLogSha256": "c5d83cdee5fbb5fec6aae2ba8793c51e7dbcf0c6bcf5e36074c06993038b382d",
+ "reportSha256": "d9867637aa00d24cdae28b4b0338fee1fa817c747952a329608d08ce495e132d",
+ "verifierLogSha256": "7a3f9349f0c035238f71c4b857128794c3643861679378f8b44d981cbc9f6e3c",
  "counts": {
-  "compliant": 133,
-  "unported": 17
+  "compliant": 144,
+  "unported": 2,
+  "unpublished": 4
  },
  "gaps": [],
  "services": [
   "host-agent:incus/host-info@builtin",
+  "host-agent:incus/assistant-session@builtin",
   "host-agent:incus/instance-inventory@builtin",
   "host-agent:incus/host-observation@builtin",
   "host-agent:incus/host-files@builtin",
@@ -23,11 +25,13 @@
   "host-agent:incus/virtualization-stack@builtin",
   "host-agent:incus/system-containers@builtin",
   "host-agent:incus/instance-lifecycle@builtin",
+  "host-agent:incus/instance-console@builtin",
   "host-agent:incus/local-status@builtin",
   "host-agent:incus/instance-exec@builtin",
   "host-agent:incus/cluster-discovery@builtin",
   "host-agent:incus/cluster-resources@builtin",
   "host-agent:incus/cluster-listings@builtin",
+  "host-agent:incus/cluster-inspection@builtin",
   "host-agent:incus/cluster-packages@builtin",
   "host-agent:incus/service-exposure@builtin",
   "host-agent:incus/guest-storage@builtin",
@@ -63,9 +67,9 @@
   "host-agent:incus/providers@builtin"
  ],
  "canary": {
-  "tool": "list_agents",
+  "tool": "configure_host_network",
   "red": true,
-  "logSha256": "b2d4aff2847acdbcf23e0912baba8b8195fddebfdf738848461352c32e7a3a70",
-  "patchSha256": "60dd3c06008c7538aad1914ab2b9ee839aa67f1090359fbf83e83b4aaedcf25d"
+  "logSha256": "9959fcf73796dc0818336102ebe726ec1a3b7ac0f5a20cd9c45949a95eb13adf",
+  "patchSha256": "f012ed2ac72d80d14fd16fee6621cf9312ca7660bcb2655ad68ebd8228f10210"
  }
 }

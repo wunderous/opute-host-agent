@@ -699,7 +699,7 @@ mod tests {
         let manifest = super::super::definition::decode_manifest(&crate::gojson::parse(br#"{"provider":{"id":"opaque.provider","version":"v1"},"services":[{"id":"service","capabilityId":"test.family","operations":[{"id":"test.probe","version":1,"effect":"read","inputSchema":{"type":"object"},"outputSchema":{"type":"object"}}]}]}"#).unwrap()).unwrap();
         candidates.set_manifest("g1", manifest);
         let publication = Arc::new(Publication::new(Arc::new(Registry::native(
-            crate::catalog::for_mode(false).clone(),
+            crate::catalog::served().clone(),
             Default::default(),
         ))));
         let directory = tempfile::tempdir().unwrap();
@@ -805,7 +805,7 @@ mod tests {
         for row in rows.as_array().unwrap() {
             let input = &row["activation"];
             let registry = Arc::new(Registry::native(
-                crate::catalog::for_mode(input["standalone"].as_bool().unwrap_or(false)).clone(),
+                crate::catalog::served().clone(),
                 Default::default(),
             ));
             let publication = Arc::new(Publication::new(registry.clone()));

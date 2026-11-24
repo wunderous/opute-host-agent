@@ -229,6 +229,32 @@ pub struct Assertion {
     pub assertions: Vec<Assertion>,
 }
 
+/// D44: the tools that start a plan run of their own. A node that calls one
+/// waits for the heavy admission slot its enclosing run holds, so no action,
+/// compensation, recovery or validation may name one.
+pub const PLAN_RUN_TOOLS: &[&str] = &[
+    "run_host_plan",
+    "run_host_local_recipe",
+    "run_runtime_recipe",
+    "run_tunnel_recipe",
+    "opute.provider.install",
+    "opute.provider.reload",
+    "opute.provider.teardown",
+];
+
+/// The D44 refusal for a node step that names a `PLAN_RUN_TOOLS` entry.
+pub fn reject_plan_run_tool(node_id: &str, tool: &str) -> Result<(), String> {
+    if tool == "run_host_plan" {
+        return Err(format!(
+            "node \"{node_id}\" cannot recursively run a host plan"
+        ));
+    }
+    if PLAN_RUN_TOOLS.contains(&tool) {
+        return Err(format!("node \"{node_id}\" cannot recursively run {tool}"));
+    }
+    Ok(())
+}
+
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Capability {
     pub name: String,
@@ -673,12 +699,7 @@ pub fn validate(
                     node.id, action.tool
                 )
             })?;
-            if action.tool == "run_host_plan" {
-                return Err(format!(
-                    "node \"{}\" cannot recursively run a host plan",
-                    node.id
-                ));
-            }
+            reject_plan_run_tool(&node.id, &action.tool)?;
             validate_interpolations(&Value::Object(action.args.clone()), doc, node, &ancestors)
                 .map_err(|e| format!("node \"{}\" action references: {e}", node.id))?;
             validate_json(
@@ -754,6 +775,7 @@ pub fn validate(
                     node.id, recover.action.tool
                 )
             })?;
+            reject_plan_run_tool(&node.id, &recover.action.tool)?;
             if recover.max_attempts < 0 || recover.max_attempts > MAX_TOTAL_ATTEMPTS {
                 return Err(format!(
                     "node \"{}\" recovery maxAttempts is outside the bounded range",
@@ -795,6 +817,7 @@ pub fn validate(
                     node.id, compensate.tool
                 )
             })?;
+            reject_plan_run_tool(&node.id, &compensate.tool)?;
             validate_interpolations(
                 &Value::Object(compensate.args.clone()),
                 doc,
@@ -1345,6 +1368,66 @@ mod tests {
             },
         );
         assert!(validate(&doc, &caps, "").is_ok());
+    }
+
+    /// D44: a node whose tool starts a plan run of its own would wait for the
+    /// heavy admission slot its enclosing run holds, and never finish.
+    #[test]
+    fn validate_rejects_every_tool_that_starts_a_plan_run() {
+        let starters = [
+            "run_host_plan",
+            "run_host_local_recipe",
+            "run_runtime_recipe",
+            "run_tunnel_recipe",
+            "opute.provider.install",
+            "opute.provider.reload",
+            "opute.provider.teardown",
+        ];
+        let capability = |name: &str, effect: &str| Capability {
+            name: name.to_string(),
+            effect: effect.to_string(),
+            idempotent: true,
+            ..Default::default()
+        };
+        let mut caps = BTreeMap::new();
+        caps.insert("noop".to_string(), capability("noop", "mutation"));
+        caps.insert("check".to_string(), capability("check", "read"));
+        for tool in starters {
+            caps.insert(tool.to_string(), capability(tool, "mutation"));
+        }
+        let check = Validation {
+            tool: "check".to_string(),
+            ..Default::default()
+        };
+        let starter = |tool: &str| Action {
+            tool: tool.to_string(),
+            args: Map::new(),
+        };
+        let mut doc = sample_document();
+        doc.nodes[0].validate = Some(check);
+        assert!(validate(&doc, &caps, "").is_ok());
+        for tool in starters {
+            let mut as_action = doc.clone();
+            as_action.nodes[0].action = Some(starter(tool));
+            let mut as_compensation = doc.clone();
+            as_compensation.nodes[0].compensate = Some(starter(tool));
+            let mut as_recovery = doc.clone();
+            as_recovery.nodes[0].recover = Some(Recovery {
+                action: starter(tool),
+                max_attempts: 1,
+            });
+            for (place, candidate) in [
+                ("action", as_action),
+                ("compensation", as_compensation),
+                ("recovery", as_recovery),
+            ] {
+                let error = validate(&candidate, &caps, "").expect_err(tool);
+                assert!(
+                    error.contains("cannot recursively run"),
+                    "{tool} as {place}: {error}"
+                );
+            }
+        }
     }
 
     #[test]

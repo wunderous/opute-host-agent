@@ -1,13 +1,13 @@
 {
  "id": "e2e6.child-env",
  "gate": "e2e-6",
- "description": "A child's environment (D40): an agent holding its bearer, two provider credentials and an OPUTE_ setting runs a recipe step; /proc shows its child holds none of them.",
+ "description": "A child's environment (D40): an agent holding its bearer, two provider credentials and an OPUTE_ setting opens a VM console and runs a recipe step; /proc shows neither child holds any of them.",
  "inputs": {
-  "agent": "transient Rust agents of the installed release candidate (0.3.0) under /tmp/e2e-agents",
+  "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "85577be61795ea2275b1c8e4b8196d2202642e81b84b829da7b5288779d3eb7f"
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -20,6 +20,68 @@
   }
  },
  "requirements": [
+  {
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md",
+   "requirement": "A child process never receives the agent's secrets",
+   "pass": [
+    {
+     "step": "vm",
+     "path": "response.body.result.status",
+     "equals": "completed"
+    },
+    {
+     "step": "vm",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "console",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "started"
+    },
+    {
+     "step": "ctrlA",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "sent"
+    },
+    {
+     "step": "detach",
+     "path": "response.body.result.structuredContent.closed",
+     "equals": true
+    },
+    {
+     "step": "vmState",
+     "path": "stdout",
+     "equals": "RUNNING\n"
+    },
+    {
+     "step": "detached",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
+     "step": "consoleEnv",
+     "path": "json.agentHasExpected",
+     "equals": true
+    },
+    {
+     "step": "consoleEnv",
+     "path": "json.found",
+     "gte": 1
+    },
+    {
+     "step": "consoleEnv",
+     "path": "json.leaked",
+     "equals": []
+    },
+    {
+     "step": "consoleEnv",
+     "path": "json.childrenKeep",
+     "equals": true
+    }
+   ],
+   "scenario": "With the bearer, two provider credentials and an OPUTE_ setting in the agent's environment, its incus console process holds PATH and none of them"
+  },
   {
    "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md",
    "requirement": "A child process never receives the agent's secrets",
@@ -60,7 +122,21 @@
  ],
  "effects": {
   "allow": [
+   "incus/instances/e2e-v6",
+   "incus/volumes/default/virtual-machine/e2e-v6",
+   "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "system/units/sys-devices-virtual-net-tap*",
+   "system/units/sys-subsystem-net-devices-tap*",
+   "system/units/var-lib-incus-devices-e2e\\x2dv6-config.mount.mount",
    "files//tmp/e2e-agents/child-env-recipe.yaml",
+   "links/tap*",
+   "mounts//var/lib/incus/devices/e2e-v6/config.mount btrfs",
+   "processes//system.slice/incus.service qemu-system-x86",
+   "modules/tap",
+   "modules/vhost_net",
    "files//tmp/e2e-agents",
    "system/units/e2e-agent-cenv.service",
    "system/unitFiles/e2e-agent-cenv.service",
@@ -68,7 +144,10 @@
    "processes//system.slice/e2e-agent-cenv.service opute-host-agen",
    "sockets/tcp 127.0.0.1:3050 opute-host-agen"
   ],
-  "persist": []
+  "persist": [
+   "modules/tap",
+   "modules/vhost_net"
+  ]
  },
  "steps": [
   {
@@ -90,6 +169,111 @@
    "mcp": "tools/list",
    "port": 3050,
    "auth": "secret:cenv"
+  },
+  {
+   "id": "vmCall",
+   "mcp": "tools/call",
+   "tool": "provision_vm",
+   "arguments": {
+    "name": "e2e-v6",
+    "instanceType": "virtual-machine",
+    "image": "parity-noble-vm",
+    "cpus": 1,
+    "memory": "1GiB",
+    "disk": "10GiB"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3050,
+   "auth": "secret:cenv",
+   "capture": {
+    "VM": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "vm",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${VM}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3050,
+   "auth": "secret:cenv",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 900,
+   "interval": 3
+  },
+  {
+   "id": "vmState",
+   "guest": "incus list e2e-v6 -c s -f csv",
+   "confirms": [
+    "vm"
+   ]
+  },
+  {
+   "id": "console",
+   "mcp": "tools/call",
+   "tool": "stream_vm_console",
+   "arguments": {
+    "uri": "vm:local:e2e-v6"
+   },
+   "port": 3050,
+   "auth": "secret:cenv"
+  },
+  {
+   "id": "consoleEnv",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py childenv e2e-agent-cenv.service 'console e2e-v6' --expect MCP_AUTH_TOKEN --expect CLOUDFLARE_API_TOKEN --expect TAILSCALE_AUTH_KEY --expect OPUTE_E2E_MARKER --keep PATH",
+   "confirms": [
+    "console"
+   ]
+  },
+  {
+   "id": "ctrlA",
+   "mcp": "tools/call",
+   "tool": "send_console_input",
+   "arguments": {
+    "operationId": "console-e2e-v6",
+    "data": "\u0001"
+   },
+   "port": 3050,
+   "auth": "secret:cenv"
+  },
+  {
+   "id": "detach",
+   "mcp": "tools/call",
+   "tool": "send_console_input",
+   "arguments": {
+    "operationId": "console-e2e-v6",
+    "data": "q"
+   },
+   "port": 3050,
+   "auth": "secret:cenv"
+  },
+  {
+   "id": "detached",
+   "confirms": [
+    "ctrlA",
+    "detach"
+   ],
+   "guest": "for i in $(seq 20); do pgrep -f 'console e2e-v6$' >/dev/null || break; sleep 0.5; done; pgrep -fc 'console e2e-v6$' || true"
   },
   {
    "id": "recipeCopy",
@@ -143,13 +327,13 @@
  ],
  "cleanup": [
   {
-   "id": "cleanRecipe",
-   "guest": "rm -f /tmp/e2e-agents/child-env-recipe.yaml"
+   "id": "cleanVm",
+   "guest": "incus delete -f e2e-v6 2>/dev/null; rm -f /tmp/e2e-agents/child-env-recipe.yaml; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   },
   {
    "id": "remove",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove cenv >/dev/null ; true"
   }
  ],
- "maxMinutes": 10
+ "maxMinutes": 20
 }

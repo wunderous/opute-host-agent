@@ -3,20 +3,20 @@
  "gate": "e2e-3",
  "description": "Cluster discovery through the neutral name, as the Use cases page describes it: no provider; an available provider with an empty inventory; one healthy single-node K3s cluster with its resources, events and keys; the cluster's server stopped; the provider unreachable (a failed probe), then back.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
   "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "85577be61795ea2275b1c8e4b8196d2202642e81b84b829da7b5288779d3eb7f"
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust-0.3.0-rc9/opute-provider-k3s-linux-x64",
-    "sha256": "535bd3fa94e360949919ffdb4533929f059cd446adecc237347328aca78826e4"
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc6/opute-provider-k3s-linux-x64",
+    "sha256": "f0e4c18623b9e271329bd3538c22219ad62aeeb489f68a8842ab6d57695239c9"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
@@ -249,41 +249,67 @@
    "scenario": "With its only server stopped, the registered cluster is listed with its instance status and no node data (D28)"
   },
   {
-   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md",
-   "requirement": "Every capability has its three roles",
+   "spec": "openspec/changes/list-configmap-keys/specs/list-configmap-keys/spec.md",
+   "requirement": "list_configmap_keys returns a ConfigMap's key names, never values",
    "pass": [
     {
      "step": "configmapKeys",
      "path": "response.body.result.isError",
-     "equals": true
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "configmapKeys",
+     "path": "response.body.result.structuredContent.uri",
+     "equals": "cluster:local:e2e-k1"
+    },
+    {
+     "step": "configmapKeys",
+     "path": "response.body.result.structuredContent.keys[0]",
+     "equals": "Corefile"
     },
     {
      "step": "configmapKeys",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: list_configmap_keys is not implemented by this Host Agent build"
-    },
-    {
-     "step": "configmapKeys",
-     "path": "response.body.result.structuredContent.code",
-     "equals": "not_implemented"
-    },
+     "matches": "^(?![\\s\\S]*forward \\.)"
+    }
+   ],
+   "scenario": "The e2e-3 goal lists config keys: K3s's own coredns ConfigMap is listed by key name, without the Corefile's text (D33)"
+  },
+  {
+   "spec": "openspec/changes/implement-list-secret-keys/specs/list-secret-keys/spec.md",
+   "requirement": "list_secret_keys returns a Secret's key names, never values",
+   "pass": [
     {
      "step": "secretKeys",
      "path": "response.body.result.isError",
-     "equals": true
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "secretKeys",
+     "path": "response.body.result.structuredContent.uri",
+     "equals": "cluster:local:e2e-k1"
+    },
+    {
+     "step": "secretKeys",
+     "path": "response.body.result.structuredContent.keys",
+     "equals": [
+      "tls.crt",
+      "tls.key"
+     ]
     },
     {
      "step": "secretKeys",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: list_secret_keys is not implemented by this Host Agent build"
-    },
-    {
-     "step": "secretKeys",
-     "path": "response.body.result.structuredContent.code",
-     "equals": "not_implemented"
+     "matches": "^(?![\\s\\S]*BEGIN)"
     }
    ],
-   "scenario": "The e2e-3 goal lists config and secret keys: both tools are published but have no provider in Rust and no handler in Go v0.2.4, so they fail closed (Q18)"
+   "scenario": "The e2e-3 goal lists secret keys: K3s's serving Secret is listed by key name, never the certificate or key (D32, answering Q18)"
   },
   {
    "spec": "openspec/specs/host-agent-contract/spec.md",

@@ -1404,7 +1404,9 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
   - **Candidate:** `rust-0.3.0-rc6` (b304544ee); all gates pass on
     `m19-r1` (e2e-6: 10 journeys, 14 requirements), with the contract
     suites, seam stage `m19`, the arm64 install and the distribution checks
-    recaptured on rc6.
+    recaptured on rc6. On `rust-0.4.0`: `rust-0.4.0-rc4` (2d2f51d20);
+    all gates pass on `m19-r2` (e2e-6: 9 journeys, 21 requirements), with
+    the same receipts recaptured on rc4.
 - **m21 release path (D52).** `e2e4.upgrade-chain` (gate e2e-4 on
   `rust-0.4.0`) runs Go v0.2.4, then 0.3.0, then 0.4.0, then a rollback to
   0.3.0 on one host.
@@ -1432,7 +1434,8 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     `e2e1.restart`'s resubmission assumed the wrong status); no product
     defect.
   - **Candidate:** `rust-0.3.0-rc7` unchanged; all gates pass under both
-    rules on `m23-r1`.
+    rules on `m23-r1`; `rust-0.4.0-rc4` unchanged, all gates pass on
+    `m23-r2`.
 - **m24 effect allowances.** The harness fails a journey with
   `unused-allowance` when an effects pattern matches no change (or, for
   `persist`, no residue) of its own run, and with `broad-allowance` when a
@@ -1443,7 +1446,8 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     patterns for kinds the state never records, stale units, whole-tree
     patterns, persist without residue; no product defect.
   - **Candidate:** `rust-0.3.0-rc7` unchanged; all gates pass under the
-    three rules on `m24-r1`.
+    three rules on `m24-r1`; `rust-0.4.0-rc4` unchanged, all gates pass
+    on `m24-r2`.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
@@ -1513,9 +1517,20 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D29 | An authenticated `/mcp` body was read whole before the 4 MiB limit (m16 finding A1) | **Decided (owner, 2026-11-10): bound the read.** At most 4 MiB is read; a larger body gets the SDK's existing 413 before the envelope is parsed ([`bound-mcp-request-body`](../bound-mcp-request-body/proposal.md)) | One request could make the agent hold a body of any size. The only observable change: an oversized malformed body gets 413, not 400. |
 | D30 | A resource id with Unicode whitespace other than space, tab, CR and LF changed identity when its printed URI was parsed (m16 finding F1) | **Decided (owner, 2026-11-10): refuse such ids**, in `Uri::new` and `Uri::parse` ([`resource-id-unicode-whitespace`](../resource-id-unicode-whitespace/proposal.md)) | The spec forbids rewriting IDs; refusing keeps every accepted URI round-trip stable. |
 | D31 | Outcomes of host faults the spec did not state: a full state directory, a damaged store, a hanging or garbage-printing command, a clock stepped back | **Decided (owner, 2026-11-10): the outcomes in [`host-fault-outcomes`](../host-fault-outcomes/proposal.md)**, checked by gate e2e-6 | Journeys must not guess an outcome; these were proposed with the m16 goal's rule (a typed refusal or a clean resume, no half-written state). |
+| D32 | `list_secret_keys` is published, but neither Go v0.2.4 nor Rust implements it (Q18) | **Decided (owner, 2026-11-11): implement** key names only, never values ([`implement-list-secret-keys`](../implement-list-secret-keys/proposal.md)) | Answers Q18; e2e3a.workload drops its `exec_cluster_command` workaround |
+| D33 | `list_configmap_keys` is published but not implemented | **Decided (owner, 2026-11-11): implement** key names only ([`list-configmap-keys`](../list-configmap-keys/proposal.md)) | A capability Go never had (goal m15) |
+| D34 | `inspect_workload` is published but not implemented, and its output fields are not declared | **Decided (owner, 2026-11-11): implement** a fixed Deployment projection with environment names and references, never values ([`inspect-workload`](../inspect-workload/proposal.md)) | A capability Go never had (goal m15) |
+| D35 | `configure_network` is published but not implemented | **Decided (owner, 2026-11-11): implement** one bridged NIC with the published defaults ([`vm-bridged-nic`](../vm-bridged-nic/proposal.md)) | A capability Go never had (goal m15) |
+| D36 | `remove_vm_network_device` is published but not implemented | **Decided (owner, 2026-11-11): implement** removal of one NIC from the instance's own configuration ([`remove-vm-network-device`](../remove-vm-network-device/proposal.md)) | The undo of D35 (goal m15) |
+| D37 | `register_kubernetes_cluster`, `list_agents`, `install_provider_tools` and `uninstall_provider_tools` are published but not implemented, and describe work the Host Agent does not own | **Decided (owner, 2026-11-11): withdraw** them from the catalog ([`withdraw-platform-and-legacy-provider-tools`](../withdraw-platform-and-legacy-provider-tools/proposal.md)) | Platform owns registration and the bridge; `opute.provider.*` owns the provider lifecycle. A contract change: the catalog revision changes |
+| D38 | A console session: the catalog promises the serial console, Go v0.2.4 ran `incus exec <vm> -- bash -il` | **Decided (owner, 2026-11-11): the serial console**, `incus console <instance>` ([`vm-console-session`](../vm-console-session/proposal.md)) | What the description promises, and no implicit root shell; a departure from Go |
+| D39 | Console output over MCP: Go's MCP path discarded it | **Decided (owner, 2026-11-11): pull from a 64 KiB buffer**, returned by `send_console_input` in new `output` and `closed` fields ([`vm-console-session`](../vm-console-session/proposal.md)) | Plain request and response works on every client; an output-schema change |
 | D40 | A child process inherited the agent's whole environment, its bearer and provider credentials included (m15 finding A4) | **Decided (Host Agent owner, delegated 2026-11-11): an allowlist** for every child, never a secret-named variable ([`child-process-environment`](../child-process-environment/proposal.md)) | The tools the agent runs no longer see its settings; Go passed the whole environment |
 | D41 | The serving relay and the provider executables' `/mcp` read a request body whole (m16 finding A2, m17 finding A5) | **Decided (Host Agent owner, delegated 2026-11-11): bound both reads**, 32 MiB for the relay, the SDK's 4 MiB for providers, 413 beyond ([`bound-relay-request-body`](../bound-relay-request-body/proposal.md)) | An oversized body is refused before it is held |
+| D42 | Audit rows were never pruned (m16 observation O1) | **Decided (Host Agent owner, delegated 2026-11-11): keep 30 days and 50,000 rows** by default, pruned in the background, never a row whose operation is working; finished operations follow after their task's one-hour TTL ([`audit-retention`](../audit-retention/proposal.md)) | Two new settings with stated defaults; the store stops growing at the bound |
 | D43 | D40 to D42 were decided on 0.4.0 code; the 0.3.0 candidate `rust-0.3.0-rc4` has A4, A2 and A5 too (measured in goal m18, `evidence/m18`) | **Decided (Host Agent owner, delegated 2026-11-11), goal m18: D40 and D41 apply to 0.3.0** from `rust-0.3.0-rc5`, as declared divergences from Go v0.2.4. **D42 stays 0.4.0 only**: it adds two settings, a contract change the parity release does not take, so O1 stays an open observation in 0.3.0 | rc5 replaces rc4 as the 0.3.0 candidate; no new setting, tool or endpoint |
+| D44 | A plan or recipe node that starts a plan run of its own waits forever for the heavy admission slot its enclosing run holds; the validators named only `run_host_plan` and `run_runtime_recipe` (found in goal m20, `evidence/m20`) | **Decided (Host Agent owner, delegated 2026-11-11), goal m20: refuse all seven tools that start a plan run** as an action, compensation, recovery or recipe validation, before any side effect; a provider is installed by a typed call before the recipe that uses it ([`refuse-nested-plan-runs`](../refuse-nested-plan-runs/proposal.md)) | A plan that cannot finish is refused at validation; 0.4.0 only, from rc3; no new tool, setting or default |
+| D45 | A plan node with a validation and no action failed at once when a dependency was applied in the same run: the executor skipped its preflight to force an action it does not have; Go v0.2.4 does the same (found in goal m20, `evidence/m20`) | **Decided (Host Agent owner, delegated 2026-11-11), goal m20: a node without an action always evaluates its validation**, polling within its timeout; an applied dependency still forces an action ([`validation-only-node-validates`](../validation-only-node-validates/proposal.md)) | A plan can wait for an effect an earlier node started; 0.4.0 only, from rc3; no new tool, setting or default |
 | D46 | No check covered where a secret goes besides a child's environment (D40): argv, file modes, the journal, the store, responses (goal m19) | **Decided (Host Agent owner, delegated 2026-11-11): three placement rules** (never on a command line; a file holding one is 0600 and the agent's user's; logs, the store and responses only redacted), checked on every candidate by `e2e6.secret-sweep` ([`secret-placement`](../secret-placement/proposal.md)) | Findings S1 to S6 on rc5 and rc3, fixed by D47 to D51 |
 | D47 | The public-MCP connector put its tunnel token on cloudflared's argv (S1) | **Decided (Host Agent owner, delegated 2026-11-11): `TUNNEL_TOKEN`** from the unit's 0600 token file ([`public-tunnel-token-environment`](../public-tunnel-token-environment/proposal.md)) | The token file's format and the tool's result do not change |
 | D48 | The Cloudflare provider's host-placed and HA connectors put the run token in `ExecStart`, the HA unit at 0644 (S2, S6) | **Decided (Host Agent owner, delegated 2026-11-11): `--token-file`** with a 0600 file, as the container and Kubernetes placements already do ([`cloudflare-connector-token-file`](../cloudflare-connector-token-file/proposal.md)) | One new 0600 file per host or HA connector, removed with it |

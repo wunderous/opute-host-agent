@@ -57,6 +57,21 @@ still called the set method. The build log is archived as
 `.parity/e2e/m25-main-after-draft.log` and the baseline was rebuilt after
 correcting the insertion.
 
+## Findings from the 0.4.0 draft
+
+The rc4 draft completed every journey. Its receipts are in
+`.parity/retired/m25-040-draft`. The old observer and probe source used by
+that run is archived beside them. One VM start was retried after a
+forwarded port cleared TIME-WAIT.
+
+| Finding | Work |
+| --- | --- |
+| The reserved-hostname journey uses two agents and two provider processes. | Record the fixtures' state roots, processes and exact expected sockets. The provider sockets use the D53 loopback binding on rc5. |
+| The neutral-profile private agents and rollback leave fixture instance trees until cleanup. | Record those trees and the processes and listeners visible in the host namespace. The private socket checks remain in the neutral-profile steps. |
+| The upgrade chain sets aside the active Rust state and stages its secret-check fixtures. | Record the temporary instance tree, the fixture files and the connector user unit. |
+| The console test starts a VM. | Record the VM's tap, config mount and QEMU process, and the modules left loaded after removal. |
+| The public-site teardown leaves Podman fixture files and K3s modules. | Use the shared Podman cleanup, declare the measured package and kernel effects, and check both installed providers' loopback listeners before teardown. |
+
 The first `m25-r1` data journey recorded an Incus loopback proxy that
 remains available for reuse while the guest exists. Its socket matched
 the guest's `e2e-pg-relay` device and disappeared during cleanup. The
@@ -81,6 +96,8 @@ lock `url` 2.5.9 and its required `form_urlencoded` 1.2.3. Local
 keep their own binary hashes. The updated builds are `rust-0.3.0-rc9`
 and `rust-0.4.0-rc6`, and their fresh E2E runs are `m25-r3` and `m25-r4`.
 The partial rc5 journey run is archived under `.parity/retired/m25-r2-rc5`.
+In `m25-r4` all 63 receipts verified on rc6 and every journey passed on
+its first attempt; the 0.4.0 gates now name `m25-r4`.
 In `m25-r3` all 59 receipts verified on rc9 and every journey passed on
-its first attempt; the gates now name `m25-r3`. `m25-r1` stays as the rc8
+its first attempt; the 0.3.0 gates name `m25-r3`. `m25-r1` stays as the rc8
 record.

@@ -336,6 +336,252 @@ stays the production owner until then (task 6.3).
 | Release | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | WSL2 stays blocked; the owner authorizes publishing 0.3.0 (GitHub release, npm, site catalog) through the normal rollout path (m26) |
 | Deployment | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | Cutover follows the section 5 runbook; rollback window 5 minutes per host (D54, replacing D28's 14 days) |
 
+
+## 7. Rust 0.4.0 candidate (goals m15, m17, m20, m19, m21, m22, m23, m24 and m25)
+
+Sections 1 to 6 are the 0.3.0 candidate, and its sign-off stands alone.
+This section is the next candidate, from the integration branch
+`rust-0.4.0`, which reaches main only after the 0.3.0 sign-off. Nothing
+here was tagged or published. On `rust-0.4.0`, `evidence/cutover/candidate.json`
+names this set and `make cutover-readiness` checks it.
+
+### 7.1 What changed from 0.3.0
+
+Every tool the agent publishes now either works or is withdrawn by
+decision. The 0.3.0 seam report listed 17 unported capabilities; the 0.4.0
+report (`evidence/seam/m17`) lists 144 compliant, 2 unported and 4
+unpublished, with no gap. The two unported ones are internal
+(`configure_host_network`, `install_sql_forward_sidecar`) and published in
+no mode. The dispatch canary turns the verifier red.
+
+| Tools | Change | Decision |
+|---|---|---|
+| `list_secret_keys` | Key names of one Secret, never values | D32 (Q18), [implement-list-secret-keys](../implement-list-secret-keys/proposal.md) |
+| `list_configmap_keys` | Key names of one ConfigMap | D33, [list-configmap-keys](../list-configmap-keys/proposal.md) |
+| `inspect_workload` | A fixed projection of one Deployment: env names and references, never values | D34, [inspect-workload](../inspect-workload/proposal.md) |
+| `configure_network` | One bridged NIC on an instance | D35, [vm-bridged-nic](../vm-bridged-nic/proposal.md) |
+| `remove_vm_network_device` | Remove one NIC from the instance's own configuration | D36, [remove-vm-network-device](../remove-vm-network-device/proposal.md) |
+| `register_kubernetes_cluster`, `list_agents`, `install_provider_tools`, `uninstall_provider_tools` | Withdrawn from the catalog | D37, [withdraw-platform-and-legacy-provider-tools](../withdraw-platform-and-legacy-provider-tools/proposal.md) |
+| `stream_vm_console`, `send_console_input`, `resize_console` | The serial console (`incus console`) on a PTY; output pulled from a 64 KiB buffer in `send_console_input`'s new `output` and `closed` | D38, D39, [vm-console-session](../vm-console-session/proposal.md) |
+| `open_assistant_session`, `remove_local_llm_model`, `configure_local_llm_runtime` | As recorded in v0.2.4 (D27) | [recorded-session-and-llm-tools](../recorded-session-and-llm-tools/proposal.md) |
+| `--mode`, Platform defaults and names | Removed. `OPUTE_HOST_ALLOW_MUTATIONS` gates mutations | [platform-neutral-host-agent](../platform-neutral-host-agent/proposal.md) (PR #43) |
+
+The catalog revision for standalone was re-pinned for D37 and D39, and
+again for D51 (m19), to
+`sha256:6ceca36091c4fc214fac50a643f9dfad87cb4163fb6ebe8b1913a57286e0178c`.
+
+Goal m17 closed the open observations in this candidate. Sections 2a and 4
+are the 0.3.0 candidate, rc5: goal m18 fixed A2, A4 and A5 there too (D43),
+and O1 stays open in 0.3.0. The decisions were
+delegated by the Host Agent owner on 2026-11-11.
+
+| Id | What | State in 0.4.0 |
+|---|---|---|
+| A4 (found in m15) | Every process the agent started inherited its whole environment, bearer and provider credentials included | Closed by D40, [child-process-environment](../child-process-environment/proposal.md): an allowlist at all eight spawn sites, never a secret-named variable |
+| A2 (m16) | The serving relay read a request body whole | Closed by D41, [bound-relay-request-body](../bound-relay-request-body/proposal.md): 32 MiB, 413 beyond |
+| A5 (found in m17) | The provider executables' `/mcp` read a body whole before the 4 MiB check | Closed by D41: the SDK's 4 MiB, 413 beyond |
+| O1 (m16) | Audit rows were never pruned | Closed by D42, [audit-retention](../audit-retention/proposal.md): 30 days and 50,000 rows by default (`OPUTE_AUDIT_RETENTION_DAYS`, `OPUTE_AUDIT_RETENTION_ROWS`); finished operations follow after their task's one-hour TTL |
+
+Each fix has a test that failed on rc1's code
+([`evidence/m17`](../../../evidence/m17/README.md)).
+
+Goal m19 swept every secret's placement (D46,
+[secret-placement](../secret-placement/proposal.md)) and found the same six
+exposures in 0.4.0 as in 0.3.0 (section 2a); `e2e6.secret-sweep` measured
+S1, S4 and S5 on rc3 (run `m19-before-040`). All six are closed in rc4 by the
+same fixes as in 0.3.0 rc6:
+
+| Id | Exposure | State in 0.4.0 |
+|---|---|---|
+| S1 | The public site's cloudflared run token on argv | Closed by D47, [public-tunnel-token-environment](../public-tunnel-token-environment/proposal.md) |
+| S2, S6 | The host and HA cloudflared connectors' run token in `ExecStart` | Closed by D48, [cloudflare-connector-token-file](../cloudflare-connector-token-file/proposal.md): a 0600 token file and `--token-file` |
+| S3 | The Tailscale auth key on `tailscale up`'s argv | Closed by D49, [tailscale-auth-key-file](../tailscale-auth-key-file/proposal.md): `--auth-key=file:/dev/stdin` |
+| S4 | The cluster agent's bridge token on argv inside its install script, in sudo's journal entry and in a 0644 config | Closed by D50, [cluster-agent-config-stdin](../cluster-agent-config-stdin/proposal.md): the config travels on stdin into a 0600 file |
+| S5 | `ensure_local_llm_relay`'s `upstreamToken` stored verbatim | Closed by D51, [write-only-relay-upstream-token](../write-only-relay-upstream-token/proposal.md) |
+
+Each fix has a test that fails on rc3's code
+([`evidence/m19/before-040.log`](../../../evidence/m19/before-040.log)).
+
+Goal m22 put the outcome rule (section 1's m22 note) on this line too. Its
+own journeys had 78 flagged steps before the round; the findings in 0.4.0
+match 0.3.0's ([`evidence/m22`](../../../evidence/m22/README.md)), and none
+is a product defect:
+
+| Id | Journeys | Finding | State in 0.4.0 |
+|---|---|---|---|
+| J1 | `e2e6.store-damage` | Its task failed on the user bus, unasserted | journey defect, fixed as in 0.3.0 |
+| E1, E2 | `e2e1.restart`, `e2e4.cutover` | A never-persisted task's `task not found`; Go v0.2.4's first supervisor call | expected; asserted, or opted out with its reason |
+| E3 | `e2e6.secret-sweep`, and `e2e4.upgrade-chain`'s three tunnel calls and three re-reads | The connector stops at its `.invalid` public endpoint, past its origin | expected refusal; `isError: true` and the text asserted |
+| — | `e2e3.discovery`, `e2e3a.workload`, `e2e3a.lose-one`, `e2e6.child-env`, `e2e7.public-site`, `neutral.reserved` | Steps that returned success with no assertion on it (the key tools, the env edits, the console input, the site's host prerequisites, the provider installs) | each now asserts its result |
+
+Goal m23 put the effect rule (section 1's m23 note) on this line too. Its
+journeys had 279 unconfirmed mutation steps before the round. All are now
+confirmed by a later observation, or opt out with their reason
+([`evidence/m23`](../../../evidence/m23/README.md)). The findings match
+0.3.0's, and none is a product defect:
+
+| Id | Journeys | Finding | State in 0.4.0 |
+|---|---|---|---|
+| J2 | `e2e2.data` | SQLite removal was checked at a path the agent never uses | journey defect, fixed as in 0.3.0 |
+| J3 | `e2e1.restart` | m23's own read-back assumed the resubmitted run stayed `unknown`; it resumes | journey defect, fixed as in 0.3.0 |
+| — | `e2e2.incus`, `e2e3.serving`, `e2e3a.workload`, `e2e3a.lose-one`, `e2e4.upgrade-chain`, `e2e6.child-env`, `e2e7.public-site`, `neutral.*` | Mutations only 0.4.0 runs: the console, the NIC, the model removal, the ConfigMap and env edits, the release path's writes, plans and relay, the providers' units, the recipe files, the site | each confirmed: a guest read, a file digest, a listening port, `list_configmap_keys`, `inspect_workload` or the fetched page; console input and resize opt out (only the console session sees them) |
+
+Goal m24 put the allowance rule (section 1's m24 note) on this line too.
+Before the round, 138 of 386 allow patterns and 17 of 27 persist patterns
+matched nothing in their committed run, and 61 covered a whole tree. Each
+now names what its run changes ([`evidence/m24`](../../../evidence/m24/README.md)).
+The findings match 0.3.0's, and none is a product defect:
+
+| Id | Journeys | Finding | State in 0.4.0 |
+|---|---|---|---|
+| W1-W5 | as in 0.3.0 | An allowed traversal-escape target, patterns for kinds the state never records, stale units, whole-tree patterns, persist without residue | journey defects, fixed as in 0.3.0 |
+| — | `e2e4.upgrade-chain`, `e2e6.child-env`, `e2e7.public-site`, `neutral.*` | Patterns only 0.4.0 runs had: `incus/*`, `system/units/*`, `user/*`, `files//etc/systemd/system/*`, every agent's unit by wildcard, the 0.3.x release in journeys that never unpack it, and persist patterns for the site's build context and instance state, which cleanup removes | journey defects, fixed: the console's VM and its image, the chain's drop-in, each agent's and provider's unit by name; no persist |
+
+The m25 draft expanded the host observer to cover filesystem and runtime
+effects. It confirmed the provider listener exposure recorded as P1.
+D53 binds the provider executables to IPv4 loopback. The draft also captured
+new effects in the neutral-profile, upgrade-chain, console and public-site
+journeys. The supply-chain dependency patch that superseded rc8 also
+supersedes rc5 with rc6. Every gate verifies on rc6 under `m25-r4`.
+
+### 7.2 The candidate
+
+| Field | Value |
+|---|---|
+| Name | `rust-0.4.0-rc6`, version `0.4.0`. It includes the patched URL dependency. |
+| Commit | `dd38feade924716a539eb613d4a17c0377e3c30c` (branch `codex/m25-observer-040`) |
+| `SHA256SUMS` | `sha256:5dacdb8f5e374edfd79399cecb16a340e024eeea61e9c89994de11f5418b6f3e` |
+| `host-agent-linux-x64` | `f2dfb569fb82035777f5e40aba33385a0977c663e196ad338b95cf2d5050bc25` |
+| `host-agent-linux-arm64.gz` | `d308eb0f0a0c89548c52c4ea389d0cc3f09102d8820dafea65befd10b4c6acd6` |
+| Upgrade target | `rust-0.4.0-rc6-next`, `0.4.1-e2e`, the same commit |
+| Rollback target | `rust-0.3.0-rc9` (section 1), used by the rollback and upgrade-chain journeys |
+
+Before the build: `cargo fmt` and clippy were clean, a 60 s pass over all
+18 fuzz targets found nothing ([`evidence/m25/fuzz-040.txt`](../../../evidence/m25/fuzz-040.txt)),
+and the stale grep found no earlier candidate named as current. The 26 hardening entry points include the
+console-output reader (m15) and, from m17, the serving relay, the provider
+`/mcp` and the child environment, each with a property test.
+
+### 7.3 Gates and receipts
+
+Every gate ran on rc4 under run `m19-r2`, and `evidence/e2e/verify.py --gate`
+passes each. Goal m21 changed no 0.4.0 code. It added `e2e4.upgrade-chain`,
+pinned the rollback journeys to `rust-0.3.0-rc7` and taught the sweep's scan
+which owners a private file may have, so it reran gates e2e-4, e2e-neutral
+and e2e-6 on rc4 under run `m21-r2`. Every journey there passed on its first
+attempt. Goal m22 changed no 0.4.0 code either; with the outcome rule on,
+every gate reran on rc4 under run `m22-r2`. Goal m23 changed no 0.4.0 code.
+With the outcome and effect rules on, every gate reran on rc4 under run
+`m23-r2`. Goal m24 changed no 0.4.0 code. With the three rules on, every
+gate reran on rc4 under run `m24-r2`. Goal m25 widened the host observer and
+fixed P1 (D53); every gate reran on rc6 under run `m25-r4`, which is now the
+run of every gate. `evidence/e2e/verify.py --gate` passes each.
+
+| Gate | Journeys | Spec requirements passed | New in 0.4.0 |
+|---|---|---|---|
+| e2e-0 | 26 | 25 | `selfcheck.unchecked-outcome` (m22); `selfcheck.unconfirmed-effect` and `selfcheck.empty-confirmation` (m23); `selfcheck.unused-allowance` and `selfcheck.broad-allowance` (m24); fourteen observer probes, each failing with its exact planted effect (m25) |
+| e2e-1 | 8 | 35 | Install on the proposed unit and launcher (below); upgrade to `0.4.1-e2e` |
+| e2e-2 | 5 | 38 | `e2e2.incus`: the console journey (open, read the login prompt, resize, detach, no `incus console` left) and the NIC journey (attach, attach again, remove, remove again) |
+| e2e-3a | 5 | 33 | `e2e3a.workload`: cluster inspection on the HA cluster through `list_secret_keys`, `list_configmap_keys` and `inspect_workload`; the Q18 workaround is gone |
+| e2e-3 | 3 | 19 | `e2e3.serving` calls both LLM tools; `e2e3.discovery` reads K3s's own keys |
+| e2e-4 | 3 | 16 | `e2e4.upgrade-chain` (m21): the release path on one host, on the production unit. Go v0.2.4 on Go's unit leaves a run in flight. `rust-0.3.0-rc7` serves that state on the same unit, and installs an LLM relay and a user-scoped public MCP connector with marked tokens. rc4 takes over on the proposed 0.4.0 unit. rc7 is then rolled back onto that unit. At each step, counts and ids reconcile per table, every run, task and operation reads back with the status last reported (Go's in-flight run as `cancelled`), mutations are admitted from the unit, each connector call gets past its origin probe, and no token is in the journal, the store, a non-private file or another process's environment (D52) |
+| e2e-6 | 9 | 21 | `e2e6.secret-sweep` (m19): with markers planted for an OAuth grant, an LLM relay, a host cluster agent install and a public MCP connector, no marker is on any process's argv (78 execs traced host-wide), in the journal, in the store or in a response, and every file that holds one is 0600; the environ of the agent's own unit holds its own credentials only. `e2e6.child-env`: `/proc` shows that neither a console's `incus` process nor a recipe step's `systemd-run` client holds the agent's bearer, a provider credential or an `OPUTE_` setting (D40). `e2e6.pressure`: a 1 GiB body to the serving relay is answered 413 in 0.03 s, with RSS at 58 MB (D41). `e2e6.budget` (`m24-r2`): with a 5,000-row bound, 28,154 calls leave exactly 5,000 audit rows one prune interval later, and the store grows 773 bytes per call against 3,421 in 0.3.0 (D42) |
+| e2e-neutral | 3 | 13 | Rerun after PR #43's merge; rollback from 0.4.0 to 0.3.0 rc7 |
+| e2e-7 | 1 | 5 | `e2e7.public-site` (m20): one `run_host_local_recipe` run brings a K3s Service up at `e2e-m25-r4.opute.io`, which the host fetches over verified TLS; a second run skips every node; a deleted pod is replaced; neither the Cloudflare token nor the tunnel's run token is in any file, journal line or run record; one teardown run removes the guest, the CNAME and the tunnel, and a second skips (D44, D45) |
+
+Retired, with cause (`.parity/retired/`):
+- `m15-r1-stale-journeys`: the first attempts of `e2e1.migrate-upgrade`
+  and `e2e4.restart` expected the version `0.3.1-e2e`, and `e2e3.discovery`
+  expected `not_implemented` from the two key tools. These were journey
+  expectations left from 0.3.0, not product defects.
+- `m15-r1-neutral-reserved-provider`: the first attempt of `neutral.reserved`
+  passed on another build's Cloudflare provider.
+
+Each of these journeys reran once under the same run, on the same build.
+Those were rc1's. On rc2:
+- `m17-r1-host-restart`: the host machine restarted three journeys into the
+  round. No verdict; the dev VM was rebuilt from rc2 and the whole round
+  reran as `m17-r2`.
+- `m17-r2-quorum-removal-dns`: the first attempt of `e2e3a.quorum-removal`
+  failed when the third server could not resolve `github.com` to download
+  K3s. Environmental; the journey reran once under `m17-r2` and passed.
+
+On rc3 (`m20-r1`), every journey of the eight earlier gates passed on its first
+attempt. One attempt was retired:
+- `m20-r1-e2e7-first`: the first attempt of `e2e7.public-site` brought the
+  site up and served it, then failed on a recipe defect and three journey
+  defects, none in the binary. The teardown recipe removed the tunnel before
+  the guest; `remove-host-tunnel` stops only a host-placed connector, so the
+  in-cluster connector still held connections and Cloudflare refused the
+  delete (code 1022). The recipe now removes the guest first and retries the
+  tunnel node; on the rerun it succeeded on attempt 4 of 6. The journey
+  deleted the pod without the client capabilities the tool requires, used an
+  incus project the agent's guests are not in, and checked a provider tool
+  against a catalog read before the providers were installed.
+
+On rc4 (`m19-r2`), one attempt was retired:
+- `m19-r2-e2e3a-workload-dns`: the first attempt of `e2e3a.workload` failed
+  when a guest could not resolve `get.k3s.io`. Environmental; the journey
+  reran once under `m19-r2` and passed in 228 s.
+
+On rc4 under the outcome rule (`m22-r2`), one attempt was retired:
+- `m22-r2-endpoint-dns`: the first attempt of `e2e3a.endpoint` failed when
+  the K3s provider could not resolve `github.com` for the release checksums,
+  and every later step depended on that cluster. Environmental; the journey
+  reran once under `m22-r2`.
+
+On rc4 under both rules (`m23-r2`), every journey passed on its first attempt.
+So did every journey under the three rules (`m24-r2`), and on rc6 under the
+widened observer (`m25-r4`). The partial rc5 round was superseded by rc6 and
+archived as `.parity/retired/m25-r2-rc5`.
+
+| Receipt | What it proves |
+|---|---|
+| Contract suites | Binary `f2dfb569…`. D8 OAuth issuance passes 23/23, D10 7/7, D11 3/3, D12 3/3 and D13 4/4. PR #43 (platform-neutral) removed two 0.3.0 scenarios. `credentials.operator-secret` went because OAuth machine clients now come from `OPUTE_OAUTH_CLIENTS`. `gate.platform-unaffected` went because there is one serving profile and no mode |
+| Seam `m25-rc6` | 144 compliant, 2 unported, 4 unpublished, no gap, the red canary, and a rerun that reproduces the report byte for byte |
+| arm64 clean install | `host-agent-linux-arm64.gz` `d308eb0f…` |
+| Distribution | Go's read-only canary passes on the locally packed 0.4.0 launcher. After the declared renames, the site preview differs from Go's only in the tools D28, D37 and D39 changed and in `run_host_local_recipe`'s description, from which platform-neutral removes the Platform name |
+
+### 7.4 Prerequisite for shipping 0.4.0: the proposed install surfaces
+
+0.4.0 refuses `--mode`. Go's deploy unit, the npm launcher and the site's
+catalog capture still pass it. The owners decided on 2026-11-11 that the
+0.4.0 gates run on the replacements proposed in
+[`evidence/cutover/proposed-0.4.0/`](../../../evidence/cutover/proposed-0.4.0/README.md):
+
+- the unit without `--mode` and with `OPUTE_HOST_ALLOW_MUTATIONS=true`;
+- the launcher patch;
+- the site capture patch.
+
+The release owners still ship these files. Until they do, 0.4.0 cannot
+start from the published unit or launcher (platform-neutral-host-agent task
+4.0 stays open). Section 5's runbook applies to 0.4.0 with two changes.
+In step 5, install the proposed unit with the binary. R1 rolls back to the
+0.3.x binary on the same unit: both settings sets stay in it, and 0.3.x
+reads its old ones (`neutral.rollback`).
+
+Measured by `e2e4.upgrade-chain` (m21) on one host:
+1. Upgrade from 0.3.0 to 0.4.0: stop the unit, install the proposed unit
+   and the 0.4.0 binary on the same instance root, env file and drop-ins,
+   and start it. 0.4.0 reconciles 0.3.0's state per table and reads back
+   every run, task and operation, including the run Go stopped in flight
+   (`cancelled`).
+2. Rollback from 0.4.0 to 0.3.0: stop the unit and put the 0.3.0 binary
+   back, keeping the proposed unit. 0.3.0 reads 0.4.0's state the same way,
+   0.4.0-era work included, and admits mutations from that unit's 0.3.0
+   settings.
+3. Both directions keep the relay and connector files private (0600, the
+   agent's user's). A connector reconciled by one line is reconciled again
+   by the other with no second unit. Each line needs its own OAuth settings
+   for that: `OPUTE_HOST_OAUTH_CLIENT_SECRET` for 0.3.0 and
+   `OPUTE_OAUTH_CLIENTS` for 0.4.0.
+
+### 7.5 Not passed
+
+`make cutover-readiness` on `rust-0.4.0` lists e2e-5, WSL2 and Q4, the same
+owners and unblockers as section 4. Q18 is answered by D32 and passes. No
+observation from the hardening review is open in 0.4.0.
+
 ## 8. Publication (0.3.0, goal m26)
 
 On 2026-11-23/24 the 0.3.0 release went out through the existing release

@@ -219,9 +219,9 @@ mod tests {
     /// candidate still takes the family exclusively.
     #[test]
     fn rejected_candidate_keeps_family_owner_and_valid_one_displaces_it() {
-        for standalone in [false, true] {
+        {
             let registry = Arc::new(Registry::native(
-                crate::catalog::for_mode(standalone).clone(),
+                crate::catalog::served().clone(),
                 Default::default(),
             ));
             let owner = Publication::new(registry.clone());
@@ -279,30 +279,24 @@ mod tests {
         let mut results = Vec::new();
         for row in rows.as_array().unwrap() {
             let input = &row["publication"];
-            let standalone = input["standalone"].as_bool().unwrap_or(false);
             let registry = Arc::new(Registry::native(
-                crate::catalog::for_mode(standalone).clone(),
+                crate::catalog::served().clone(),
                 Default::default(),
             ));
             let owner = Arc::new(Publication::new(registry.clone()));
             let directory = tempfile::tempdir().unwrap();
             let http = if std::env::var("PARITY_PROVIDER_PUBLICATION_HTTP").as_deref() == Ok("1") {
-                let environment = crate::config::Env::from_pairs([
-                    ("OPUTE_REMOTE_AGENT_ID", "publication-http-fixture"),
-                    (
-                        "OPUTE_AGENT_MODE",
-                        if standalone { "standalone" } else { "platform" },
-                    ),
-                ]);
+                let environment = crate::config::Env::from_pairs([(
+                    "OPUTE_REMOTE_AGENT_ID",
+                    "publication-http-fixture",
+                )]);
                 let mut config = crate::config::Config::load(&environment);
                 config.prefix_tool_names = false;
                 config.mcp_auth_token = "publication-fixture-bearer".into();
                 let store = Arc::new(Mutex::new(
                     crate::store::StateStore::open(directory.path()).unwrap(),
                 ));
-                let auth =
-                    crate::store::AuthzStore::open(directory.path(), "publication-fixture-secret")
-                        .unwrap();
+                let auth = crate::store::AuthzStore::open(directory.path(), &[]).unwrap();
                 let server =
                     crate::app::compose(&config, auth, store, Some(owner.clone())).unwrap();
                 let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

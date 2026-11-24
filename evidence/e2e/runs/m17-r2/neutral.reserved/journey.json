@@ -1,0 +1,437 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove r >/dev/null; python3 /opt/opute-e2e/guest/e2etool.py agent remove n >/dev/null; systemctl stop e2e-provider-cf-r e2e-provider-cf-n 2>/dev/null; rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; rm -rf /opt/opute-e2e/releases/rust-0.4.0 /opt/opute-e2e/releases/rust-0.3.x /opt/opute-e2e/guest/neutralprobe.py; true",
+   "id": "clean"
+  }
+ ],
+ "description": "The Cloudflare provider's reserved-name guard as operator configuration: two 0.4.0 agents, each with its own Cloudflare provider and no Cloudflare credentials; one provider runs with OPUTE_RESERVED_HOSTNAMES=*.opute.io.",
+ "effects": {
+  "allow": [
+   "files//opt/opute-e2e/releases/rust-0.4.0*",
+   "files//opt/opute-e2e/releases/rust-0.3.x*",
+   "system/units/e2e-*",
+   "system/unitFiles/e2e-*",
+   "files//home/opute/.config/opute-e2e*",
+   "files//opt/opute-e2e/providers*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-neutral",
+ "id": "neutral.reserved",
+ "inputs": {
+  "agent": "the 0.4.0 candidate's release binary (the one the dev VM runs), started by the journey with `serve` and explicit settings",
+  "files": {
+   "activate": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/cloudflare-activate-tunneling.yaml",
+    "sha256": "6fec9957909058f39bc48bd35becae2e46be55a06b9b2ff4a9928a608772f460"
+   },
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "probe": {
+    "path": "${REPO}/evidence/e2e/guest-tools/neutralprobe.py",
+    "sha256": "1ed02ede839e09d7f4d0bea7779ae9e248951f6deb7c79a015af76cfbadfbdad"
+   },
+   "providerCloudflare": {
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc2/opute-provider-cloudflare-linux-x64",
+    "sha256": "e043e0f1260320185b123ead4fff3e01181d8edea3e3cb5214d7953a7668d7c4"
+   },
+   "rust04": {
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc2/host-agent-linux-x64.gz",
+    "sha256": "efa3da904bd1e3ab8908ac2b30716282da81028a1b5f262f4dec9ad229c6f9ff"
+   }
+  },
+  "provider": "the Rust Cloudflare provider 1.0.1 from the same release set, without Cloudflare credentials"
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "2\n",
+     "path": "stdout",
+     "step": "providers"
+    },
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "toolsR"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "reservedName"
+    },
+    {
+     "equals": "reserved_hostname",
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "reservedName"
+    },
+    {
+     "equals": "mcp.opute.io",
+     "path": "response.body.result.result.structuredContent.hostname",
+     "step": "reservedName"
+    },
+    {
+     "equals": "*.opute.io",
+     "path": "response.body.result.result.structuredContent.pattern",
+     "step": "reservedName"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "otherName"
+    },
+    {
+     "contains": "CLOUDFLARE_ACCOUNT_ID",
+     "path": "response.body.result.result.content[0].text",
+     "step": "otherName"
+    }
+   ],
+   "requirement": "Reserved names are operator configuration",
+   "scenario": "A deployment protects its names: with OPUTE_RESERVED_HOSTNAMES=*.opute.io a tunnel for mcp.opute.io is refused with reserved_hostname. The provider has no Cloudflare credentials, so no API call is possible; another hostname gets past the guard to that credentials error",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "toolsN"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "nothingReserved"
+    },
+    {
+     "contains": "CLOUDFLARE_ACCOUNT_ID",
+     "path": "response.body.result.result.content[0].text",
+     "step": "nothingReserved"
+    },
+    {
+     "absent": true,
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "nothingReserved"
+    }
+   ],
+   "requirement": "Reserved names are operator configuration",
+   "scenario": "Nothing reserved: mcp.opute.io is accepted like any other hostname and reaches the same credentials error",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "probe",
+   "id": "probeCopy",
+   "to": "/opt/opute-e2e/guest/neutralprobe.py"
+  },
+  {
+   "copy": "rust04",
+   "id": "copy04",
+   "to": "/opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz"
+  },
+  {
+   "guest": "gzip -dc /opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz > /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent && chmod 0755 /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent && /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent --version",
+   "id": "unpack04"
+  },
+  {
+   "copy": "providerCloudflare",
+   "id": "providerCopy",
+   "mode": "0755",
+   "to": "/opt/opute-e2e/providers/opute-provider-cloudflare"
+  },
+  {
+   "copy": "activate",
+   "id": "recipeCopy",
+   "mode": "0644",
+   "to": "/home/opute/.config/opute-e2e/cloudflare-activate-tunneling.yaml"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/r /tmp/e2e-agents/r/home && systemd-run --quiet --collect --unit=e2e-agent-r --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/r/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-cf-r' --setenv='MCP_AUTH_TOKEN=${SECRET:r}' --setenv='HOST_MCP_PORT=3041' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3041/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3041/health",
+   "id": "agentR"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/n /tmp/e2e-agents/n/home && systemd-run --quiet --collect --unit=e2e-agent-n --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/n/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-cf-n' --setenv='MCP_AUTH_TOKEN=${SECRET:n}' --setenv='HOST_MCP_PORT=3042' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3042/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3042/health",
+   "id": "agentN"
+  },
+  {
+   "auth": "secret:r",
+   "id": "listR",
+   "mcp": "tools/list",
+   "port": 3041
+  },
+  {
+   "auth": "secret:n",
+   "id": "listN",
+   "mcp": "tools/list",
+   "port": 3042
+  },
+  {
+   "guest": "chown -R opute /home/opute/.config/opute-e2e && systemd-run --quiet --collect --unit=e2e-provider-cf-r --uid=opute --gid=opute --setenv=HOME=/home/opute --setenv=OPUTE_PROVIDER_PORT=4330 --setenv='OPUTE_RESERVED_HOSTNAMES=*.opute.io' --property=Restart=no /opt/opute-e2e/providers/opute-provider-cloudflare && systemd-run --quiet --collect --unit=e2e-provider-cf-n --uid=opute --gid=opute --setenv=HOME=/home/opute --setenv=OPUTE_PROVIDER_PORT=4331 --property=Restart=no /opt/opute-e2e/providers/opute-provider-cloudflare && for i in $(seq 60); do ss -ltnH 'sport = :4330' | grep -q . && ss -ltnH 'sport = :4331' | grep -q . && break; sleep 0.5; done; ss -ltnH '( sport = :4330 or sport = :4331 )' | wc -l",
+   "id": "providers"
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.tunneling.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.mesh-runtime.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.mesh-membership.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.public-ingress.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.cloudflare",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:4330/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.1"
+    },
+    "recipeSource": "/home/opute/.config/opute-e2e/cloudflare-activate-tunneling.yaml"
+   },
+   "auth": "secret:r",
+   "id": "installR",
+   "mcp": "tools/call",
+   "port": 3041,
+   "tool": "opute.provider.install"
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.tunneling.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.mesh-runtime.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.mesh-membership.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.public-ingress.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.cloudflare",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:4331/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.1"
+    },
+    "recipeSource": "/home/opute/.config/opute-e2e/cloudflare-activate-tunneling.yaml"
+   },
+   "auth": "secret:n",
+   "id": "installN",
+   "mcp": "tools/call",
+   "port": 3042,
+   "tool": "opute.provider.install"
+  },
+  {
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3041, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.tunneling.ensure-host-tunnel\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.tunneling.ensure-host-tunnel\" in names}))' '${SECRET:r}'",
+   "id": "toolsR"
+  },
+  {
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3042, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.tunneling.ensure-host-tunnel\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.tunneling.ensure-host-tunnel\" in names}))' '${SECRET:n}'",
+   "id": "toolsN"
+  },
+  {
+   "auth": "secret:r",
+   "id": "catalogR",
+   "mcp": "tools/list",
+   "port": 3041
+  },
+  {
+   "auth": "secret:n",
+   "id": "catalogN",
+   "mcp": "tools/list",
+   "port": 3042
+  },
+  {
+   "arguments": {
+    "bindingId": "e2e",
+    "hostname": "mcp.opute.io",
+    "localTarget": "http://127.0.0.1:3041/mcp",
+    "placement": "host",
+    "tunnelName": "e2e-tunnel"
+   },
+   "auth": "secret:r",
+   "capture": {
+    "TID_reservedName": "response.body.result.taskId"
+   },
+   "id": "reservedNameCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3041,
+   "tool": "opute.capability.tunneling.ensure-host-tunnel"
+  },
+  {
+   "auth": "secret:r",
+   "id": "reservedName",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_reservedName}"
+   },
+   "port": 3041,
+   "timeout": 120,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "bindingId": "e2e",
+    "hostname": "agent.example.test",
+    "localTarget": "http://127.0.0.1:3041/mcp",
+    "placement": "host",
+    "tunnelName": "e2e-tunnel"
+   },
+   "auth": "secret:r",
+   "capture": {
+    "TID_otherName": "response.body.result.taskId"
+   },
+   "id": "otherNameCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3041,
+   "tool": "opute.capability.tunneling.ensure-host-tunnel"
+  },
+  {
+   "auth": "secret:r",
+   "id": "otherName",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_otherName}"
+   },
+   "port": 3041,
+   "timeout": 120,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "bindingId": "e2e",
+    "hostname": "mcp.opute.io",
+    "localTarget": "http://127.0.0.1:3042/mcp",
+    "placement": "host",
+    "tunnelName": "e2e-tunnel"
+   },
+   "auth": "secret:n",
+   "capture": {
+    "TID_nothingReserved": "response.body.result.taskId"
+   },
+   "id": "nothingReservedCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3042,
+   "tool": "opute.capability.tunneling.ensure-host-tunnel"
+  },
+  {
+   "auth": "secret:n",
+   "id": "nothingReserved",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_nothingReserved}"
+   },
+   "port": 3042,
+   "timeout": 120,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  }
+ ]
+}

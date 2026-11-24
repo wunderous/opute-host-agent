@@ -36,6 +36,7 @@ pub const TARGETS: &[Target] = &[
     ("provider_result", provider_result),
     ("incus_output", incus_output),
     ("command_output", command_output),
+    ("console_output", console_output),
     ("authz_store", authz_store),
 ];
 
@@ -128,7 +129,6 @@ fn compose_wire(name: &str, extra: &[(&str, &str)]) -> Wire {
             ("XDG_CONFIG_HOME", at("xdg")),
             ("PATH", empty_path.to_string_lossy().into_owned()),
             ("OPUTE_REMOTE_AGENT_ID", "agent-under-fuzz".into()),
-            ("OPUTE_AGENT_MODE", "standalone".into()),
             ("OPUTE_STANDALONE_STATE_DIR", at("state")),
             ("HOST_MCP_BIND_HOST", "127.0.0.1".into()),
             ("HOST_MCP_PORT", "1".into()),
@@ -139,9 +139,8 @@ fn compose_wire(name: &str, extra: &[(&str, &str)]) -> Wire {
         }
         let runtime = crate::app::new_runtime(&env).expect("fuzz runtime");
         let cfg = runtime.config.clone();
-        let authz =
-            crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.opute_client_secret)
-                .expect("fuzz authz");
+        let authz = crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.oauth_clients)
+            .expect("fuzz authz");
         let server =
             crate::app::http_server(&cfg, authz, runtime.state.clone()).expect("fuzz server");
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind fuzz listener");
@@ -237,7 +236,7 @@ pub fn tool_arguments(data: &[u8]) {
     let Some((&pick, rest)) = data.split_first() else {
         return;
     };
-    let snapshot = crate::catalog::for_mode(pick & 0x80 == 0);
+    let snapshot = crate::catalog::served();
     if snapshot.tools.is_empty() {
         return;
     }
@@ -262,7 +261,7 @@ pub fn plan_document(data: &[u8]) {
     let Ok(doc) = crate::plan::schema::decode_bytes(data) else {
         return;
     };
-    let snapshot = crate::catalog::for_mode(true);
+    let snapshot = crate::catalog::served();
     let capabilities = crate::plan_mcp::capabilities_from_snapshot(snapshot);
     if crate::plan::schema::validate(&doc, &capabilities, &snapshot.revision).is_ok() {
         let _ = crate::plan::schema::document_hash(&doc);
@@ -365,13 +364,51 @@ pub fn provider_result(data: &[u8]) {
     }
 }
 
-/// `incus list --format json` output.
+/// `incus list --format json` output, and an instance's devices as
+/// `incus query` returns them (D35, D36).
 pub fn incus_output(data: &[u8]) {
     if let Ok(items) = crate::incus::decode_list(&text(data)) {
         for item in &items {
             let _ = item.config_value("limits.memory");
         }
     }
+    if let Ok(doc) = serde_json::from_slice::<J>(data) {
+        let devices = |key: &str| {
+            doc.get(key)
+                .and_then(J::as_object)
+                .cloned()
+                .unwrap_or_default()
+        };
+        let (own, expanded) = (devices("devices"), devices("expanded_devices"));
+        for device in expanded.keys().chain(own.keys()) {
+            let _ = crate::incusops::bridged_nic_needed(&expanded, "vm", device, "br0");
+            let _ = crate::incusops::nic_removal_needed(&own, &expanded, "vm", device);
+        }
+    }
+}
+
+/// A guest's console output (D39), cut into reads by the input's own bytes.
+/// Oracle: the buffer never exceeds 64 KiB, and every read is whole UTF-8
+/// once the console has exited.
+pub fn console_output(data: &[u8]) {
+    use crate::console::{append, drain, Output, BUFFER};
+    let mut output = Output::default();
+    let mut rest = data;
+    while let Some((&cut, tail)) = rest.split_first() {
+        let (chunk, next) = tail.split_at((cut as usize).min(tail.len()));
+        append(&mut output.pending, chunk);
+        assert!(
+            output.pending.len() <= BUFFER,
+            "console buffer over its bound"
+        );
+        if cut % 3 == 0 {
+            drain(&mut output);
+        }
+        rest = next;
+    }
+    output.exited = true;
+    let (_, closed) = drain(&mut output);
+    assert!(closed && output.pending.is_empty());
 }
 
 /// Output of every other host command, registry or API the agent reads,
@@ -412,7 +449,13 @@ pub fn command_output(data: &[u8]) {
         26 => drop(k3s::membership::parse_native_membership(raw)),
         27 => drop(k3s::membership::parse_cluster_node_snapshot(raw)),
         28 => drop(k3s::membership::raw_url_decode(&s)),
-        29 => drop(k3s::storage::keep_set_from_pod_json(raw)),
+        29 => {
+            drop(k3s::storage::keep_set_from_pod_json(raw));
+            // D34: a Deployment as `kubectl get deployment -o json` prints it.
+            if let Ok(deployment) = serde_json::from_slice::<J>(raw) {
+                drop(crate::clusterops::project_deployment(&deployment));
+            }
+        }
         30 => drop(k3s::storage::parse_cri_images(raw)),
         31 => drop(k3s::storage::parse_cri_containers(raw)),
         32 => {
@@ -436,7 +479,8 @@ pub fn command_output(data: &[u8]) {
 pub fn authz_store(data: &[u8]) {
     let scratch = Scratch::new();
     std::fs::write(scratch.0.join("authz.sqlite"), data).expect("write authz.sqlite");
-    if let Ok(mut store) = crate::store::AuthzStore::open(&scratch.0, "fuzz-secret") {
+    if let Ok(mut store) = crate::store::AuthzStore::open(&scratch.0, &["fuzz-client".to_string()])
+    {
         store.close();
     }
 }

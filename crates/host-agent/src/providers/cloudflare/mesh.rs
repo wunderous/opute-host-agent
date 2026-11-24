@@ -781,13 +781,13 @@ fn remove(ctx: &Ctx, args: &Args) -> Outcome {
 fn ensure_ha_endpoint(ctx: &Ctx, args: &Args) -> Outcome {
     let targets = target_uris_input(args)?;
     let hostname = args.string("hostname", "").trim().to_lowercase();
-    api::refuse_platform_hostname(&hostname)?;
+    api::refuse_reserved_hostname(&hostname)?;
     let tunnel_name = args.string("tunnelName", "").trim().to_string();
-    api::refuse_platform_tunnel_name(&tunnel_name)?;
+    api::require_tunnel_name(&tunnel_name)?;
     let (account, zone, token) = api::creds()?;
     let tunnel = api::ensure_tunnel_by_name(&token, &account, &tunnel_name)?;
     let rules = api::tunnel_ingress(&token, &account, &tunnel.id)?;
-    api::refuse_platform_ingress(&rules)?;
+    api::refuse_reserved_ingress(&rules)?;
     api::put_tunnel_ingress(
         &token,
         &account,
@@ -805,7 +805,7 @@ fn ensure_ha_endpoint(ctx: &Ctx, args: &Args) -> Outcome {
             },
         ],
     )?;
-    api::upsert_cname(&token, &account, &zone, &hostname, &tunnel.id)?;
+    api::upsert_cname(&token, &zone, &hostname, &tunnel.id)?;
     let tunnel_token = api::tunnel_token(&token, &account, &tunnel.id)?;
     let service_name = format!("opute-cloudflare-mesh-ha-{tunnel_name}.service");
     let unpublish = || {

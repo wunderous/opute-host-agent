@@ -1,6 +1,6 @@
 {
   "schema": "m16-resource-budget.v1",
-  "description": "The resource budget gate e2e-6 holds a release candidate to (journey e2e6.budget, and e2e6.pressure's body check). Growth is measured after a two-minute warm-up, between the first and last sample of fifteen minutes of mixed calls on one transient agent. Set from the m12b soak's Rust figures (evidence/m12b/README.md: RSS peak 86 MiB, epoch-end slope 129 MiB/h, about 32 MiB over 15 min; FDs peak 17, slope 7/h) with 1.5x headroom on growth and 3x on the peak. A change needs a commit that says why. Store growth is judged per call (storeBytesPerCallMax), not as a total: the contract keeps one durable audit row per call with no retention bound, so the store grows with the call rate, not with time. The first budget set an absolute 64 MiB store limit without a measured basis; the e2e-6 draft on the m16 candidate ran 28,144 calls in 15 minutes and grew the store 81.5 MB (about 3.5 KB per call over the ~23,500 calls after warm-up) with RSS, FDs and threads flat, so the limit was replaced by 8 KiB per call (2.3x the measured figure). Unbounded audit growth is observation O1 in entry-points.json.",
+  "description": "The resource budget gate e2e-6 holds a release candidate to (journey e2e6.budget, and e2e6.pressure's body check). Growth is measured after a two-minute warm-up, between the first and last sample of fifteen minutes of mixed calls on one transient agent. Set from the m12b soak's Rust figures (evidence/m12b/README.md: RSS peak 86 MiB, epoch-end slope 129 MiB/h, about 32 MiB over 15 min; FDs peak 17, slope 7/h) with 1.5x headroom on growth and 3x on the peak. A change needs a commit that says why. Store growth is judged per call (storeBytesPerCallMax), not as a total: the contract keeps one durable audit row per call with no retention bound, so the store grows with the call rate, not with time. The first budget set an absolute 64 MiB store limit without a measured basis; the e2e-6 draft on the m16 candidate ran 28,144 calls in 15 minutes and grew the store 81.5 MB (about 3.5 KB per call over the ~23,500 calls after warm-up) with RSS, FDs and threads flat, so the limit was replaced by 8 KiB per call (2.3x the measured figure). Unbounded audit growth is observation O1 in entry-points.json. D42 (m17): the journey's agent keeps at most auditRetentionRows audit rows; one prune interval after the load the audit must hold at most that many, and the store's growth over the last five minutes must stay under storeLateGrowthBytesMax. A draft on this change measured 3,239,936 bytes over those minutes (operations still inside their task's one-hour TTL); unbounded audit growth at the m16 rate would be about 27 MB. The bound is 8 MiB, 2.6x the measured figure.",
   "seconds": 900,
   "minCalls": 2000,
   "rssGrowthBytesMax": 50331648,
@@ -8,5 +8,7 @@
   "threadGrowthMax": 8,
   "storeBytesPerCallMax": 8192,
   "peakRssBytesMax": 268435456,
-  "bodyLimitRssBytesMax": 134217728
+  "bodyLimitRssBytesMax": 134217728,
+  "auditRetentionRows": 5000,
+  "storeLateGrowthBytesMax": 8388608
 }

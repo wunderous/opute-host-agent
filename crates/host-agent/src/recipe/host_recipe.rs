@@ -200,8 +200,8 @@ pub fn validate_host_envelope(document: &HostDocument) -> Result<(), String> {
 }
 
 /// The three restrictions that keep host-local execution from becoming a
-/// second coordinator with none of the durable machinery that makes the
-/// Platform one: a single host, no waits, and no emitted events.
+/// second coordinator with none of the durable machinery a distributed
+/// coordinator has: a single host, no waits, and no emitted events.
 fn validate_host_local_plan(document: &PlanDocument) -> Result<(), String> {
     let mut seen = std::collections::BTreeSet::new();
     let mut ordered = Vec::new();
@@ -273,7 +273,7 @@ pub(crate) fn reject_nested_plan_runs(doc: &PlanDocument) -> Result<(), String> 
             actions.push(&recover.action);
         }
         for action in actions {
-            if action.tool == "run_host_plan" || action.tool == "run_runtime_recipe" {
+            if crate::plan::schema::PLAN_RUN_TOOLS.contains(&action.tool.as_str()) {
                 return Err(format!(
                     "recipe node \"{}\" cannot recursively run {}",
                     node.id, action.tool
@@ -281,7 +281,7 @@ pub(crate) fn reject_nested_plan_runs(doc: &PlanDocument) -> Result<(), String> 
             }
         }
         if let Some(validation) = &node.validate {
-            if validation.tool == "run_host_plan" || validation.tool == "run_runtime_recipe" {
+            if crate::plan::schema::PLAN_RUN_TOOLS.contains(&validation.tool.as_str()) {
                 return Err(format!(
                     "recipe node \"{}\" cannot use {} as validation",
                     node.id, validation.tool
@@ -292,8 +292,8 @@ pub(crate) fn reject_nested_plan_runs(doc: &PlanDocument) -> Result<(), String> 
     Ok(())
 }
 
-/// A distributed recipe must say which host every action belongs to -- the
-/// Platform is dispatching across several and an unbound node has no
+/// A distributed recipe must say which host every action belongs to -- its
+/// coordinator is dispatching across several and an unbound node has no
 /// answer. A host-local recipe has exactly one host by construction (the
 /// agent executing it), so an action node MAY omit its target there, and
 /// omitting it means this host; a target that IS present is still pinned
@@ -471,6 +471,34 @@ mod tests {
             args: Map::new(),
         });
         assert!(reject_nested_plan_runs(&doc).is_err());
+    }
+
+    /// D44: `run_host_local_recipe` in a node deadlocked on the dev VM (m20):
+    /// the inner run waited for the heavy slot the outer run held.
+    #[test]
+    fn every_tool_that_starts_a_plan_run_is_rejected() {
+        for tool in [
+            "run_host_plan",
+            "run_host_local_recipe",
+            "run_runtime_recipe",
+            "run_tunnel_recipe",
+            "opute.provider.install",
+            "opute.provider.reload",
+            "opute.provider.teardown",
+        ] {
+            let starter = Action {
+                tool: tool.to_string(),
+                args: Map::new(),
+            };
+            let mut as_action = minimal_plan();
+            as_action.nodes[0].action = Some(starter.clone());
+            let mut as_compensation = minimal_plan();
+            as_compensation.nodes[0].compensate = Some(starter);
+            for doc in [as_action, as_compensation] {
+                let error = reject_nested_plan_runs(&doc).expect_err(tool);
+                assert!(error.contains("cannot recursively run"), "{error}");
+            }
+        }
     }
 
     #[test]

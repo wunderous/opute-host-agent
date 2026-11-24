@@ -81,4 +81,8 @@ one new run id:
   controls fail as expected: `selfcheck.unconfirmed-effect` with
   `unconfirmed-effect` alone, and `selfcheck.empty-confirmation` with
   `pass-condition` alone.
-- `rust-0.4.0-rc4` (`rust-0.4.0`): `m23-r2`, recorded on that branch.
+- `rust-0.4.0-rc4` (`rust-0.4.0`): `m23-r2`. The journeys with steps only
+  0.4.0 runs drafted first as `m23-d3` (not committed); every gate then
+  passed on its first attempt, and `verify.py --gate` passes each. e2e-7
+  created and removed its own `e2e-m23-r2.opute.io` record, as the m20
+  decision allows.

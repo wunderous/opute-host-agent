@@ -16,6 +16,7 @@ by sweeping the catalog.
 from __future__ import annotations
 
 import json
+import re
 
 import make_e2e1 as base
 import make_e2e3a as ha
@@ -34,9 +35,9 @@ Q29_SPEC = CH + "workload-unit-per-task/specs/host-agent-contract/spec.md"
 Q25_SPEC = CH + "truthful-operation-status/specs/operation-records/spec.md"
 Q26_SPEC = CH + "container-runtime-stdout/specs/container-storage/spec.md"
 Q27_SPEC = CH + "truthful-serving-launch/specs/serving-assignment/spec.md"
+LLM_SPEC = CH + "recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md"
 Q28_SPEC = CH + "bind-standalone-service-domain/specs/service-exposure/spec.md"
 Q5_SPEC = CH + "truthful-interrupted-plan/specs/host-agent-contract/spec.md"
-SEAM_SPEC = ha.SEAM_SPEC
 CATALOG = "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
 E2E2_GOAL = ".agents/goals/e2e-2-host-workloads.md (flows 4, 5, 7, 8)"
 HOME = "/home/opute"
@@ -356,14 +357,141 @@ V1 = "vm:local:e2e-v1"
 FOREIGN = "container:local:e2e-foreign"
 
 
+START_B = (f"{T} agent start b --port {B_PORT} --id {B_ID} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
+           f"--env OPUTE_HOST_AGENT_INSTANCE={B_ID} --env OPUTE_INCUS_OWNERSHIP_MODE=enforce "
+           f"--env OPUTE_SHARED_HOST_OWNER_INSTANCE={B_ID} --env MCP_AUTH_TOKEN='${{SECRET:tokenB}}' >/dev/null "
+           "&& echo started")
+CONSOLE_SPEC = CH + "vm-console-session/specs/vm-console-session/spec.md"
+NIC_SPEC = CH + "vm-bridged-nic/specs/vm-bridged-nic/spec.md"
+RM_NIC_SPEC = CH + "remove-vm-network-device/specs/remove-vm-network-device/spec.md"
+PROMPT = "(login|Password): $"  # the guest getty's answer to Enter
+# keystrokes into the guest's console: only the console's own answer shows them (m23)
+KEYS = "console input: the guest's answer comes back only through the console session"
+CONSOLES = "pgrep -fc 'console e2e-v1$' || true"  # the agent's `incus ... console e2e-v1` processes
+
+
+def console_steps() -> list[dict]:
+    """D38, D39: the VM's console, opened twice, typed into, resized, detached; then held open while the
+    agent stops."""
+    return [
+        call("console", "stream_vm_console", {"uri": V1, "width": 100, "height": 30}, B),
+        call("consoleAgain", "stream_vm_console", {"uri": V1}, B),
+        {"id": "consoleProcs", "guest": CONSOLES, "confirms": ["console", "consoleAgain"]},
+        # type Enter until the guest's getty answers with a prompt (login: or Password:, by its state)
+        call("consoleRead", "send_console_input", {"operationId": "console-e2e-v1", "data": "\r"}, B,
+             until={"path": "response.body.result.structuredContent.output", "matches": PROMPT}, timeout=60,
+             interval=2, effectUnobservable=KEYS),
+        call("consoleResize", "resize_console", {"operationId": "console-e2e-v1", "width": 120, "height": 40}, B,
+             effectUnobservable="the window size lives in the agent's console pty, which no other reader sees"),
+        call("consoleResizeBad", "resize_console", {"operationId": "console-e2e-v1", "width": 0, "height": 40}, B),
+        # ctrl+a, then q, as two keystrokes: incus reads the detach sequence one key at a time
+        call("consoleCtrlA", "send_console_input", {"operationId": "console-e2e-v1", "data": "\u0001"}, B),
+        call("consoleDetach", "send_console_input", {"operationId": "console-e2e-v1", "data": "q"}, B),
+        call("consoleAfter", "send_console_input", {"operationId": "console-e2e-v1", "data": ""}, B),
+        {"id": "consoleGone", "guest": CONSOLES, "confirms": ["consoleCtrlA", "consoleDetach"]},
+        call("consoleHeld", "stream_vm_console", {"uri": V1}, B),
+        {"id": "consoleHeldProcs", "guest": CONSOLES, "confirms": ["consoleHeld"]},
+        {"id": "stopB", "guest": f"{T} agent stop b >/dev/null; sleep 1; {CONSOLES}"},
+        {"id": "restartB", "guest": START_B},
+    ]
+
+
+def nic_steps() -> list[dict]:
+    """D35, D36: a bridged NIC on the VM, attached twice, refused on conflict and a missing parent, then
+    removed twice; the profile's eth0 is refused."""
+    return [
+        {"id": "bridge", "guest": "ip link add e2e-br0 type bridge && ip link set e2e-br0 up && echo up"},
+        *task("nic", "configure_network", {"uri": V1, "parent": "e2e-br0"}, B),
+        *task("nicAgain", "configure_network", {"uri": V1, "deviceName": "eth1", "parent": "e2e-br0"}, B),
+        *task("nicConflict", "configure_network", {"uri": V1, "parent": "lo"}, B),
+        *task("nicNoParent", "configure_network", {"uri": V1, "deviceName": "eth2", "parent": "e2e-nope"}, B),
+        {"id": "nicDevices", "guest": "incus config device show e2e-v1 | grep -c 'parent: e2e-br0'; "
+                                      "incus config device get e2e-v1 eth1 nictype; "
+                                      "incus config device show e2e-v1 | grep -c '^eth2:' || true",
+         "confirms": ["nic", "nicAgain"]},
+        call("nicGuest", "run_instance_command",
+             {"uri": V1, "command": "sh", "args": ["-c", "ls /sys/class/net | grep -vc '^lo$'"]}, B,
+             until={"path": "response.body.result.structuredContent.stdout", "in": ["2\n"]}, timeout=60,
+             interval=3, effectUnobservable="a read inside the guest: its network interfaces"),
+        *task("nicProfile", "remove_vm_network_device", {"uri": V1, "deviceName": "eth0"}, B),
+        *task("nicRemove", "remove_vm_network_device", {"uri": V1, "deviceName": "eth1"}, B),
+        *task("nicRemoveAgain", "remove_vm_network_device", {"uri": V1, "deviceName": "eth1"}, B),
+        {"id": "nicAfter", "guest": "incus config device show e2e-v1 | grep -c 'parent: e2e-br0' || true; "
+                                    "incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'; "
+                                    "ip link del e2e-br0 && echo gone", "confirms": ["nicRemove", "nicRemoveAgain"]},
+    ]
+
+
+def console_requirements() -> list[dict]:
+    return [
+        req(CONSOLE_SPEC, "A console session runs the instance's console",
+            direct("console", "structuredContent.status", equals="started"),
+            direct("console", "structuredContent.operationId", equals="console-e2e-v1"),
+            direct("console", "structuredContent.uri", equals=V1),
+            direct("consoleAgain", "structuredContent.status", equals="started"),
+            a("consoleProcs", "stdout", equals="1\n"),
+            scenario="One session per instance: a second start replaces the first, and one console process "
+                     "runs"),
+        req(CONSOLE_SPEC, "Console output is read by pull from a bounded buffer",
+            direct("consoleRead", "structuredContent.status", equals="sent"),
+            direct("consoleRead", "structuredContent.output", matches=PROMPT),
+            direct("consoleRead", "structuredContent.closed", equals=False),
+            direct("consoleCtrlA", "structuredContent.closed", equals=False),
+            direct("consoleDetach", "structuredContent.closed", equals=True),
+            direct("consoleAfter", "isError", equals=True),
+            direct("consoleAfter", "content[0].text", matches="console-e2e-v1"),
+            a("consoleGone", "stdout", equals="0\n"),
+            scenario="Enter typed on the console brings the guest's getty prompt back; ctrl+a then q "
+                     "ends the session, "
+                     "the read that reports it is the last, and no console process is left"),
+        req(CONSOLE_SPEC, "A console's size can be changed",
+            direct("consoleResize", "structuredContent.status", equals="resized"),
+            direct("consoleResizeBad", "isError", equals=True),
+            direct("consoleResizeBad", "content[0].text", matches="console size must be positive"),
+            scenario="Resize to 120 by 40; a zero width is refused"),
+        req(CONSOLE_SPEC, "Sessions end with the agent",
+            direct("consoleHeld", "structuredContent.status", equals="started"),
+            a("consoleHeldProcs", "stdout", equals="1\n"),
+            a("stopB", "stdout", equals="0\n"),
+            a("restartB", "stdout", equals="started\n"),
+            scenario="With a session open, agent B is stopped (SIGTERM from its systemd unit) and no console "
+                     "process remains; B starts again on the same state. The unit's cgroup stop would also end "
+                     "it, so the agent's own close on shutdown is shown by the console unit test"),
+    ]
+
+
+def nic_requirements() -> list[dict]:
+    return [
+        req(NIC_SPEC, "configure_network attaches one bridged NIC",
+            a("bridge", "stdout", equals="up\n"),
+            res("nic", "structuredContent.status", equals="attached"),
+            res("nic", "structuredContent.deviceName", equals="eth1"),
+            res("nic", "structuredContent.parent", equals="e2e-br0"),
+            res("nic", "structuredContent.uri", equals=V1),
+            res("nicAgain", "structuredContent.status", equals="attached"),
+            res("nicConflict", "isError", equals=True),
+            res("nicConflict", "content[0].text", matches="different configuration"),
+            res("nicNoParent", "isError", equals=True),
+            res("nicNoParent", "content[0].text", matches="e2e-nope"),
+            a("nicDevices", "stdout", equals="1\nbridged\n0\n"),
+            direct("nicGuest", "structuredContent.stdout", equals="2\n"),
+            scenario="Attach and attach again: one bridged eth1 on e2e-br0, seen by the guest as a second "
+                     "interface; a conflicting eth1 and a missing parent are refused and add nothing"),
+        req(RM_NIC_SPEC, "remove_vm_network_device removes one NIC from an instance's own configuration",
+            res("nicProfile", "isError", equals=True),
+            res("nicProfile", "content[0].text", matches="profile"),
+            res("nicRemove", "structuredContent.removed", equals=True),
+            res("nicRemoveAgain", "structuredContent.removed", equals=False),
+            a("nicAfter", "stdout", equals="0\n1\ngone\n"),
+            scenario="The profile's eth0 is refused and the VM keeps its address; eth1 is removed, then "
+                     "removing it again changes nothing"),
+    ]
+
+
 def incus() -> dict:
     steps = base.TOOL_STEPS + [
         # host B: a second agent on the VM with Incus ownership enforced; it owns what it creates
-        {"id": "agentB", "guest": (
-            f"{T} agent start b --port {B_PORT} --id {B_ID} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
-            f"--env OPUTE_HOST_AGENT_INSTANCE={B_ID} --env OPUTE_INCUS_OWNERSHIP_MODE=enforce "
-            f"--env OPUTE_SHARED_HOST_OWNER_INSTANCE={B_ID} --env MCP_AUTH_TOKEN='${{SECRET:tokenB}}' >/dev/null "
-            "&& echo started")},
+        {"id": "agentB", "guest": START_B},
         {"id": "catalogB", "mcp": "tools/list", **B},
         {"id": "foreign", "guest": "incus launch parity-noble e2e-foreign -q && incus list e2e-foreign -c s -f csv"},
         # Q16: agent B's own Incus client (user opute) has another current project
@@ -398,6 +526,8 @@ def incus() -> dict:
              effectUnobservable="a read inside the guest: nproc and uname"),
         {"id": "reachV", "guest": "ping -c1 -W5 ${V1_IP} >/dev/null && echo ping-ok; "
                                   "timeout 5 bash -c 'echo > /dev/tcp/${V1_IP}/22' 2>/dev/null && echo ssh-port"},
+        *console_steps(),
+        *nic_steps(),
         # lifecycle
         *task("stopC", "stop_vm", {"uri": C1}, B),
         {"id": "cStopped", "guest": "incus list e2e-c1 -c s -f csv", "confirms": ["stopC"]},
@@ -518,8 +648,9 @@ def incus() -> dict:
             a("left", "stdout", equals="e2e-foreign\n"),
             scenario="Every owned guest is gone after delete; only the foreign instance remains"),
     ]
+    reqs += console_requirements() + nic_requirements()
     cleanup = [{"id": "cleanIncus", "guest": (
-        f"{T} agent remove b >/dev/null; if test -f /root/e2e-incus-config.yml; then "
+        f"{T} agent remove b >/dev/null; ip link del e2e-br0 2>/dev/null; if test -f /root/e2e-incus-config.yml; then "
         "runuser -u opute -- incus project switch default 2>/dev/null; incus project delete e2e-other 2>/dev/null; "
         "cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml; rm -f /root/e2e-incus-config.yml; fi; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; "
         "done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
@@ -534,7 +665,8 @@ def incus() -> dict:
     return journey(
         "e2e2.incus", "e2e-2",
         "Incus containers and VMs through typed calls on a second agent with ownership enforced: a container with "
-        "a pinned address and a VM, both reachable; lifecycle; a VM resize; root disk growth and its quota; "
+        "a pinned address and a VM, both reachable; the VM's console (open, type, resize, detach, end with the "
+        "agent) and a bridged NIC attached and removed; lifecycle; a VM resize; root disk growth and its quota; "
         "refusals on an instance the agent does not own; reset of an owned container; delete. Guests live in the "
         "default project (Q16).",
         reqs, steps, cleanup, allow=allow, persist=persist, minutes=28, inputs=inputs)
@@ -1186,14 +1318,20 @@ def discovery() -> dict:
             direct("stoppedList", "structuredContent.clusters[0].status", equals="Stopped"),
             scenario="With its only server stopped, the registered cluster is listed with its instance status "
                      "and no node data (D28)"),
-        req(SEAM_SPEC, "Every capability has its three roles",
-            *[x for tool, step in (("list_configmap_keys", "configmapKeys"), ("list_secret_keys", "secretKeys"))
-              for x in (direct(step, "isError", equals=True),
-                        direct(step, "content[0].text",
-                               equals=f"Error: {tool} is not implemented by this Host Agent build"),
-                        direct(step, "structuredContent.code", equals="not_implemented"))],
-            scenario="The e2e-3 goal lists config and secret keys: both tools are published but have no "
-                     "provider in Rust and no handler in Go v0.2.4, so they fail closed (Q18)"),
+        req(ha.CONFIGMAP_KEYS_SPEC, "list_configmap_keys returns a ConfigMap's key names, never values",
+            direct("configmapKeys", "isError", **{"in": [False, "<absent>"]}),
+            direct("configmapKeys", "structuredContent.uri", equals=CLUSTER),
+            direct("configmapKeys", "structuredContent.keys[0]", equals="Corefile"),
+            direct("configmapKeys", "content[0].text", matches="^(?![\\s\\S]*forward \\.)"),
+            scenario="The e2e-3 goal lists config keys: K3s's own coredns ConfigMap is listed by key name, "
+                     "without the Corefile's text (D33)"),
+        req(ha.SECRET_KEYS_SPEC, "list_secret_keys returns a Secret's key names, never values",
+            direct("secretKeys", "isError", **{"in": [False, "<absent>"]}),
+            direct("secretKeys", "structuredContent.uri", equals=CLUSTER),
+            direct("secretKeys", "structuredContent.keys", equals=["tls.crt", "tls.key"]),
+            direct("secretKeys", "content[0].text", matches="^(?![\\s\\S]*BEGIN)"),
+            scenario="The e2e-3 goal lists secret keys: K3s's serving Secret is listed by key name, never "
+                     "the certificate or key (D32, answering Q18)"),
         req(SPEC, "Durable and redacted observations",
             ok("tokenLeaks"), a("tokenLeaks", "stdout", equals="0\n"),
             scenario="No discovery result, state row or journal line carries the cluster's join token"),
@@ -1429,6 +1567,11 @@ def serving() -> dict:
         call("probe", "probe_openai_compatible_server",
              {"endpoint": "http://127.0.0.1:18434", "bearerToken": "${SECRET:gatewayToken}", "includeChat": True}),
         {"id": "tokenRows", "guest": f"{T} contains {SDB} '${{SECRET:gatewayToken}}'"},
+        # the two legacy wrappers act on the shared Ollama runtime, as recorded
+        *task("removeModel", "remove_local_llm_model", {"modelRef": "e2e-model", "purge": True}),
+        *task("configureRuntime", "configure_local_llm_runtime", {"numParallel": 4, "maxLoadedModels": 1}),
+        {"id": "ollamaUntouched", "guest": "systemctl list-units --all --plain --no-legend 'ollama*' | wc -l; "
+                                           "ss -ltnH 'sport = :11434' | wc -l", "confirms": ["removeModel"]},
         call("removeGateway", "remove_local_llm_relay", {"sessionId": "e2e-gateway"}),
         {"id": "gatewayGone", "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 "
                                        "http://127.0.0.1:18434/v1/models || true", "confirms": ["removeGateway"]},
@@ -1455,6 +1598,20 @@ def serving() -> dict:
             a("assignLog", "stdout", matches="\n1\n$"),
             scenario="On a system-unit agent, reconcile_serving_assignment launches the process under the user "
                      "service manager with the user bus, reports it started, and it listens (D28)"),
+        req(LLM_SPEC, "The legacy LLM wrappers act on the shared Ollama runtime",
+            res("removeModel", "isError", **{"in": [False, "<absent>"]}),
+            res("removeModel", "structuredContent.removed", equals=False),
+            res("removeModel", "structuredContent.purged", equals=False),
+            res("removeModel", "structuredContent.shared", equals=True),
+            res("removeModel", "structuredContent.reason", matches="shared host state"),
+            res("configureRuntime", "isError", equals=True),
+            res("configureRuntime", "content[0].text", matches="host-wide and pinned"),
+            a("ollamaUntouched", "stdout", equals="0\n0\n"),
+            a("modelUp", "stdout", equals="1\n"),
+            scenario="remove_local_llm_model removes nothing and reports the shared model retained; "
+                     "configure_local_llm_runtime refuses with the typed error; neither starts, stops or "
+                     "configures a runtime (no Ollama unit or listener appears). The dev VM has no Ollama, so "
+                     "the 'still listed' half of the scenario is not observed here"),
         req(SPEC, "Durable and redacted observations",
             a("tokenRows", "json.rows", equals=0),
             scenario="Secret-bearing input: the gateway's incoming token is in no durable row"),
@@ -1715,6 +1872,256 @@ def cutover() -> dict:
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})
 
 
+# --- e2e-4 / 3. the release path: Go v0.2.4 -> 0.3.0 -> 0.4.0 -> 0.3.0 (m21) -----------------------------
+
+CHAIN_SPEC = CH + "secret-placement/specs/secret-placement/spec.md"
+NEUTRAL_SPEC = CH + "platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+CHAIN = "/opt/opute-e2e/chain"
+CHAIN_WORK = "/root/e2e-chain"
+SW = "python3 /opt/opute-e2e/guest/secretsweep.py"
+REL03 = f"{CHAIN}/rust-0.3.x/host-agent-linux-x64.gz"
+CHAIN_STATE = "/home/opute/.config/opute/instances/standalone/state"
+CHAIN_ROOTS = ("/etc", "/opt", "/tmp", "/var/tmp", "/home", "/root", "/run", "/usr/local", "/srv")
+# ensure_public_mcp_tunnel is task-aware and needs the roots capability
+ROOTS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}},
+                                                             "roots": {}}}
+
+
+PAST_ORIGIN = "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+
+
+def unit_swap(id_: str, unit_file: str, gz: str) -> dict:
+    """Stop the agent, install a unit file and a binary, start it and print its version."""
+    return {"id": id_, "guest": (f"systemctl stop {UNIT} && install -m 0644 {unit_file} /etc/systemd/system/{UNIT} "
+                                 f"&& systemctl daemon-reload && {base.install_binary(gz)} && systemctl start {UNIT} && "
+                                 f"{base.WAIT_HEALTH.format(port=3014)} && {base.BIN} --version")}
+
+
+def chain_task(id_: str, tool: str, args: dict) -> list[dict]:
+    poll = {"id": id_, "mcp": "tasks/get", "params": {"taskId": "${TID_" + id_ + "}"}, "meta": TASKS_META,
+            "until": {"path": "response.body.result.status", "in": ha.DONE}, "timeout": 300, "interval": 3}
+    return [call(id_ + "Call", tool, args, meta=ROOTS_META, capture={"TID_" + id_: "response.body.result.taskId"}),
+            poll]
+
+
+def chain_scan(id_: str) -> dict:
+    # the production agent runs as opute: a file it writes for itself is opute's, one it installs through sudo root's
+    return {"id": id_, "guest": (f"{SW} scan --markers {CHAIN_WORK}/markers.json --unit {UNIT} --state {CHAIN_STATE} "
+                                 "--owner root --owner opute "
+                                 + " ".join(f"--root {r}" for r in CHAIN_ROOTS))}
+
+
+def wire(id_: str, var: str) -> dict:
+    return {"id": id_, "mcp": "tasks/get", "params": {"taskId": "${" + var + "}"}, "meta": TASKS_META}
+
+
+def upgrade_chain() -> dict:
+    relay = {"sessionId": "e2e-chain", "listenHost": "127.0.0.1", "listenPort": 3058, "targetHost": "127.0.0.1",
+             "targetPort": 3059, "incomingToken": "${SECRET:relayIn}", "upstreamToken": "${SECRET:relayUp}",
+             "allowedSourceCIDRs": ["127.0.0.1/32"]}
+    # user scope: the production agent runs as opute, and a system-scoped connector requires root
+    tunnel = {"bindingId": "e2e-chain", "endpoint": "https://e2e-chain.invalid/mcp", "scope": "user",
+              "localTarget": "http://127.0.0.1:3014/mcp", "tunnelToken": "${SECRET:tunnelToken}"}
+    # Both OAuth settings sets, as a host carries them across 0.3.0 and 0.4.0 (neutral.rollback): 0.3.0's
+    # connector proves its origin with the configured client secret, 0.4.0 generates its machine client's own
+    plant = (f"{SW} plant --env {CHAIN_WORK}/oauth.env --markers {CHAIN_WORK}/markers.json "
+             "--set OPUTE_HOST_OAUTH_CLIENT_SECRET=${SECRET:oauthClient} --setting OPUTE_OAUTH_CLIENTS=opute-mcp-host "
+             "--marker tunnelToken=${SECRET:tunnelToken} "
+             "--marker incomingToken=${SECRET:relayIn} --marker upstreamToken=${SECRET:relayUp}")
+    write = lambda id_, n: call(id_, "ensure_host_file", {"path": f"~/e2e/chain-{n}.txt",  # noqa: E731
+                                                          "content": f"{n}\n", "scope": "user"})
+    run = lambda id_, var, key: call(id_, "run_host_plan",  # noqa: E731
+                                     {"plan": {"contractVersion": "host-plan.v1", "planId": f"e2e.chain.{key}",
+                                               "generation": 1, "idempotencyKey": f"e2e-chain-{key}",
+                                               "nodes": cross_plan("x", "x", "n1")["nodes"][:1]}},
+                                     capture={var: "response.body.result.structuredContent.runId"})
+    db = lambda id_, extra="": {"id": id_, "guest": f"systemctl stop {UNIT} && {T} db {SDB_}{extra}"}  # noqa: E731
+    steps = base.TOOL_STEPS + [
+        {"id": "sweepTool", "copy": "secretsweep", "to": "/opt/opute-e2e/guest/secretsweep.py"},
+        {"id": "goUnitCopy", "copy": "goUnit", "to": f"{CHAIN}/go.service"},
+        {"id": "neutralUnitCopy", "copy": "proposedUnit", "to": f"{CHAIN}/proposed.service"},
+        {"id": "rust03Copy", "copy": "rust03", "to": REL03},
+        {"id": "plant", "guest": plant},
+        {"id": "aside", "guest": f"systemctl stop {UNIT} && mv /home/opute/.config/opute/instances "
+                                 f"/tmp/e2e-chain-rust-instances && cp /etc/systemd/system/{UNIT} {CHAIN}/vm.service "
+                                 f"&& printf '[Service]\\nEnvironmentFile={CHAIN_WORK}/oauth.env\\n' > "
+                                 f"/etc/systemd/system/{UNIT}.d/chain.conf && echo aside"},
+        # 1. Go v0.2.4 on Go's unit: a completed run and one stopped in flight
+        unit_swap("goInstall", f"{CHAIN}/go.service", f"{base.GO_REL}/host-agent-linux-x64.gz"),
+        {"id": "goHealth", "health": True},
+        {"id": "slow", "guest": f"{T} slow start --port 8799 --delay 60"},
+        call("goDone", "run_host_plan", {"plan": base.plan("e2e-chain-go", "e2e-chain-go-1", ".config/opute-e2e/go.txt")},
+             capture={"GO_DONE": "response.body.result.structuredContent.runId"}),
+        base.poll_run("goDoneWait", "GO_DONE"),
+        {"id": "goDoneFile", "guest": f"cat {HOME}/.config/opute-e2e/go.txt", "confirms": ["goDone"]},
+        call("goFlight", "run_host_plan", {"plan": base.plan("e2e-chain-flight", "e2e-chain-flight-1",
+                                                             ".config/opute-e2e/flight.txt", slow=True)},
+             capture={"GO_FLIGHT": "response.body.result.structuredContent.runId"}),
+        call("goInFlight", "get_host_plan_run", {"runId": "${GO_FLIGHT}"},
+             until={"path": "response.body.result.structuredContent.nodes.n2.attempts", "in": [1]}, timeout=30),
+        # the in-flight run's first node wrote before the second waits on the slow endpoint
+        {"id": "goFlightFile", "guest": f"cat {HOME}/.config/opute-e2e/flight.txt", "confirms": ["goFlight"]},
+        db("goStop"),
+        {"id": "slowStop", "guest": f"{T} slow stop"},
+        # 2. rust-0.3.0 on the same unit and state; work that writes the m19 secret classes
+        unit_swap("r3Install", f"{CHAIN}/go.service", REL03),
+        {"id": "r3Health", "health": True},
+        {"id": "r3Db", "guest": f"{T} db {SDB_}"},
+        call("r3GoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
+        call("r3GoFlight", "get_host_plan_run", {"runId": "${GO_FLIGHT}"}),
+        # a task runs in its own user workload unit (Q29), which needs opute's user manager
+        call("r3Supervisor", "ensure_host_service_supervisor", {}),
+        {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
+                                   "done; test -S /run/user/$(id -u opute)/bus && echo up"},
+        {**linger("r3Linger"), "confirms": ["r3Supervisor"]},
+        call("r3Relay", "ensure_local_llm_relay", relay),
+        {"id": "r3RelayListens", "guest": "ss -ltnH 'sport = :3058' | wc -l", "confirms": ["r3Relay"]},
+        *chain_task("r3Tunnel", "ensure_public_mcp_tunnel", tunnel),
+        run("r3Plan", "R3_RUN", "r3"), base.poll_run("r3PlanDone", "R3_RUN"),
+        {"id": "r3PlanFile", "guest": f"cat {HOME}/e2e/n1.txt && rm {HOME}/e2e/n1.txt", "confirms": ["r3Plan"]},
+        *unobservable(task("r3Task", "run_host_command", {"command": "echo r3-era"}), PRINTS),
+        write("r3Write", "r3"),
+        chain_scan("r3Scan"),
+        db("r3Stop"),
+        # 3. rust-0.4.0 on the proposed 0.4.0 unit (packet 7.4)
+        unit_swap("r4Install", f"{CHAIN}/proposed.service", f"{base.REL}/host-agent-linux-x64.gz"),
+        {"id": "r4Health", "health": True},
+        {"id": "r4Db", "guest": f"{T} db {SDB_}"},
+        call("r4GoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
+        call("r4GoFlight", "get_host_plan_run", {"runId": "${GO_FLIGHT}"}),
+        call("r4R3Plan", "get_host_plan_run", {"runId": "${R3_RUN}"}),
+        wire("r4R3Task", "TID_r3Task"), wire("r4R3Tunnel", "TID_r3Tunnel"),
+        call("r4R3TaskOp", "get_operation", {"operationId": "${TID_r3Task}"}),
+        call("r4Read", "inspect_host_file", {"path": "~/e2e/chain-r3.txt", "scope": "user"}),
+        *chain_task("r4Tunnel", "ensure_public_mcp_tunnel", tunnel),
+        run("r4Plan", "R4_RUN", "r4"), base.poll_run("r4PlanDone", "R4_RUN"),
+        # r3PlanFile removed the file r3's run wrote: this one is r4's
+        {"id": "r4PlanFile", "guest": f"cat {HOME}/e2e/n1.txt", "confirms": ["r4Plan"]},
+        *unobservable(task("r4Task", "run_host_command", {"command": "echo r4-era"}), PRINTS),
+        write("r4Write", "r4"),
+        chain_scan("r4Scan"),
+        db("r4Stop"),
+        # 4. rollback: rust-0.3.0 on the same 0.4.0 unit
+        unit_swap("backInstall", f"{CHAIN}/proposed.service", REL03),
+        {"id": "backHealth", "health": True},
+        {"id": "backDb", "guest": f"{T} db {SDB_}"},
+        call("backGoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
+        call("backR3Plan", "get_host_plan_run", {"runId": "${R3_RUN}"}),
+        call("backR4Plan", "get_host_plan_run", {"runId": "${R4_RUN}"}),
+        wire("backR4Task", "TID_r4Task"), wire("backR4Tunnel", "TID_r4Tunnel"), wire("backR3Tunnel", "TID_r3Tunnel"),
+        call("backR4TaskOp", "get_operation", {"operationId": "${TID_r4Task}"}),
+        call("backRead", "inspect_host_file", {"path": "~/e2e/chain-r4.txt", "scope": "user"}),
+        *chain_task("backTunnel", "ensure_public_mcp_tunnel", tunnel),
+        write("backWrite", "back"),
+        {"id": "chainFiles", "guest": f"cat {HOME}/e2e/chain-r3.txt {HOME}/e2e/chain-r4.txt {HOME}/e2e/chain-back.txt",
+         "confirms": ["r3Write", "r4Write", "backWrite"]},
+        chain_scan("backScan"),
+        {"id": "connectors", "guest": "ls /home/opute/.config/systemd/user/ | grep -c '^opute-cloudflared-' || true"},
+        {"id": "tokenFiles", "guest": "stat -c '%a %U' /home/opute/.config/opute/tunnels/*.env"},
+    ]
+    same = lambda step, ref: [a(step, f"json.{k}", equalsStep={"step": ref, "path": f"json.{k}"})  # noqa: E731
+                              for k in ("counts", "operationIds", "planRunIds")]
+    status = lambda step: direct(step, "structuredContent.status", equals="completed")  # noqa: E731
+    wrote = lambda step: direct(step, "isError", **{"in": [False, "<absent>"]})  # noqa: E731
+    clean = lambda step: [a(step, f"json.{k}", equals=v)  # noqa: E731
+                          for k, v in (("journal", []), ("store", []), ("looseFiles", []), ("strayEnviron", {}))]
+    as_before = lambda step, ref: a(step, "response.body.result.status",  # noqa: E731
+                                    equalsStep={"step": ref, "path": "response.body.result.status"})
+    reqs = [
+        req(CUTOVER, "Forward: each release serves the previous release's state unchanged",
+            ok("aside"), a("goInstall", "stdout", matches="\n0\\.2\\.4\n$"),
+            direct("goDoneWait", "structuredContent.status", equals="completed"),
+            direct("goInFlight", "structuredContent.nodes.n2.attempts", equals=1),
+            a("goStop", "json.integrity", equals="ok"),
+            a("r3Install", "stdout", matches="\n0\\.3\\.0\n$"), a("r3Db", "json.integrity", equals="ok"),
+            *same("r3Db", "goStop"), status("r3GoDone"),
+            direct("r3GoFlight", "structuredContent.status", equals="cancelled"),
+            a("r4Install", "stdout", matches=base.RUST_MATCH), a("r4Db", "json.integrity", equals="ok"),
+            *same("r4Db", "r3Stop"), status("r4GoDone"),
+            direct("r4GoFlight", "structuredContent.status", equals="cancelled"), status("r4R3Plan"),
+            as_before("r4R3Task", "r3Task"), as_before("r4R3Tunnel", "r3Tunnel"), status("r4R3TaskOp"),
+            direct("r4Read", "structuredContent.exists", equals=True),
+            a("goDoneFile", "stdout", equals="e2e\n"), a("goFlightFile", "stdout", equals="e2e\n"),
+            a("r3Linger", "stdout", equals="yes\nbus\n"), a("r3RelayListens", "stdout", equals="1\n"),
+            a("r3PlanFile", "stdout", equals="n1\n"), a("r4PlanFile", "stdout", equals="n1\n"),
+            a("chainFiles", "stdout", equals="r3\nr4\nback\n"),
+            scenario="Go v0.2.4's state, with a run stopped in flight, is served by 0.3.0; 0.3.0's state, with "
+                     "its relay, connector, plan and task, is served by 0.4.0: counts and ids "
+                     "reconcile per table and every record reads back with the status last reported"),
+        req(CUTOVER, "Rollback: 0.3.0 serves 0.4.0's state unchanged",
+            a("backInstall", "stdout", matches="\n0\\.3\\.0\n$"), a("backDb", "json.integrity", equals="ok"),
+            *same("backDb", "r4Stop"), status("backGoDone"), status("backR3Plan"), status("backR4Plan"),
+            as_before("backR4Task", "r4Task"), as_before("backR4Tunnel", "r4Tunnel"),
+            as_before("backR3Tunnel", "r3Tunnel"), status("backR4TaskOp"),
+            direct("backRead", "structuredContent.exists", equals=True),
+            scenario="0.3.0 started on 0.4.0's state, on the same 0.4.0 unit, reads every operation, task and "
+                     "plan run, 0.4.0-era work included, with the status 0.4.0 last reported"),
+        req(NEUTRAL_SPEC, "One serving profile",
+            status("r3PlanDone"), wrote("r3Write"), status("r4PlanDone"), wrote("r4Write"), wrote("backWrite"),
+            res("r3Task", "structuredContent.stdout", equals="r3-era\n"),
+            res("r4Task", "structuredContent.stdout", equals="r4-era\n"),
+            scenario="Each release admits mutations from its unit: 0.3.0 from Go's unit, 0.4.0 from the proposed "
+                     "unit, and 0.3.0 again from the proposed unit after rollback"),
+        req(CHAIN_SPEC, "A file holding a secret is private to the agent's user",
+            ok("plant"), direct("r3Relay", "structuredContent.ready", equals=True),
+            *[a(t, "response.body.result.status", equals="completed") for t in ("r3Tunnel", "r4Tunnel", "backTunnel")],
+            # the endpoint is .invalid, so each call ends at the public probe: past the origin (D52 in 0.3.0)
+            *[x for t in ("r3Tunnel", "r4Tunnel", "backTunnel", "r4R3Tunnel", "backR4Tunnel", "backR3Tunnel")
+              for x in (res(t, "isError", equals=True), res(t, "content[0].text", matches=PAST_ORIGIN))],
+            res("r4R3Task", "structuredContent.stdout", equals="r3-era\n"),
+            res("backR4Task", "structuredContent.stdout", equals="r4-era\n"),
+            direct("r3Supervisor", "structuredContent.status", equals="ready"),
+            a("connectors", "stdout", equals="1\n"), a("tokenFiles", "stdout", equals="600 opute\n"),
+            *clean("r3Scan"), *clean("r4Scan"), *clean("backScan"),
+            scenario="The relay's and the user-scoped connector's tokens, written under 0.3.0 and ensured again "
+                     "under 0.4.0 and after rollback onto the same one connector, are in no journal line, no store "
+                     "row and no file that is not 0600 and the agent's user's, and in no process's environment; "
+                     "each connector call proves its origin and stops only at the unreachable public endpoint"),
+        req(SPEC, "One exact Host Agent identity",
+            *[a(h, "response.body.agentId", equals="e2e-devvm-agent")
+              for h in ("goHealth", "r3Health", "r4Health", "backHealth")]),
+    ]
+    cleanup = [
+        {"id": "slowStopAgain", "guest": f"{T} slow stop >/dev/null; true"},
+        {"id": "removeConnector", "guest": (
+            "u=$(id -u opute); for f in /home/opute/.config/systemd/user/opute-cloudflared-*.service; do "
+            "[ -e \"$f\" ] && runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$u systemctl --user disable --now "
+            "\"$(basename \"$f\")\"; rm -f \"$f\"; done; rm -rf /home/opute/.config/opute/tunnels "
+            "/home/opute/.local/share/opute/tunnels; rmdir /home/opute/.config/systemd/user/default.target.wants /home/opute/.config/systemd/user "
+            "/home/opute/.config/systemd 2>/dev/null; true")},
+        {"id": "restoreRust", "guest": (
+            f"systemctl stop {UNIT}; rm -f /etc/systemd/system/{UNIT}.d/chain.conf; "
+            f"install -m 0644 {CHAIN}/vm.service /etc/systemd/system/{UNIT} && "
+            f"systemctl daemon-reload && {base.install_binary(f'{base.REL}/host-agent-linux-x64.gz')} >/dev/null && "
+            "rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-chain-rust-instances "
+            f"/home/opute/.config/opute/instances && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}; "
+            f"loginctl disable-linger opute; rm -rf {HOME}/e2e {HOME}/.config/opute-e2e {CHAIN} {CHAIN_WORK}; true")},
+    ]
+    files = {**base.TOOL_FILES, "secretsweep": inp("${REPO}/evidence/e2e/guest-tools/secretsweep.py"),
+             "goUnit": inp("${PARITY}/go-src/deploy/opute-bootstrap-mcp.service"),
+             "proposedUnit": inp("${REPO}/evidence/cutover/proposed-0.4.0/opute-bootstrap-mcp.service"),
+             "rust03": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")}
+    # the connector's user unit and tunnel, the chain's drop-in, and the opute user manager (m24)
+    allow = ["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/e2e*",
+             "files//home/opute/.config/opute-e2e*", "files//home/opute/.config/systemd*",
+             "files//home/opute/.config/opute/tunnels*", "files//home/opute/.local/share/opute/tunnels*",
+             "files//etc/systemd/system/opute-bootstrap-mcp.service.d/chain.conf", "files//opt/opute-e2e/chain*",
+             "files//root/e2e-chain", "files//root/e2e-chain/markers.json", "files//root/e2e-chain/oauth.env",
+             "files//tmp/e2e-chain-rust-instances*", "opute/units/opute-cloudflared-e2e-chain.service",
+             *USER_SESSION]
+    return journey(
+        "e2e4.upgrade-chain", "e2e-4",
+        "The release path (m21): the host is reinstalled as Go v0.2.4 on Go's unit and leaves a run in flight; "
+        "the previous Rust release (0.3.0) takes over on the same unit and state and installs an LLM relay and a "
+        "user-scoped public MCP connector with marked tokens; the 0.4.0 candidate takes over on the "
+        "proposed 0.4.0 unit and does more work; then 0.3.0 is rolled back onto the same 0.4.0 unit. Each step "
+        "reads the previous binary's records back and searches the host for the tokens.",
+        reqs, steps, cleanup, allow=allow, minutes=25,
+        inputs={"agent": base.AGENT, "go": f"{base.GO_REL} (published Go v0.2.4 release, SHA256SUMS pinned)",
+                "previous": f"the previous Rust release ({base.PREVIOUS}), copied in",
+                "slow": "a local endpoint answering after 60 s (e2etool slow)", "files": files})
+
+
 NEXT = "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
 
 
@@ -1794,7 +2201,7 @@ def restart() -> dict:
               equals="The Host Agent shut down before the task completed."),
             a("kill", "stdout", equals="up\n"),
             direct("opsAfterKill", "isError", **{"in": [False, "<absent>"]}),
-            a("upgrade", "stdout", matches="\n0\\.3\\.1-e2e\n$"),
+            a("upgrade", "stdout", matches="\n" + re.escape(base.NEXT_VERSION) + "\n$"),
             res("afterUpgrade", "structuredContent.stdout", equals="upgraded\n"),
             a("db", "json.integrity", equals="ok"),
             scenario="A task in flight at SIGTERM is persisted cancelled and reads back so, through get_operation "
@@ -1853,7 +2260,7 @@ def restart() -> dict:
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})
 
 
-JOURNEYS = [host_ops, incus, plans, oci, data, discovery, site, serving, cutover, restart]
+JOURNEYS = [host_ops, incus, plans, oci, data, discovery, site, serving, cutover, restart, upgrade_chain]
 
 
 def render() -> dict[str, str]:

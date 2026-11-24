@@ -1,0 +1,267 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/e2e",
+   "files//home/opute/e2e/model",
+   "files//home/opute/e2e/model/serve.py",
+   "files//var/lib/systemd/linger/opute",
+   "linger",
+   "system/units/run-user-1001.mount",
+   "system/units/user-1001.slice",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user@1001.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-3",
+ "harnessErrors": [],
+ "journey": "e2e3.serving",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "ready",
+     "equals": "ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "modelUp"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "gateway"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.status",
+     "step": "chat"
+    },
+    {
+     "actual": "e2e fixture completion",
+     "equals": "e2e fixture completion",
+     "ok": true,
+     "path": "json.content",
+     "step": "chat"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "json.status",
+     "step": "chatNoToken"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.ready",
+     "step": "probe"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A prompt returns a completion through the gateway",
+   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "assign"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.started",
+     "step": "assign"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "assignAgain"
+    },
+    {
+     "actual": "Running as unit: host-serving-e2e-model.service\ntime=2026-11-11T12:21:45.667Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-11T12:21:45.667Z level=INFO msg=\"client log level set\" level=\"\"\nQueued start job for default target default.target.\nCreated slice app.slice - User Application Slice.\nStarted launchpadlib-cache-clean.timer - Clean up old files in the Launchpadlib cache.\nReached target paths.target - Paths.\nReached target timers.target - Timers.\nStarting dbus.socket - D-Bus User Message Bus Socket...\nListening on dirmngr.socket - GnuPG network certificate management daemon.\nListening on gpg-agent-browser.socket - GnuPG cryptographic agent and passphrase cache (access for web browsers).\nListening on gpg-agent-extra.socket - GnuPG cryptographic agent and passphrase cache (restricted).\nStarting gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation)...\nListening on gpg-agent.socket - GnuPG cryptographic agent and passphrase cache.\nListening on keyboxd.socket - GnuPG public key management service.\nListening on pk-debconf-helper.socket - debconf communication socket.\nListening on snapd.session-agent.socket - REST API socket for snapd user session agent.\nListening on dbus.socket - D-Bus User Message Bus Socket.\nListening on gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation).\nReached target sockets.target - Sockets.\nReached target basic.target - Basic System.\nReached target default.target - Main User Target.\nStartup finished in 98ms.\ntime=2026-11-11T12:21:46.028Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-11-11T12:21:46.185Z level=INFO msg=\"server connecting\"\ntime=2026-11-11T12:21:46.185Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-11T12:21:46.185Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-11T12:21:46.234Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-11-11T12:21:46.240Z level=INFO msg=\"server connecting\"\ntime=2026-11-11T12:21:46.240Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-11T12:21:46.240Z level=INFO msg=\"client log level set\" level=\"\"\nCreated slice opute.slice - Slice /opute.\nCreated slice opute-workload.slice - Slice /opute/workload.\nStarted host-serving-e2e-model.service - /bin/bash -lic \" export PYTHONDONTWRITEBYTECODE='1';cd '/home/opute/e2e/model' && exec 'python3' '/home/opute/e2e/model/serve.py' '18091'\".\nbash: cannot set terminal process group (-1): Inappropriate ioctl for device\nbash: no job control in this shell\ntime=2026-11-11T12:21:46.316Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-11-11T12:21:46.322Z level=INFO msg=\"server connecting\"\ntime=2026-11-11T12:21:46.322Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-11T12:21:46.322Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-11T12:21:46.365Z level=INFO msg=\"server session disconnected\" session_id=\"\"\n1\n",
+     "matches": "\n1\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "assignLog"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A serving launch is reported only when it started",
+   "spec": "openspec/changes/truthful-serving-launch/specs/serving-assignment/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "removeModel"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.removed",
+     "step": "removeModel"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.purged",
+     "step": "removeModel"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.shared",
+     "step": "removeModel"
+    },
+    {
+     "actual": "Ollama model artifacts are shared host state; use the host Ollama lifecycle for explicit garbage collection",
+     "matches": "shared host state",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.reason",
+     "step": "removeModel"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "configureRuntime"
+    },
+    {
+     "actual": "Error: the Ollama runtime configuration is host-wide and pinned to one process, two resident models, and one request at a time",
+     "matches": "host-wide and pinned",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "configureRuntime"
+    },
+    {
+     "actual": "0\n0\n",
+     "equals": "0\n0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "ollamaUntouched"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "modelUp"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "The legacy LLM wrappers act on the shared Ollama runtime",
+   "spec": "openspec/changes/recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.rows",
+     "step": "tokenRows"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "removeGateway"
+    },
+    {
+     "actual": "000",
+     "equals": "000",
+     "ok": true,
+     "path": "stdout",
+     "step": "gatewayGone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Removing the gateway and runtime leaves nothing behind",
+   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "assign": 81,
+   "assignAgain": 49,
+   "assignLog": 3159,
+   "chat": 199,
+   "chatNoToken": 195,
+   "configureRuntime": 3002,
+   "configureRuntimeCall": 9,
+   "fixtureCopy": 430,
+   "gateway": 54,
+   "gatewayGone": 154,
+   "modelUp": 152,
+   "ollamaUntouched": 154,
+   "own": 143,
+   "probe": 54,
+   "removeGateway": 41,
+   "removeModel": 3002,
+   "removeModelCall": 9,
+   "supervisor": 369,
+   "supervisorAgain": 56,
+   "tokenRows": 193,
+   "tool": 281,
+   "units": 218,
+   "userBus": 150,
+   "wire": 287
+  },
+  "stepsSeconds": 57.1
+ },
+ "unverified": []
+}

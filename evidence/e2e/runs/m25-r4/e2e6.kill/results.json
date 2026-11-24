@@ -1,0 +1,178 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/kp",
+   "files//tmp/e2e-agents/kp/home",
+   "files//tmp/e2e-agents/kp/home/.cache",
+   "files//tmp/e2e-agents/kp/home/.cache/incus",
+   "files//tmp/e2e-agents/kp/home/.config",
+   "files//tmp/e2e-agents/kp/home/.config/incus",
+   "files//tmp/e2e-agents/kp/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/kp/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/kp/home/.config/opute",
+   "files//tmp/e2e-agents/kp/home/.config/opute-e2e",
+   "files//tmp/e2e-agents/kp/home/.config/opute-e2e/kill.txt",
+   "files//tmp/e2e-agents/kp/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/kp/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/kp/instance",
+   "files//tmp/e2e-agents/kp/instance/host-agent.lock",
+   "files//tmp/e2e-agents/kp/state",
+   "files//tmp/e2e-agents/kp/state/authz.sqlite",
+   "files//tmp/e2e-agents/kp/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/kp/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/kp/state/credentials",
+   "files//tmp/e2e-agents/kp/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/kp/state/host-agent.lock",
+   "files//tmp/e2e-agents/kp/state/state.db",
+   "files//tmp/e2e-agents/kp/state/state.db-shm",
+   "files//tmp/e2e-agents/kp/state/state.db-wal",
+   "processes//system.slice/e2e-agent-kp.service opute-host-agen",
+   "processes//system.slice/e2e-slow.service python3",
+   "sockets/tcp 127.0.0.1:3042 opute-host-agen",
+   "sockets/tcp 127.0.0.1:8799 python3",
+   "system/unitFiles/e2e-agent-kp.service",
+   "system/unitFiles/e2e-slow.service",
+   "system/units/e2e-agent-kp.service",
+   "system/units/e2e-slow.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.kill",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "running",
+     "in": [
+      "running",
+      "working"
+     ],
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "running"
+    },
+    {
+     "actual": "killed\n",
+     "matches": "killed\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "kill"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "restart"
+    },
+    {
+     "actual": "unknown",
+     "equals": "unknown",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "runAfter"
+    },
+    {
+     "actual": "unknown",
+     "equals": "unknown",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "runLater"
+    },
+    {
+     "actual": "e2e\n",
+     "equals": "e2e\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "planFile"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/truthful-interrupted-plan/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 12,
+     "equals": 12,
+     "ok": true,
+     "path": "json.restarts",
+     "step": "loop"
+    },
+    {
+     "actual": 44,
+     "gte": 1,
+     "ok": true,
+     "path": "json.acceptedTotal",
+     "step": "loop"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "afterLoop"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "audit"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.unfinished",
+     "step": "audit"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterLoop": 291,
+   "audit": 189,
+   "kill": 4153,
+   "kpAgent": 554,
+   "list": 527,
+   "listAgain": 244,
+   "loop": 8398,
+   "plan": 263,
+   "planFile": 144,
+   "restart": 556,
+   "runAfter": 212,
+   "runLater": 425,
+   "running": 209,
+   "settle": 45150,
+   "slow": 210,
+   "tool": 286,
+   "wire": 283
+  },
+  "stepsSeconds": 106.8
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

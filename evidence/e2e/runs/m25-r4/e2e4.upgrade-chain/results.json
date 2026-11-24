@@ -1,0 +1,987 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//etc/systemd/system/opute-bootstrap-mcp.service.d/chain.conf",
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/flight.txt",
+   "files//home/opute/.config/opute-e2e/go.txt",
+   "files//home/opute/.config/opute/tunnels",
+   "files//home/opute/.config/opute/tunnels/e2e-chain.env",
+   "files//home/opute/.config/systemd",
+   "files//home/opute/.config/systemd/user",
+   "files//home/opute/.config/systemd/user/default.target.wants",
+   "files//home/opute/.config/systemd/user/default.target.wants/opute-cloudflared-e2e-chain.service",
+   "files//home/opute/.config/systemd/user/opute-cloudflared-e2e-chain.service",
+   "files//home/opute/.local/share/opute/opute-host-agent/sha256",
+   "files//home/opute/.local/share/opute/tunnels",
+   "files//home/opute/.local/share/opute/tunnels/e2e-chain",
+   "files//home/opute/.local/share/opute/tunnels/e2e-chain/cloudflared",
+   "files//home/opute/e2e",
+   "files//home/opute/e2e/chain-back.txt",
+   "files//home/opute/e2e/chain-r3.txt",
+   "files//home/opute/e2e/chain-r4.txt",
+   "files//home/opute/e2e/n1.txt",
+   "files//opt/opute-e2e/chain",
+   "files//opt/opute-e2e/chain/go.service",
+   "files//opt/opute-e2e/chain/proposed.service",
+   "files//opt/opute-e2e/chain/rust-0.3.x",
+   "files//opt/opute-e2e/chain/rust-0.3.x/host-agent-linux-x64.gz",
+   "files//opt/opute-e2e/chain/vm.service",
+   "files//root/e2e-chain",
+   "files//root/e2e-chain/markers.json",
+   "files//root/e2e-chain/oauth.env",
+   "files//tmp/e2e-chain-rust-instances",
+   "files//tmp/e2e-chain-rust-instances/standalone",
+   "files//tmp/e2e-chain-rust-instances/standalone/host-agent.lock",
+   "files//tmp/e2e-chain-rust-instances/standalone/state",
+   "files//tmp/e2e-chain-rust-instances/standalone/state/authz.sqlite",
+   "files//tmp/e2e-chain-rust-instances/standalone/state/credentials",
+   "files//tmp/e2e-chain-rust-instances/standalone/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-chain-rust-instances/standalone/state/state.db",
+   "files//var/lib/systemd/linger/opute",
+   "linger",
+   "mounts//run/user/1001 tmpfs",
+   "opute/running",
+   "opute/units/dbus.service",
+   "opute/units/dbus.socket",
+   "opute/units/dirmngr.socket",
+   "opute/units/gpg-agent-browser.socket",
+   "opute/units/gpg-agent-extra.socket",
+   "opute/units/gpg-agent-ssh.socket",
+   "opute/units/gpg-agent.socket",
+   "opute/units/init.scope",
+   "opute/units/keyboxd.socket",
+   "opute/units/launchpadlib-cache-clean.timer",
+   "opute/units/opute-cloudflared-e2e-chain.service",
+   "opute/units/pk-debconf-helper.socket",
+   "opute/units/snapd.session-agent.socket",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope systemd",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon",
+   "system/units/run-user-1001.mount",
+   "system/units/user-1001.slice",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user@1001.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-4",
+ "harnessErrors": [],
+ "journey": "e2e4.upgrade-chain",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "aside"
+    },
+    {
+     "actual": "0cb38a9cb4ee9aba76ea6d9293a8e6cfc158b073e14ccebd1bd41cc9da6e0d46\n0.2.4\n",
+     "matches": "\n0\\.2\\.4\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "goInstall"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "goDoneWait"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "goInFlight"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "goStop"
+    },
+    {
+     "actual": "569a27d3549f677ba227044d5220a0a501bd36ffe7157861810c822e522a62da\n0.3.0\n",
+     "matches": "\n0\\.3\\.0\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "r3Install"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "r3Db"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 7,
+      "operations": 1,
+      "plan_runs": 2,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 7,
+      "operations": 1,
+      "plan_runs": 2,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "path": "json.counts",
+     "step": "r3Db"
+    },
+    {
+     "actual": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d"
+     ],
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d"
+     ],
+     "path": "json.operationIds",
+     "step": "r3Db"
+    },
+    {
+     "actual": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "ba615368-fd96-4e23-a107-789ef304a91a"
+     ],
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "ba615368-fd96-4e23-a107-789ef304a91a"
+     ],
+     "path": "json.planRunIds",
+     "step": "r3Db"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r3GoDone"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r3GoFlight"
+    },
+    {
+     "actual": "f2dfb569fb82035777f5e40aba33385a0977c663e196ad338b95cf2d5050bc25\n0.4.0\n",
+     "matches": "\n0\\.4\\.0\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "r4Install"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "r4Db"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 15,
+      "operations": 3,
+      "plan_runs": 3,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "r3Stop"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 15,
+      "operations": 3,
+      "plan_runs": 3,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "path": "json.counts",
+     "step": "r4Db"
+    },
+    {
+     "actual": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "ad6e0b3a-f863-4040-a81a-0350408ff7ee",
+      "c2f8ab6c-fee0-4296-a025-c761da5410ab"
+     ],
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "r3Stop"
+     },
+     "ok": true,
+     "other": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "ad6e0b3a-f863-4040-a81a-0350408ff7ee",
+      "c2f8ab6c-fee0-4296-a025-c761da5410ab"
+     ],
+     "path": "json.operationIds",
+     "step": "r4Db"
+    },
+    {
+     "actual": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "ba615368-fd96-4e23-a107-789ef304a91a",
+      "c8bcb898-7d34-4956-91c1-d29f7c7ce792"
+     ],
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "r3Stop"
+     },
+     "ok": true,
+     "other": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "ba615368-fd96-4e23-a107-789ef304a91a",
+      "c8bcb898-7d34-4956-91c1-d29f7c7ce792"
+     ],
+     "path": "json.planRunIds",
+     "step": "r4Db"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r4GoDone"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r4GoFlight"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r4R3Plan"
+    },
+    {
+     "actual": "completed",
+     "equalsStep": {
+      "path": "response.body.result.status",
+      "step": "r3Task"
+     },
+     "ok": true,
+     "other": "completed",
+     "path": "response.body.result.status",
+     "step": "r4R3Task"
+    },
+    {
+     "actual": "completed",
+     "equalsStep": {
+      "path": "response.body.result.status",
+      "step": "r3Tunnel"
+     },
+     "ok": true,
+     "other": "completed",
+     "path": "response.body.result.status",
+     "step": "r4R3Tunnel"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r4R3TaskOp"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "r4Read"
+    },
+    {
+     "actual": "e2e\n",
+     "equals": "e2e\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "goDoneFile"
+    },
+    {
+     "actual": "e2e\n",
+     "equals": "e2e\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "goFlightFile"
+    },
+    {
+     "actual": "yes\nbus\n",
+     "equals": "yes\nbus\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "r3Linger"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "r3RelayListens"
+    },
+    {
+     "actual": "n1\n",
+     "equals": "n1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "r3PlanFile"
+    },
+    {
+     "actual": "n1\n",
+     "equals": "n1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "r4PlanFile"
+    },
+    {
+     "actual": "r3\nr4\nback\n",
+     "equals": "r3\nr4\nback\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "chainFiles"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Forward: each release serves the previous release's state unchanged",
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "569a27d3549f677ba227044d5220a0a501bd36ffe7157861810c822e522a62da\n0.3.0\n",
+     "matches": "\n0\\.3\\.0\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "backInstall"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "backDb"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 23,
+      "operations": 5,
+      "plan_runs": 4,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "r4Stop"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 23,
+      "operations": 5,
+      "plan_runs": 4,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "path": "json.counts",
+     "step": "backDb"
+    },
+    {
+     "actual": [
+      "2f74540a-4a4b-4ac0-bd80-05a14b563434",
+      "886d83a6-743d-4854-9ecd-02ba1d0b1b9f",
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "ad6e0b3a-f863-4040-a81a-0350408ff7ee",
+      "c2f8ab6c-fee0-4296-a025-c761da5410ab"
+     ],
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "r4Stop"
+     },
+     "ok": true,
+     "other": [
+      "2f74540a-4a4b-4ac0-bd80-05a14b563434",
+      "886d83a6-743d-4854-9ecd-02ba1d0b1b9f",
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "ad6e0b3a-f863-4040-a81a-0350408ff7ee",
+      "c2f8ab6c-fee0-4296-a025-c761da5410ab"
+     ],
+     "path": "json.operationIds",
+     "step": "backDb"
+    },
+    {
+     "actual": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "b450d5b2-8fe2-4531-96f3-6fed3b0341a1",
+      "ba615368-fd96-4e23-a107-789ef304a91a",
+      "c8bcb898-7d34-4956-91c1-d29f7c7ce792"
+     ],
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "r4Stop"
+     },
+     "ok": true,
+     "other": [
+      "8dd339f8-3f6c-47e4-88d8-a3e7f9c0827d",
+      "b450d5b2-8fe2-4531-96f3-6fed3b0341a1",
+      "ba615368-fd96-4e23-a107-789ef304a91a",
+      "c8bcb898-7d34-4956-91c1-d29f7c7ce792"
+     ],
+     "path": "json.planRunIds",
+     "step": "backDb"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "backGoDone"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "backR3Plan"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "backR4Plan"
+    },
+    {
+     "actual": "completed",
+     "equalsStep": {
+      "path": "response.body.result.status",
+      "step": "r4Task"
+     },
+     "ok": true,
+     "other": "completed",
+     "path": "response.body.result.status",
+     "step": "backR4Task"
+    },
+    {
+     "actual": "completed",
+     "equalsStep": {
+      "path": "response.body.result.status",
+      "step": "r4Tunnel"
+     },
+     "ok": true,
+     "other": "completed",
+     "path": "response.body.result.status",
+     "step": "backR4Tunnel"
+    },
+    {
+     "actual": "completed",
+     "equalsStep": {
+      "path": "response.body.result.status",
+      "step": "r3Tunnel"
+     },
+     "ok": true,
+     "other": "completed",
+     "path": "response.body.result.status",
+     "step": "backR3Tunnel"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "backR4TaskOp"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "backRead"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Rollback: 0.3.0 serves 0.4.0's state unchanged",
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r3PlanDone"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "r3Write"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r4PlanDone"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "r4Write"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "backWrite"
+    },
+    {
+     "actual": "r3-era\n",
+     "equals": "r3-era\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "r3Task"
+    },
+    {
+     "actual": "r4-era\n",
+     "equals": "r4-era\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "r4Task"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One serving profile",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "plant"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.ready",
+     "step": "r3Relay"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "r3Tunnel"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "r4Tunnel"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "backTunnel"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "r3Tunnel"
+    },
+    {
+     "actual": "Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within 1m30s: MCP tools/list probe failed: Post \"https://e2e-chain.invalid/mcp\": dial tcp: lookup e2e-chain.invalid: no such host",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within ",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "r3Tunnel"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "r4Tunnel"
+    },
+    {
+     "actual": "Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within 1m30s: MCP OAuth token request failed: Post \"https://e2e-chain.invalid/oauth/token\": dial tcp: lookup e2e-chain.invalid: no such host",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within ",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "r4Tunnel"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "backTunnel"
+    },
+    {
+     "actual": "Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within 1m30s: MCP tools/list probe failed: Post \"https://e2e-chain.invalid/mcp\": dial tcp: lookup e2e-chain.invalid: no such host",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within ",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "backTunnel"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "r4R3Tunnel"
+    },
+    {
+     "actual": "Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within 1m30s: MCP tools/list probe failed: Post \"https://e2e-chain.invalid/mcp\": dial tcp: lookup e2e-chain.invalid: no such host",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within ",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "r4R3Tunnel"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "backR4Tunnel"
+    },
+    {
+     "actual": "Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within 1m30s: MCP OAuth token request failed: Post \"https://e2e-chain.invalid/oauth/token\": dial tcp: lookup e2e-chain.invalid: no such host",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within ",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "backR4Tunnel"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "backR3Tunnel"
+    },
+    {
+     "actual": "Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within 1m30s: MCP tools/list probe failed: Post \"https://e2e-chain.invalid/mcp\": dial tcp: lookup e2e-chain.invalid: no such host",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within ",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "backR3Tunnel"
+    },
+    {
+     "actual": "r3-era\n",
+     "equals": "r3-era\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "r4R3Task"
+    },
+    {
+     "actual": "r4-era\n",
+     "equals": "r4-era\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "backR4Task"
+    },
+    {
+     "actual": "ready",
+     "equals": "ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "r3Supervisor"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "connectors"
+    },
+    {
+     "actual": "600 opute\n",
+     "equals": "600 opute\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "tokenFiles"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.journal",
+     "step": "r3Scan"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.store",
+     "step": "r3Scan"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.looseFiles",
+     "step": "r3Scan"
+    },
+    {
+     "actual": {},
+     "equals": {},
+     "ok": true,
+     "path": "json.strayEnviron",
+     "step": "r3Scan"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.journal",
+     "step": "r4Scan"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.store",
+     "step": "r4Scan"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.looseFiles",
+     "step": "r4Scan"
+    },
+    {
+     "actual": {},
+     "equals": {},
+     "ok": true,
+     "path": "json.strayEnviron",
+     "step": "r4Scan"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.journal",
+     "step": "backScan"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.store",
+     "step": "backScan"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.looseFiles",
+     "step": "backScan"
+    },
+    {
+     "actual": {},
+     "equals": {},
+     "ok": true,
+     "path": "json.strayEnviron",
+     "step": "backScan"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A file holding a secret is private to the agent's user",
+   "spec": "openspec/changes/secret-placement/specs/secret-placement/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "goHealth"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "r3Health"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "r4Health"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "backHealth"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One exact Host Agent identity",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "aside": 151,
+   "backDb": 193,
+   "backGoDone": 15,
+   "backHealth": 16,
+   "backInstall": 1004,
+   "backR3Plan": 8,
+   "backR3Tunnel": 0,
+   "backR4Plan": 7,
+   "backR4Task": 1,
+   "backR4TaskOp": 18,
+   "backR4Tunnel": 0,
+   "backRead": 21,
+   "backScan": 1381,
+   "backTunnel": 99059,
+   "backTunnelCall": 8,
+   "backWrite": 25,
+   "chainFiles": 485,
+   "connectors": 140,
+   "goDone": 28,
+   "goDoneFile": 136,
+   "goDoneWait": 1015,
+   "goFlight": 26,
+   "goFlightFile": 144,
+   "goHealth": 16,
+   "goInFlight": 1015,
+   "goInstall": 1521,
+   "goStop": 235,
+   "goUnitCopy": 290,
+   "neutralUnitCopy": 284,
+   "plant": 188,
+   "r3Db": 191,
+   "r3GoDone": 15,
+   "r3GoFlight": 8,
+   "r3Health": 16,
+   "r3Install": 1004,
+   "r3Linger": 143,
+   "r3Plan": 45,
+   "r3PlanDone": 1018,
+   "r3PlanFile": 468,
+   "r3Relay": 24,
+   "r3RelayListens": 144,
+   "r3Scan": 1392,
+   "r3Stop": 222,
+   "r3Supervisor": 327,
+   "r3Task": 3002,
+   "r3TaskCall": 9,
+   "r3Tunnel": 96057,
+   "r3TunnelCall": 9,
+   "r3Write": 24,
+   "r4Db": 191,
+   "r4GoDone": 15,
+   "r4GoFlight": 7,
+   "r4Health": 16,
+   "r4Install": 994,
+   "r4Plan": 46,
+   "r4PlanDone": 1017,
+   "r4PlanFile": 470,
+   "r4R3Plan": 7,
+   "r4R3Task": 1,
+   "r4R3TaskOp": 21,
+   "r4R3Tunnel": 0,
+   "r4Read": 21,
+   "r4Scan": 1376,
+   "r4Stop": 219,
+   "r4Task": 3003,
+   "r4TaskCall": 8,
+   "r4Tunnel": 99060,
+   "r4TunnelCall": 8,
+   "r4Write": 24,
+   "rust03Copy": 358,
+   "slow": 212,
+   "slowStop": 206,
+   "sweepTool": 283,
+   "tokenFiles": 149,
+   "tool": 286,
+   "userBus": 151,
+   "wire": 280
+  },
+  "stepsSeconds": 365.9
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

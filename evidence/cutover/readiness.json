@@ -45,6 +45,16 @@
    "gate": "e2e-6"
   },
   {
+   "id": "e2e-neutral",
+   "kind": "e2e-gate",
+   "gate": "e2e-neutral"
+  },
+  {
+   "id": "e2e-7",
+   "kind": "e2e-gate",
+   "gate": "e2e-7"
+  },
+  {
    "id": "candidate",
    "kind": "candidate",
    "record": "evidence/cutover/candidate.json",
@@ -55,7 +65,9 @@
     "e2e-3a",
     "e2e-3",
     "e2e-4",
-    "e2e-6"
+    "e2e-6",
+    "e2e-neutral",
+    "e2e-7"
    ],
    "contracts": "evidence/cutover/contract-suites.json",
    "arm64": "evidence/cutover/arm64/receipt.json",
@@ -76,14 +88,14 @@
     "tools/parity",
     "parity-manifest.json"
    ],
-   "sha256": "90fb34c1697d779aa5e238cefd51e05e8b4812c9b38c742806ada1816dcbb4a2",
-   "sourceDigest": "e33e883dc7b9759f863e0a074c7f19b986c2ec2ebc3e21088ab96f15070be7c2",
+   "sha256": "8b73cc7979e3c80b65ee8224c3f84a32143fe0e005742633564e4d27902542c9",
+   "sourceDigest": "124518d2f7f65797700d1227d785c932508e0c76d8703213ed19033ca09b1e73",
    "summary": "the D8, D10-D13 contract suites against the Rust release binary"
   },
   {
    "id": "seam",
    "kind": "seam",
-   "stage": "m25-rc9",
+   "stage": "m25-rc6",
    "sources": [
     "Cargo.lock",
     "Cargo.toml",
@@ -91,7 +103,7 @@
     "baseline",
     "parity-manifest.json"
    ],
-   "sourceDigest": "12596a9881eb8bfadffb96d7ed498eefc6c9222c016fb782d0fe437976cb8788"
+   "sourceDigest": "b6e4582b7542383b5919536c7cde1b2f5d5e8c2dd628a2063d89274eb839ee6b"
   },
   {
    "id": "forward-conversion",
@@ -142,8 +154,8 @@
     "Cargo.toml",
     "crates"
    ],
-   "sha256": "5902c72223800d0356257775c0e90690e516244e0e0ff442e5a02a43f02722f8",
-   "sourceDigest": "0eca59245da01f1204c5af15e575710e6b137fb0b90d9390a2484194d8bfb082",
+   "sha256": "131ce715c842d3b2f1e4180f62de4e04456c2d23e899d2b3370667d9b6f47bd0",
+   "sourceDigest": "14d54e1184065daa38c60755bae1f556bee4fd117d12914da783f210a46002ff",
    "summary": "one emulated arm64 Debian 12 clean-machine install, launch, MCP, stop, uninstall"
   },
   {

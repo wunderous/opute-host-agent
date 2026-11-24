@@ -53,8 +53,11 @@ VCPUS, MEMORY_MB, DISK = 8, 16384, "100G"
 SSH_PORT, MCP_PORT = 42222, 43014
 AGENT_ID = "e2e-devvm-agent"
 UNIT = "opute-bootstrap-mcp.service"
-# The Rust release the VM is built from (m13b: the 0.3.0 candidate); Go stays v0.2.4.
-VERSION = "0.3.0"
+# The Rust release the VM is built from (m15: the 0.4.0 candidate); Go stays v0.2.4.
+VERSION = "0.4.0"
+# 0.4.0 rejects `--mode`: the VM installs the proposed unit in place of Go's
+# (evidence/cutover/proposed-0.4.0/README.md); the sudoers file stays Go's.
+PROPOSED_UNIT = Path(__file__).resolve().parents[2] / "cutover/proposed-0.4.0/opute-bootstrap-mcp.service"
 POOL, BRIDGE, PROJECT = "opute-e2e", "opute-e2e0", "opute-e2e"
 HOST_KEY_ALIAS = "opute-parity-t2-golden"
 
@@ -224,6 +227,9 @@ def build(rust_release: Path) -> dict:
         if deploy_pins[f"deploy/{name}"] != actual:
             raise SystemExit(f"refused: deploy/{name} does not match the recorded distribution contract")
         deploy[name] = actual
+    deploy["opute-bootstrap-mcp.service"] = {"installed": "evidence/cutover/proposed-0.4.0/opute-bootstrap-mcp.service",
+                                            "sha256": sha256_file(PROPOSED_UNIT),
+                                            "derivedFrom": deploy["opute-bootstrap-mcp.service"]}
     releases = {
         "rust": _verify_release(rust_release, ["host-agent-linux-x64", "host-agent-linux-x64.gz"]),
         "go": _verify_release(GO_RELEASE, ["host-agent-linux-x64", "host-agent-linux-x64.gz"]),
@@ -251,7 +257,8 @@ def build(rust_release: Path) -> dict:
             directory = Path(files["dir"])
             scp(sorted(p for p in directory.iterdir() if p.is_file()),
                 f"/opt/opute-e2e/releases/{side}/v{VERSION if side == 'rust' else '0.2.4'}/")
-        scp([GO_DEPLOY / n for n in deploy], "/opt/opute-e2e/deploy/")
+        scp([PROPOSED_UNIT if n == "opute-bootstrap-mcp.service" else GO_DEPLOY / n for n in deploy],
+            "/opt/opute-e2e/deploy/")
         scp([env_file], "/opt/opute-e2e/host-agent.env")
         for command in PROVISION:
             t0 = time.monotonic()

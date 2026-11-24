@@ -4,10 +4,10 @@
   "results": "evidence/m9/canaries.json"
  },
  "catalogRevisions": {
-  "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks the Rust side; the Go value is Go v0.2.4's revision, which the un-renamed Rust catalog matched until the D28 fixes (Q21) changed descriptors). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
+  "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). standalone is the one served catalog (crate test catalog::tests::revisions_match_manifest checks the Rust side); platform is historical, the catalog Go's platform mode served, which no build serves since platform-neutral-host-agent ( the Go value is Go v0.2.4's revision, which the un-renamed Rust catalog matched until the D28 fixes (Q21) changed descriptors). 0.4.0 re-pins standalone for D37 (four tools withdrawn) and D39 (send_console_input gains output and closed). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
   "platform": {
    "go": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
-   "rust": "sha256:257a3f615b68b4b889f182659dc3c9aa32540bfa2653d53ece099050884d0483"
+   "rust": "sha256:cefdfaf8100463749aaec4a432ed883cfc5f9b5e6a8efb505b129731cd37a5af"
   },
   "providerFixtures": [
    {
@@ -161,7 +161,7 @@
   ],
   "standalone": {
    "go": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
-   "rust": "sha256:9aba4c895695d25c6b8f91aecf06297a813283561bfe308a50cc3569fb20d912"
+   "rust": "sha256:6ceca36091c4fc214fac50a643f9dfad87cb4163fb6ebe8b1913a57286e0178c"
   }
  },
  "contracts": {

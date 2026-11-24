@@ -1,0 +1,40 @@
+{
+ "cleanup": [
+  {
+   "guest": "rm -f /etc/opute-e2e-declared-probe",
+   "id": "rm"
+  }
+ ],
+ "description": "Positive control for the effects diff: a declared file change, undone by cleanup, passes.",
+ "effects": {
+  "allow": [
+   "files//etc/opute-e2e-declared-probe"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-0",
+ "id": "selfcheck.declared-effect",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "touch"
+    }
+   ],
+   "requirement": "Harness: declared effects pass",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "steps": [
+  {
+   "guest": "touch /etc/opute-e2e-declared-probe",
+   "id": "touch"
+  }
+ ]
+}

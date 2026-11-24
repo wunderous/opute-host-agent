@@ -17,11 +17,16 @@ A journey (journeys/<id>.json) declares:
                 http    a plain HTTP request (OAuth endpoints, /health)
                 guest   a shell command in the VM as root; stdout that parses
                         as JSON is recorded as `json`
-                copy    a hash-pinned input file (inputs.files) into the VM
+                copy    a hash-pinned input file (inputs.files) into the VM; an
+                        owner's secret file (`secret` in inputs.files, never
+                        pinned) is copied unread: the values of its
+                        `secretKeys` are never written to a record
+                fetch   an HTTPS GET from the host itself (outside the VM), with
+                        the host's default TLS verification; `until` polls
                 restore discard the run overlay and boot the snapshot
-                `${NAME}` expands a captured value; `${SECRET:name}` a per-run
+                `${NAME}` expands a captured value (`$${` is a literal `${`); `${SECRET:name}` a per-run
                 random secret; `${TOKEN}` the agent's test token. All three are
-                redacted from every record.
+                redacted from every record. `${RUN}` is the run id.
   cleanup       steps that undo what the journey did
   maxMinutes    at most 30
 A requirement whose outcome depends on an open owner question
@@ -65,7 +70,7 @@ E2E = e2elib.E2E_DIR
 JOURNEYS = E2E / "journeys"
 RUNS = E2E / "runs"
 TOKEN_PATTERN = re.compile(r"e2e-test-token-[0-9a-f]{48}")
-STEP_KINDS = ("mcp", "health", "guest", "restore", "copy", "http")
+STEP_KINDS = ("mcp", "health", "guest", "restore", "copy", "http", "fetch")
 OPS = ("equals", "in", "exists", "absent", "matches", "gte", "lte", "contains", "excludes", "equalsStep")
 QUESTION = re.compile(r"^Q\d+$")
 MAX_MINUTES = 30
@@ -131,8 +136,9 @@ def journey_problems(journey: dict) -> list[str]:
                 out.append(f"assertion on {a.get('step')!r} needs exactly one of {OPS}")
     files = (journey["inputs"] or {}).get("files", {})
     for step in journey["steps"] + journey["cleanup"]:
-        if "copy" in step and (step["copy"] not in files or not files[step["copy"]].get("sha256")):
-            out.append(f"step {step['id']}: copy needs a hash-pinned inputs.files entry")
+        if "copy" in step and (step["copy"] not in files or not (
+                files[step["copy"]].get("sha256") or files[step["copy"]].get("secret"))):
+            out.append(f"step {step['id']}: copy needs a hash-pinned or secret inputs.files entry")
     effects = journey["effects"]
     if not isinstance(effects.get("allow"), list) or not isinstance(effects.get("persist"), list):
         out.append("effects needs allow and persist lists")
@@ -571,20 +577,23 @@ def scrub(value: Any, ctx: dict) -> Any:
     return json.loads(text)
 
 
-_VAR = re.compile(r"\$\{(SECRET:)?([A-Za-z0-9_.-]+)\}")
+_VAR = re.compile(r"(\$)?\$\{(SECRET:)?([A-Za-z0-9_.-]+)\}")
 
 
 def expand(value: Any, ctx: dict) -> Any:
-    """`${TOKEN}`, `${SECRET:name}` (a per-run random secret) and `${NAME}` (a capture)."""
+    """`${TOKEN}`, `${SECRET:name}` (a per-run random secret) and `${NAME}` (a capture); `$${` is a literal
+    `${`, as in a recipe's own `${vars.inputs.x}`."""
     if isinstance(value, str):
         def sub(m: re.Match) -> str:
             if m.group(1):
-                return ctx["secrets"].setdefault(m.group(2), f"e2e-secret-{secrets.token_hex(16)}")
-            if m.group(2) == "TOKEN":
+                return m.group(0)[1:]
+            if m.group(2):
+                return ctx["secrets"].setdefault(m.group(3), f"e2e-secret-{secrets.token_hex(16)}")
+            if m.group(3) == "TOKEN":
                 return ctx["token"]
-            if m.group(2) not in ctx["vars"]:
-                raise KeyError(f"${{{m.group(2)}}} was never captured")
-            return str(ctx["vars"][m.group(2)])
+            if m.group(3) not in ctx["vars"]:
+                raise KeyError(f"${{{m.group(3)}}} was never captured")
+            return str(ctx["vars"][m.group(3)])
         return _VAR.sub(sub, value)
     if isinstance(value, list):
         return [expand(v, ctx) for v in value]
@@ -669,13 +678,22 @@ def run_mcp(step: dict, ctx: dict) -> dict:
         until = step.get("until")
         if not until:
             return record
-        found, value = dig(record, until["path"])
-        if found and value in until["in"]:
+        if until_met(until, record):
             return record
         if time.monotonic() >= deadline:
             record["untilTimedOut"] = True
             return record
         time.sleep(step.get("interval", 1))
+
+
+def until_met(until: dict, record: dict) -> bool:
+    """An `until` holds when its path's value is one of `in`, or a string `matches` searches."""
+    found, value = dig(record, until["path"])
+    if not found:
+        return False
+    if "matches" in until:
+        return isinstance(value, str) and re.search(until["matches"], value) is not None
+    return value in until["in"]
 
 
 def run_step(step: dict, phase: str, ctx: dict) -> dict:
@@ -707,6 +725,16 @@ def run_step(step: dict, phase: str, ctx: dict) -> dict:
             for key in ("schemaResults", "schemaTarget"):
                 if key in step:
                     record[key] = step[key]
+        elif "fetch" in step:
+            record.update(kind="fetch", url=expand(step["fetch"], ctx),
+                          response=fetch(expand(step["fetch"], ctx), expand(step.get("headers", {}), ctx),
+                                         step.get("until"), step.get("retryTimeout", 0), step.get("interval", 5)))
+        elif "copy" in step and ctx["files"][step["copy"]].get("secret"):
+            source = Path(expand_path(ctx["files"][step["copy"]]["path"]))
+            devvm.guest(f"install -d {shlex.quote(str(Path(step['to']).parent))}", check=True)
+            devvm.scp([source], step["to"])
+            devvm.guest(f"chmod {step.get('mode', '0600')} {shlex.quote(step['to'])}", check=True)
+            record.update(kind="copy", input=step["copy"], to=step["to"], secret=True)
         elif "copy" in step:
             spec = ctx["files"][step["copy"]]
             source = Path(expand_path(spec["path"]))
@@ -728,12 +756,61 @@ def run_step(step: dict, phase: str, ctx: dict) -> dict:
     return scrub(record, ctx)
 
 
+def fetch(url: str, headers: dict, until: dict | None, retry_timeout: float, interval: float) -> dict:
+    """One GET from this host, verified against its default trust store; polls while `until` (a path in
+    the step record, `response.status` say) does not hold."""
+    import hashlib
+    import ssl
+    import urllib.error
+    import urllib.request
+    deadline = time.monotonic() + retry_timeout
+    attempts = 0
+    while True:
+        attempts += 1
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": "opute-e2e-fetch", **headers})
+            with urllib.request.urlopen(request, timeout=30, context=ssl.create_default_context()) as r:
+                body = r.read(1 << 20)
+                # an https URL only answers here once its certificate chain and name verified
+                response = {"status": r.status, "contentType": r.headers.get("Content-Type", ""),
+                            "tlsVerified": url.startswith("https:")}
+        except urllib.error.HTTPError as e:
+            body = e.read(1 << 20)
+            response = {"status": e.code, "contentType": e.headers.get("Content-Type", "")}
+        except (urllib.error.URLError, OSError) as e:
+            body = b""
+            response = {"status": None, "error": f"{type(e).__name__}: {getattr(e, 'reason', e)}"}
+        response.update(bodySha256=hashlib.sha256(body).hexdigest(), body=body[:4096].decode(errors="replace"),
+                        attempts=attempts)
+        try:
+            response["json"] = json.loads(body)
+        except ValueError:
+            pass
+        if not until or until_met(until, {"response": response}) or time.monotonic() >= deadline:
+            return response
+        time.sleep(interval)
+
+
 def expand_path(path: str) -> str:
     return path.replace("${PARITY}", str(e2elib.PARITY)).replace("${REPO}", str(e2elib.REPO_ROOT))
 
 
 def write_gz(path: Path, obj: Any) -> None:
     path.write_bytes(gzip.compress(json.dumps(obj, sort_keys=True).encode(), mtime=0))
+
+
+def owner_secrets(journey: dict) -> list[str]:
+    """The values of each secret input's `secretKeys`, read here only to refuse a record that holds one."""
+    values = []
+    for spec in (journey["inputs"].get("files") or {}).values():
+        if not spec.get("secret"):
+            continue
+        path = Path(expand_path(spec["path"]))
+        for line in path.read_text().splitlines() if path.exists() else []:
+            key, _, value = line.partition("=")
+            if key.strip() in spec.get("secretKeys", []) and len(value.strip()) >= 16:
+                values.append(value.strip())
+    return values
 
 
 def harness_hashes() -> dict:
@@ -753,7 +830,7 @@ def run(journey_id: str, run_id: str) -> dict:
     if out.exists():
         raise SystemExit(f"refused: {out} exists; a journey runs once")
     out.mkdir(parents=True)
-    ctx = {"token": devvm.token(), "requestId": 0, "vars": {}, "secrets": {},
+    ctx = {"token": devvm.token(), "requestId": 0, "vars": {"RUN": run_id}, "secrets": {},
            "files": journey["inputs"].get("files", {}),
            "stub": Stub(journey["inputs"]["stub"]) if "stub" in journey["inputs"] else None}
     started = e2elib.now()
@@ -787,7 +864,7 @@ def run(journey_id: str, run_id: str) -> dict:
     for path in out.iterdir():
         data = gzip.decompress(path.read_bytes()) if path.suffix == ".gz" else path.read_bytes()
         if TOKEN_PATTERN.search(data.decode(errors="replace")) or any(
-                v.encode() in data for v in [ctx["token"], *ctx["secrets"].values()] if v):
+                v.encode() in data for v in [ctx["token"], *ctx["secrets"].values(), *owner_secrets(journey)] if v):
             for p in out.iterdir():
                 p.unlink()
             out.rmdir()

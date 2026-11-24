@@ -1,6 +1,6 @@
 {
  "e2e-0": {
-  "run": "m25-r3",
+  "run": "m25-r4",
   "journeys": {
    "selfcheck.noop": {
     "pass": true
@@ -191,7 +191,7 @@
   }
  },
  "e2e-1": {
-  "run": "m25-r3",
+  "run": "m25-r4",
   "journeys": {
    "e2e1.system-unit": {
     "pass": true
@@ -220,7 +220,7 @@
   }
  },
  "e2e-2": {
-  "run": "m25-r3",
+  "run": "m25-r4",
   "journeys": {
    "e2e2.host-ops": {
     "pass": true
@@ -240,7 +240,7 @@
   }
  },
  "e2e-3a": {
-  "run": "m25-r3",
+  "run": "m25-r4",
   "journeys": {
    "e2e3a.build": {
     "pass": true
@@ -260,7 +260,7 @@
   }
  },
  "e2e-3": {
-  "run": "m25-r3",
+  "run": "m25-r4",
   "journeys": {
    "e2e3.discovery": {
     "pass": true
@@ -274,23 +274,40 @@
   }
  },
  "e2e-4": {
-  "run": "m25-r3",
+  "run": "m25-r4",
   "journeys": {
    "e2e4.cutover": {
     "pass": true
    },
    "e2e4.restart": {
     "pass": true
+   },
+   "e2e4.upgrade-chain": {
+    "pass": true
+   }
+  }
+ },
+ "e2e-neutral": {
+  "run": "m25-r4",
+  "journeys": {
+   "neutral.profile": {
+    "pass": true
+   },
+   "neutral.reserved": {
+    "pass": true
+   },
+   "neutral.rollback": {
+    "pass": true
    }
   }
  },
  "e2e-5": {
-  "run": "m19-r1",
+  "run": null,
   "journeys": {},
-  "blocked": "goal e2e-5 (Platform-enrolled) has not run; no journeys are recorded"
+  "blocked": "goal e2e-5 (an external orchestrator client on a host configured by explicit settings, run in Platform staging) has not run; no journeys are recorded"
  },
  "e2e-6": {
-  "run": "m25-r3",
+  "run": "m25-r4",
   "journeys": {
    "e2e6.disk-full": {
     "pass": true
@@ -316,10 +333,15 @@
    "e2e6.child-env": {
     "pass": true
    },
-   "e2e6.provider-body": {
-    "pass": true
-   },
    "e2e6.secret-sweep": {
+    "pass": true
+   }
+  }
+ },
+ "e2e-7": {
+  "run": "m25-r4",
+  "journeys": {
+   "e2e7.public-site": {
     "pass": true
    }
   }

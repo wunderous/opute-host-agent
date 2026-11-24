@@ -7,7 +7,6 @@
       ],
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": false
       },
       "route": "dispatch",
@@ -21,7 +20,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -35,7 +33,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -49,7 +46,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -63,7 +59,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -77,7 +72,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -91,7 +85,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -105,7 +98,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -119,7 +111,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -129,7 +120,6 @@
     "configure_host_network": {
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": false
       },
       "route": "dispatch",
@@ -142,7 +132,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -150,22 +139,30 @@
       "status": "compliant"
     },
     "configure_local_llm_runtime": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/local-llm-runtime@builtin",
+      "status": "compliant"
     },
     "configure_network": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/instance-lifecycle@builtin",
+      "status": "compliant"
     },
     "configure_oci_storage": {
       "consumers": [
@@ -174,7 +171,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -188,7 +184,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -202,7 +197,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -216,7 +210,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -230,7 +223,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -244,7 +236,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -258,7 +249,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -272,7 +262,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -286,7 +275,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -300,7 +288,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -314,7 +301,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -328,7 +314,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -342,7 +327,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -356,7 +340,6 @@
       ],
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": false
       },
       "route": "dispatch",
@@ -370,7 +353,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -384,7 +366,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -398,7 +379,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -412,7 +392,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -426,7 +405,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -440,7 +418,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -454,7 +431,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -468,7 +444,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -482,7 +457,6 @@
       ],
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": false
       },
       "route": "dispatch",
@@ -496,7 +470,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -510,7 +483,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -524,7 +496,6 @@
       ],
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": false
       },
       "route": "dispatch",
@@ -538,7 +509,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -552,7 +522,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -565,7 +534,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -579,7 +547,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -593,7 +560,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -607,7 +573,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -621,7 +586,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -634,7 +598,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -648,7 +611,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -662,7 +624,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -676,7 +637,6 @@
       ],
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -690,7 +650,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -704,7 +663,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -717,7 +675,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -731,7 +688,6 @@
       ],
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": false
       },
       "route": "dispatch",
@@ -745,7 +701,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -758,7 +713,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -772,7 +726,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -786,7 +739,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -800,7 +752,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -814,7 +765,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -828,7 +778,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -842,7 +791,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -850,13 +798,17 @@
       "status": "compliant"
     },
     "inspect_workload": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/cluster-inspection@builtin",
+      "status": "compliant"
     },
     "install_cluster_agent": {
       "consumers": [
@@ -865,7 +817,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -879,7 +830,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -893,7 +843,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -907,7 +856,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -921,7 +869,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -931,16 +878,13 @@
     "install_provider_tools": {
       "internal": false,
       "published": {
-        "platform": true,
-        "standalone": true
+        "standalone": false
       },
-      "route": "dispatch",
-      "status": "unported"
+      "route": "dispatch"
     },
     "install_sql_forward_sidecar": {
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": false
       },
       "route": "dispatch",
@@ -953,7 +897,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -963,11 +906,9 @@
     "list_agents": {
       "internal": false,
       "published": {
-        "platform": true,
-        "standalone": true
+        "standalone": false
       },
-      "route": "dispatch",
-      "status": "unported"
+      "route": "dispatch"
     },
     "list_certificate_issuers": {
       "consumers": [
@@ -976,7 +917,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -990,7 +930,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1004,7 +943,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1012,13 +950,17 @@
       "status": "compliant"
     },
     "list_configmap_keys": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/cluster-inspection@builtin",
+      "status": "compliant"
     },
     "list_deployments": {
       "consumers": [
@@ -1027,7 +969,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1041,7 +982,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1055,7 +995,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1069,7 +1008,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1083,7 +1021,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1097,7 +1034,6 @@
       ],
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -1111,7 +1047,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1119,13 +1054,17 @@
       "status": "compliant"
     },
     "list_secret_keys": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/cluster-inspection@builtin",
+      "status": "compliant"
     },
     "list_services": {
       "consumers": [
@@ -1134,7 +1073,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1148,7 +1086,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1162,7 +1099,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1170,13 +1106,16 @@
       "status": "compliant"
     },
     "open_assistant_session": {
+      "consumers": [
+        "tools/call"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
-      "status": "unported"
+      "service": "host-agent:incus/assistant-session@builtin",
+      "status": "compliant"
     },
     "opute.provider.install": {
       "consumers": [
@@ -1184,7 +1123,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1197,7 +1135,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1210,7 +1147,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1223,7 +1159,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1236,7 +1171,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1250,7 +1184,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1264,7 +1197,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1278,7 +1210,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1292,7 +1223,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1306,7 +1236,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1320,7 +1249,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1334,7 +1262,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1348,7 +1275,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1362,7 +1288,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1376,7 +1301,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1390,7 +1314,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1404,7 +1327,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1418,7 +1340,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1432,7 +1353,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1442,11 +1362,9 @@
     "register_kubernetes_cluster": {
       "internal": false,
       "published": {
-        "platform": true,
-        "standalone": true
+        "standalone": false
       },
-      "route": "dispatch",
-      "status": "unported"
+      "route": "dispatch"
     },
     "release_postgresql_service_relay": {
       "consumers": [
@@ -1455,7 +1373,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1469,7 +1386,6 @@
       ],
       "internal": true,
       "published": {
-        "platform": false,
         "standalone": false
       },
       "route": "dispatch",
@@ -1483,7 +1399,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1497,7 +1412,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1505,13 +1419,17 @@
       "status": "compliant"
     },
     "remove_local_llm_model": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/local-llm-runtime@builtin",
+      "status": "compliant"
     },
     "remove_local_llm_relay": {
       "consumers": [
@@ -1520,7 +1438,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1534,7 +1451,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1548,7 +1464,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1562,7 +1477,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -1576,7 +1490,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1584,13 +1497,17 @@
       "status": "compliant"
     },
     "remove_vm_network_device": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/instance-lifecycle@builtin",
+      "status": "compliant"
     },
     "render_cluster_package": {
       "consumers": [
@@ -1599,7 +1516,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1612,7 +1528,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "task-input",
@@ -1626,7 +1541,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1634,13 +1548,17 @@
       "status": "compliant"
     },
     "resize_console": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/instance-console@builtin",
+      "status": "compliant"
     },
     "restart_host_service": {
       "consumers": [
@@ -1649,7 +1567,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1663,7 +1580,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1677,7 +1593,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1690,7 +1605,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1703,7 +1617,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1717,7 +1630,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1730,7 +1642,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1744,7 +1655,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": false,
         "standalone": true
       },
       "route": "dispatch",
@@ -1757,7 +1667,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1765,13 +1674,17 @@
       "status": "compliant"
     },
     "send_console_input": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/instance-console@builtin",
+      "status": "compliant"
     },
     "set_host_service_state": {
       "consumers": [
@@ -1780,7 +1693,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1794,7 +1706,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1808,7 +1719,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1822,7 +1732,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1836,7 +1745,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1850,7 +1758,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1864,7 +1771,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1872,13 +1778,17 @@
       "status": "compliant"
     },
     "stream_vm_console": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
-      "status": "unported"
+      "service": "host-agent:incus/instance-console@builtin",
+      "status": "compliant"
     },
     "terminate_host_vm_distribution": {
       "consumers": [
@@ -1887,7 +1797,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1901,7 +1810,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1911,11 +1819,9 @@
     "uninstall_provider_tools": {
       "internal": false,
       "published": {
-        "platform": true,
-        "standalone": true
+        "standalone": false
       },
-      "route": "dispatch",
-      "status": "unported"
+      "route": "dispatch"
     },
     "uninstall_virtualization_stack": {
       "consumers": [
@@ -1924,7 +1830,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1938,7 +1843,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "dispatch",
@@ -1951,7 +1855,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1964,7 +1867,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1977,7 +1879,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1990,7 +1891,6 @@
       ],
       "internal": false,
       "published": {
-        "platform": true,
         "standalone": true
       },
       "route": "lifecycle",
@@ -1999,8 +1899,9 @@
     }
   },
   "counts": {
-    "compliant": 133,
-    "unported": 17
+    "compliant": 144,
+    "unported": 2,
+    "unpublished": 4
   },
   "decision": "D14",
   "gaps": [],
@@ -2016,6 +1917,14 @@
       "operations": [
         "get_host_info",
         "detect_host_platform"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.assistant-session",
+      "inject": [],
+      "key": "host-agent:incus/assistant-session@builtin",
+      "operations": [
+        "open_assistant_session"
       ]
     },
     {
@@ -2155,8 +2064,22 @@
         "start_vm",
         "stop_vm",
         "restart_vm",
+        "configure_network",
+        "remove_vm_network_device",
         "update_vm_resources",
         "delete_vm"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.instance-console",
+      "inject": [
+        "host-agent:incus/instance-lifecycle@builtin"
+      ],
+      "key": "host-agent:incus/instance-console@builtin",
+      "operations": [
+        "stream_vm_console",
+        "send_console_input",
+        "resize_console"
       ]
     },
     {
@@ -2216,6 +2139,18 @@
         "list_pods",
         "list_services",
         "list_deployments"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.cluster-inspection",
+      "inject": [
+        "host-agent:incus/cluster-discovery@builtin"
+      ],
+      "key": "host-agent:incus/cluster-inspection@builtin",
+      "operations": [
+        "list_secret_keys",
+        "list_configmap_keys",
+        "inspect_workload"
       ]
     },
     {
@@ -2373,6 +2308,8 @@
       "operations": [
         "check_local_llm_prerequisites",
         "list_local_llm_models",
+        "remove_local_llm_model",
+        "configure_local_llm_runtime",
         "probe_local_llm",
         "install_local_llm_model",
         "configure_local_llm_model",

@@ -1,6 +1,6 @@
 //! Cloudflare's API (Go `dedicated_tunnel.go` and `cloudflareDelete`): one
-//! dedicated tunnel per host, its ingress and its proxied CNAMEs, never the
-//! Platform's own tunnel or hostnames.
+//! dedicated tunnel per host, its ingress and its proxied CNAMEs, never a
+//! hostname the operator reserved (`OPUTE_RESERVED_HOSTNAMES`).
 
 use super::super::support::{
     first_non_empty, go_any, http_do, string_slice_input, Args, HttpRequest,
@@ -9,9 +9,55 @@ use super::query_escape;
 use crate::goerr::quote;
 use serde_json::{json, Map, Value as J};
 
-const PLATFORM_TUNNEL_NAME: &str = "opute-platform-opute-io";
 const API_DEFAULT_BASE: &str = "https://api.cloudflare.com/client/v4";
-const PLATFORM_HOSTNAMES: [&str; 2] = ["platform.opute.io", "mcp.opute.io"];
+/// Operator setting: exact hostnames and `*.suffix` patterns, comma-separated.
+const RESERVED_ENV: &str = "OPUTE_RESERVED_HOSTNAMES";
+
+#[cfg(test)]
+thread_local! {
+    static RESERVED_OVERRIDE: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Runs `body` with `OPUTE_RESERVED_HOSTNAMES` set to `value` on this thread.
+#[cfg(test)]
+pub(super) fn with_reserved(value: &str, body: impl FnOnce()) {
+    RESERVED_OVERRIDE.with(|cell| *cell.borrow_mut() = Some(value.to_string()));
+    body();
+    RESERVED_OVERRIDE.with(|cell| *cell.borrow_mut() = None);
+}
+
+fn reserved_setting() -> String {
+    #[cfg(test)]
+    if let Some(value) = RESERVED_OVERRIDE.with(|cell| cell.borrow().clone()) {
+        return value;
+    }
+    std::env::var(RESERVED_ENV).unwrap_or_default()
+}
+
+/// The reserved pattern a hostname matches, if any: an exact name, or
+/// `*.suffix` for any name under `suffix` (never the bare suffix).
+fn reserved_match(hostname: &str) -> Option<String> {
+    let hostname = hostname.trim().trim_end_matches('.').to_lowercase();
+    reserved_setting()
+        .split(',')
+        .map(|p| p.trim().trim_end_matches('.').to_lowercase())
+        .filter(|p| !p.is_empty())
+        .find(|pattern| match pattern.strip_prefix("*.") {
+            Some(suffix) => hostname.ends_with(&format!(".{suffix}")),
+            None => hostname == *pattern,
+        })
+}
+
+fn reserved_refusal(hostname: &str, pattern: &str) -> String {
+    super::super::typed_error(
+        "reserved_hostname",
+        &format!(
+            "hostname {} is reserved by the operator ({RESERVED_ENV})",
+            quote(hostname)
+        ),
+        json!({"hostname": hostname, "pattern": pattern}),
+    )
+}
 
 pub(super) struct Dedicated {
     pub tunnel_id: String,
@@ -87,42 +133,29 @@ fn dedicated_tunnel_name(args: &Args) -> String {
     args.string("tunnelName", "").trim().to_string()
 }
 
-pub(super) fn refuse_platform_tunnel_name(name: &str) -> Result<(), String> {
-    let trimmed = name.trim();
-    if trimmed.is_empty() {
+pub(super) fn require_tunnel_name(name: &str) -> Result<(), String> {
+    if name.trim().is_empty() {
         return Err("tunnelName is required".into());
-    }
-    if trimmed.eq_ignore_ascii_case(PLATFORM_TUNNEL_NAME) {
-        return Err(format!(
-            "refusing to mutate platform Cloudflare tunnel {}",
-            quote(trimmed)
-        ));
     }
     Ok(())
 }
 
-pub(super) fn refuse_platform_hostname(hostname: &str) -> Result<(), String> {
+pub(super) fn refuse_reserved_hostname(hostname: &str) -> Result<(), String> {
     let trimmed = hostname.trim().to_lowercase();
     if trimmed.is_empty() {
         return Err("hostname is required".into());
     }
-    if PLATFORM_HOSTNAMES.contains(&trimmed.as_str()) {
-        return Err(format!(
-            "refusing to attach platform hostname {} to a dedicated host tunnel",
-            quote(&trimmed)
-        ));
+    match reserved_match(&trimmed) {
+        Some(pattern) => Err(reserved_refusal(&trimmed, &pattern)),
+        None => Ok(()),
     }
-    Ok(())
 }
 
-pub(super) fn refuse_platform_ingress(rules: &[IngressRule]) -> Result<(), String> {
+pub(super) fn refuse_reserved_ingress(rules: &[IngressRule]) -> Result<(), String> {
     for rule in rules {
         let hostname = rule.hostname.trim().to_lowercase();
-        if PLATFORM_HOSTNAMES.contains(&hostname.as_str()) {
-            return Err(format!(
-                "refusing to mutate a tunnel whose ingress includes {}",
-                quote(&hostname)
-            ));
+        if let Some(pattern) = reserved_match(&hostname) {
+            return Err(reserved_refusal(&hostname, &pattern));
         }
     }
     Ok(())
@@ -165,10 +198,10 @@ pub(super) fn ensure_dedicated_tunnel(args: &Args) -> Result<Dedicated, String> 
         return Err("hostname is required".into());
     }
     for hostname in &hostnames {
-        refuse_platform_hostname(hostname)?;
+        refuse_reserved_hostname(hostname)?;
     }
     let tunnel_name = dedicated_tunnel_name(args);
-    refuse_platform_tunnel_name(&tunnel_name)?;
+    require_tunnel_name(&tunnel_name)?;
     let local_target = args.string("localTarget", "");
     if local_target.is_empty() {
         return Err("localTarget is required".into());
@@ -176,7 +209,7 @@ pub(super) fn ensure_dedicated_tunnel(args: &Args) -> Result<Dedicated, String> 
     let (account, zone, token) = creds()?;
     let tunnel = ensure_tunnel_by_name(&token, &account, &tunnel_name)?;
     let rules = tunnel_ingress(&token, &account, &tunnel.id)?;
-    refuse_platform_ingress(&rules)?;
+    refuse_reserved_ingress(&rules)?;
     let mut ingress: Vec<IngressRule> = hostnames
         .iter()
         .map(|h| IngressRule {
@@ -193,7 +226,7 @@ pub(super) fn ensure_dedicated_tunnel(args: &Args) -> Result<Dedicated, String> 
     put_tunnel_ingress(&token, &account, &tunnel.id, &ingress)?;
     let mut primary: Option<Record> = None;
     for hostname in &hostnames {
-        let record = upsert_cname(&token, &account, &zone, hostname, &tunnel.id)?;
+        let record = upsert_cname(&token, &zone, hostname, &tunnel.id)?;
         primary.get_or_insert(record);
     }
     let run_token = tunnel_token(&token, &account, &tunnel.id)?;
@@ -222,15 +255,15 @@ pub(super) fn unpublish_dedicated_tunnel(args: &Args) -> Result<(), String> {
         return Err("hostname is required".into());
     }
     for hostname in &hostnames {
-        refuse_platform_hostname(hostname)?;
+        refuse_reserved_hostname(hostname)?;
     }
     let tunnel_name = dedicated_tunnel_name(args);
-    refuse_platform_tunnel_name(&tunnel_name)?;
+    require_tunnel_name(&tunnel_name)?;
     let (account, zone, token) = creds()?;
     let tunnel = find_tunnel_by_name(&token, &account, &tunnel_name)?;
     if let Some(tunnel) = &tunnel {
         let rules = tunnel_ingress(&token, &account, &tunnel.id)?;
-        refuse_platform_ingress(&rules)?;
+        refuse_reserved_ingress(&rules)?;
     }
     let base = api_base();
     for hostname in &hostnames {
@@ -240,8 +273,7 @@ pub(super) fn unpublish_dedicated_tunnel(args: &Args) -> Result<(), String> {
         let target_id = parse_tunnel_id_from_cname(&record.content);
         if !target_id.is_empty() {
             if let Some(target) = get_tunnel(&token, &account, &target_id)? {
-                refuse_platform_tunnel_name(&target.name)?;
-                refuse_platform_ingress(&tunnel_ingress(&token, &account, &target.id)?)?;
+                refuse_reserved_ingress(&tunnel_ingress(&token, &account, &target.id)?)?;
             }
         }
         delete(
@@ -502,7 +534,6 @@ fn list_hostname_records(token: &str, zone: &str, hostname: &str) -> Result<Vec<
 
 pub(super) fn upsert_cname(
     token: &str,
-    account: &str,
     zone: &str,
     hostname: &str,
     tunnel_id: &str,
@@ -511,22 +542,15 @@ pub(super) fn upsert_cname(
     let base = api_base();
     let mut matching = None;
     for record in list_hostname_records(token, zone, hostname)? {
-        if record.kind.eq_ignore_ascii_case("CNAME") {
-            let target_id = parse_tunnel_id_from_cname(&record.content);
-            if !target_id.is_empty() && !target_id.eq_ignore_ascii_case(tunnel_id) {
-                if let Some(target) = get_tunnel(token, account, &target_id)? {
-                    refuse_platform_tunnel_name(&target.name)?;
-                }
-            }
-            if record
+        if record.kind.eq_ignore_ascii_case("CNAME")
+            && record
                 .content
                 .strip_suffix('.')
                 .unwrap_or(&record.content)
                 .eq_ignore_ascii_case(&desired)
-            {
-                matching = Some(record);
-                continue;
-            }
+        {
+            matching = Some(record);
+            continue;
         }
         delete(
             token,

@@ -1,0 +1,95 @@
+# m20: removes what minimal-site.recipe.yaml made: the guest container with its cluster, registry, workload
+# and connector, then the tunnel and its CNAME at Cloudflare. Each node validates the absence it makes, so
+# a second run skips every action.
+#
+# The guest goes first because the connector runs in its cluster, and remove-host-tunnel stops only a
+# host-placed connector. Cloudflare refuses to delete a tunnel that still has connections (error 1022, found
+# by e2e7 under m20-r1), and closes them within minutes of the connector stopping, so the tunnel node retries.
+#
+# Removing the staged context's Dockerfile makes the next site run stage it again, so that run applies every
+# node from clean state.
+#
+# Assertion values are not interpolated, and a read of a removed guest is refused rather than answered, so the
+# guest node asserts the guest's absence from list_vms by its literal name. The caller fills in __GUEST_NAME__
+# with the `name` input, as the www-opute-io deploy script fills in its recipe's expected image.
+contractVersion: host-recipe.v1
+recipeId: com.opute.host-agent.minimal-site.teardown
+recipeVersion: 1.0.0
+execution:
+  coordinator: host-agent
+  mode: local
+compatibility:
+  requiredTools:
+    - opute.capability.tunneling.remove-host-tunnel
+    - get_cloudflare_tunnel_status
+    - delete_vm
+    - list_vms
+    - remove_host_file
+    - inspect_host_file
+inputs:
+  hostname:
+    required: true
+    schema: {type: string, pattern: '^(minimal|e2e-[a-z0-9-]{1,40})\.opute\.io$'}
+  tunnelName:
+    required: true
+    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,62}$'}
+  name:
+    required: true
+    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,30}$'}
+  contextDir:
+    required: true
+    schema: {type: string, pattern: '^/.+$'}
+  runNonce:
+    default: default
+    description: A new value starts a new run with the same inputs; it finds every effect in place and skips.
+    schema: {type: string, minLength: 1, maxLength: 128}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.host-agent.minimal-site.teardown
+  generation: 1
+  idempotencyKey: com.opute.host-agent.minimal-site.teardown-${vars.inputs.name}-${vars.inputs.hostname}-${vars.inputs.runNonce}
+  defaults:
+    timeoutMs: 600000
+  nodes:
+    - id: guest
+      action:
+        tool: delete_vm
+        args: {uri: 'container:local:${vars.inputs.name}'}
+      validate:
+        tool: list_vms
+        args: {fast: true}
+        assert:
+          - path: /vms
+            op: all
+            assertions:
+              - {path: /name, op: ne, value: __GUEST_NAME__}
+        pollIntervalMs: 2000
+        timeoutMs: 120000
+    - id: tunnel
+      dependsOn: [guest]
+      retry: {maxAttempts: 6, backoffMs: 10000, backoffFactor: 2}
+      action:
+        tool: opute.capability.tunneling.remove-host-tunnel
+        args: &tunnel
+          bindingId: site
+          hostname: '${vars.inputs.hostname}'
+          tunnelName: '${vars.inputs.tunnelName}'
+          localTarget: 'http://traefik.kube-system.svc.cluster.local:80'
+          placement: kubernetes
+          targetUri: 'cluster:local:${vars.inputs.name}'
+      validate:
+        tool: get_cloudflare_tunnel_status
+        args: *tunnel
+        assert:
+          - {path: /routed, op: eq, value: false}
+          - {path: /tunnelId, op: empty}
+    - id: context
+      dependsOn: [tunnel]
+      action:
+        tool: remove_host_file
+        args: {path: '${vars.inputs.contextDir}/Dockerfile', confirm: true}
+      validate:
+        tool: inspect_host_file
+        args: {path: '${vars.inputs.contextDir}/Dockerfile'}
+        assert:
+          - {path: /exists, op: eq, value: false}

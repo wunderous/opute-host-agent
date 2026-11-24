@@ -110,7 +110,7 @@ mod tests {
     #[test]
     fn removing_candidate_revokes_lookup_without_mutating_retained_snapshot() {
         let candidates = Candidates::default();
-        let active = crate::catalog::for_mode(true);
+        let active = crate::catalog::served();
         let generation = " opaque/@generation ";
         let manifest = InstallManifest::default();
         candidates.set_manifest(generation, manifest);
@@ -122,6 +122,6 @@ mod tests {
         assert!(candidates.snapshot(active, generation).is_none());
         assert!(candidates.adapter(generation).is_none());
         assert_eq!(accepted.revision, revision);
-        assert_eq!(active.revision, crate::catalog::for_mode(true).revision);
+        assert_eq!(active.revision, crate::catalog::served().revision);
     }
 }

@@ -1,0 +1,38 @@
+--- a/npm/local-host-agent/index.js
++++ b/npm/local-host-agent/index.js
+@@ -306,6 +306,7 @@
+         || key === 'OPUTE_LOCAL_HOST_AGENT_RUNTIME_DIR'
+         || key === 'OPUTE_STANDALONE_STATE_DIR'
+         || key === 'OPUTE_STANDALONE_ALLOW_MUTATIONS'
++        || key === 'OPUTE_HOST_ALLOW_MUTATIONS'
+         || key === 'OPUTE_STANDALONE_ALLOW_INSECURE_DOWNLOADS'
+         || key === 'OPUTE_INFRA_PROVIDER_ID'
+       ) {
+@@ -344,7 +345,8 @@
+   OPUTE_REMOTE_AGENT_ID    Required explicit opaque canonical agent id
+   MCP_AUTH_TOKEN           Bearer token required by /mcp when set
+   OPUTE_HOST_AGENT_BINARY  Use a local binary instead of downloading a release
+-  OPUTE_STANDALONE_ALLOW_MUTATIONS=true  Enable mutating tools
++  OPUTE_HOST_ALLOW_MUTATIONS=true        Enable mutating tools (0.4.0 and later)
++  OPUTE_STANDALONE_ALLOW_MUTATIONS=true  Enable mutating tools (0.3.x; ignored from 0.4.0)
+ 
+ MCP client config (include Authorization when MCP_AUTH_TOKEN is set):
+   {
+@@ -360,7 +362,7 @@
+   const port = mcpPort()
+   const url = mcpUrl(host, port)
+   console.error(`starting standalone Streamable HTTP MCP at ${url}`)
+-  const child = spawn(binary, ['--mode=standalone', '--transport=http', ...passthroughArgs], {
++  const child = spawn(binary, ['--transport=http', ...passthroughArgs], {
+     stdio: 'inherit',
+     env: buildAgentEnv(),
+   })
+@@ -402,7 +404,7 @@
+   fs.mkdirSync(runtimeDir(), { recursive: true, mode: 0o700 })
+   const logPath = path.join(runtimeDir(), 'daemon.log')
+   const logFd = fs.openSync(logPath, 'a')
+-  const child = spawn(binary, ['--mode=standalone', '--transport=http', ...passthroughArgs], {
++  const child = spawn(binary, ['--transport=http', ...passthroughArgs], {
+     detached: true,
+     stdio: ['ignore', logFd, logFd],
+     env: buildAgentEnv(instanceId),
