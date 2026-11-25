@@ -1,0 +1,159 @@
+
+> @opute/host-agent@0.5.0 test
+> node --test index.test.js
+
+TAP version 13
+# Subtest: downloads, verifies, caches, and re-verifies the release binary
+ok 1 - downloads, verifies, caches, and re-verifies the release binary
+  ---
+  duration_ms: 114.228705
+  ...
+# Subtest: start requires an explicit canonical Host Agent identity before resolving a binary
+ok 2 - start requires an explicit canonical Host Agent identity before resolving a binary
+  ---
+  duration_ms: 25.937974
+  ...
+# Subtest: missing local binary fails closed before a listener is claimed
+ok 3 - missing local binary fails closed before a listener is claimed
+  ---
+  duration_ms: 28.329255
+  ...
+# Subtest: url prints the default Streamable HTTP endpoint
+ok 4 - url prints the default Streamable HTTP endpoint
+  ---
+  duration_ms: 25.332522
+  ...
+# Subtest: background daemon start/status/stop owns its listener and strips platform credentials
+ok 5 - background daemon start/status/stop owns its listener and strips platform credentials
+  ---
+  duration_ms: 340.275366
+  ...
+# Subtest: start --allow-mutations creates the workload slice before the agent starts
+not ok 6 - start --allow-mutations creates the workload slice before the agent starts
+  ---
+  duration_ms: 28.61588
+  location: 'host-agents/npm/local-host-agent/index.test.js:267:1'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '/tmp/opute-fake-systemd-fTvaVh/config/systemd/user/opute-workload.slice'"
+  code: 'ENOENT'
+  stack: |-
+    Object.readFileSync (node:fs:442:20)
+    TestContext.<anonymous> (host-agents/npm/local-host-agent/index.test.js:272:19)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: start --allow-mutations keeps an existing workload slice
+not ok 7 - start --allow-mutations keeps an existing workload slice
+  ---
+  duration_ms: 28.522753
+  location: 'host-agents/npm/local-host-agent/index.test.js:285:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    config
+    + actual - expected
+    
+    + []
+    - [
+    -   '--user cat opute-workload.slice'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '--user cat opute-workload.slice'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (host-agents/npm/local-host-agent/index.test.js:296:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: start --allow-mutations without a systemd user session refuses before the agent starts
+not ok 8 - start --allow-mutations without a systemd user session refuses before the agent starts
+  ---
+  duration_ms: 135.158858
+  location: 'host-agents/npm/local-host-agent/index.test.js:302:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /systemd user session/. Input:
+    
+    'failed to start standalone agent: child process exited before health (code=0, signal=none)\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    failed to start standalone agent: child process exited before health (code=0, signal=none)
+    
+  operator: 'match'
+  stack: |-
+    Object.<anonymous> (host-agents/npm/local-host-agent/index.test.js:310:14)
+    expectedException (node:assert:808:17)
+    expectsError (node:assert:931:3)
+    Function.rejects (node:assert:996:3)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (host-agents/npm/local-host-agent/index.test.js:306:3)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: start without --allow-mutations touches no slice
+ok 9 - start without --allow-mutations touches no slice
+  ---
+  duration_ms: 28.706543
+  ...
+# Subtest: background start refuses a foreign listener without overwriting daemon state
+ok 10 - background start refuses a foreign listener without overwriting daemon state
+  ---
+  duration_ms: 27.553078
+  ...
+# Subtest: background start fails closed for a live reused PID
+ok 11 - background start fails closed for a live reused PID
+  ---
+  duration_ms: 29.726694
+  ...
+# Subtest: background start clears a dead pid when the port is free
+ok 12 - background start clears a dead pid when the port is free
+  ---
+  duration_ms: 275.445936
+  ...
+# Subtest: background start refuses a dead pid when a foreign listener holds the port
+ok 13 - background start refuses a dead pid when a foreign listener holds the port
+  ---
+  duration_ms: 28.966728
+  ...
+# Subtest: stop refuses a live reused PID without ownership
+ok 14 - stop refuses a live reused PID without ownership
+  ---
+  duration_ms: 30.384075
+  ...
+# Subtest: background start uses stored owned endpoint when daemon state points at another port
+ok 15 - background start uses stored owned endpoint when daemon state points at another port
+  ---
+  duration_ms: 306.682684
+  ...
+# Subtest: background start fails closed when a foreign listener claims the port after preflight
+ok 16 - background start fails closed when a foreign listener claims the port after preflight
+  ---
+  duration_ms: 136.679853
+  ...
+# Subtest: native Windows fails before attempting an artifact download
+ok 17 - native Windows fails before attempting an artifact download # SKIP
+  ---
+  duration_ms: 0.092706
+  ...
+# Subtest: the packed npm tarball launches the verified binary
+ok 18 - the packed npm tarball launches the verified binary
+  ---
+  duration_ms: 510.587546
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 14
+# fail 3
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 2146.490008
