@@ -15,4 +15,4 @@
 
 - [x] 4.1 A fresh Ubuntu 24.04 user, using the packed 0.5.1 launcher and the 0.5.0 binary: `start --background --allow-mutations` with no manual step; the first `ensure_host_file` succeeds; a second start keeps the slice; a start with no user session is refused. Also: a read-only start writes nothing. `evidence/d56/fresh-user.txt`.
 - [x] 4.2 README step 4 (both repositories) and the npm README drop the manual block.
-- [ ] 4.3 Release 0.5.1: the host-agents pin `release/v0.5.1.json` names opute-host-agent `v0.5.0`'s files unchanged; tag, Publish, read-only canary, npm `latest`.
+- [x] 4.3 Release 0.5.1: the host-agents pin `release/v0.5.1.json` names opute-host-agent `v0.5.0`'s files unchanged; tag, Publish, read-only canary, npm `latest`. Published 2026-11-24: host-agents#38 (merge `e3881f2`), tag `v0.5.1`, Publish run 45532389044 (read-only canary passed), 9 files equal the pin, npm `latest` 0.5.1; the published package passes the fresh-user check (`evidence/d56/fresh-user.txt`).

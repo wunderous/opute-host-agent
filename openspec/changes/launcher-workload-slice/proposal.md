@@ -1,7 +1,7 @@
 # The launcher creates the workload slice
 
-Status: **accepted (owner, 2026-11-24) as D56**. Target `0.5.1`, launcher
-only.
+Status: **accepted (owner, 2026-11-24) as D56**. Published as `0.5.1`
+(launcher only) on 2026-11-24.
 
 ## Why
 

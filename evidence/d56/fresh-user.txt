@@ -26,3 +26,19 @@ slice: absent; health: 000
 http://127.0.0.1:3014/mcp
 slice: absent
 stopped standalone agent (pid 578)
+
+== published 0.5.1 (after release): a new login user p1 in a new container,
+   `npx -y @opute/host-agent` from the registry (latest 0.5.1, gitHead
+   e3881f2), no local binary. Publish run 45532389044; 9 release files equal
+   release/v0.5.1.json.
+slice before: absent
+created /home/p1/.config/systemd/user/opute-workload.slice: resource limits for the agent's changes (edit it to lower them)
+http://127.0.0.1:3014/mcp
+slice after: present, mode 644
+ensure_host_file: ok Managed host file reconciled.
+stopped standalone agent (pid 413)
+-- second start keeps the slice
+http://127.0.0.1:3014/mcp
+slice unchanged
+ensure_host_file: ok Managed host file reconciled.
+stopped standalone agent (pid 478)
