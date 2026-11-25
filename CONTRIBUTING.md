@@ -5,9 +5,9 @@ welcome.
 
 ## Before you start
 
-- **Bugs:** open an issue with the agent version (`npx @opute/host-agent
-  status` or the release tag), the host OS, the MCP client, and the smallest
-  request that shows the problem. Remove tokens, hostnames and other private
+- **Bugs:** open an issue with the version you ran (the npm version or the
+  release tag; `npm view @opute/host-agent version` shows the latest), the
+  host OS, the MCP client, and the smallest request that shows the problem. Remove tokens, hostnames and other private
   values first.
 - **New tools or behavior changes:** open an issue first. A change a client can
   observe, such as a tool, schema, default or permission, starts as an
