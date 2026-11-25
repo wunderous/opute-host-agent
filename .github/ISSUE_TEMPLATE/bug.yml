@@ -1,0 +1,47 @@
+name: Bug report
+description: Something the agent or the launcher did wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report security issues privately instead: see SECURITY.md.
+        Never paste your MCP_AUTH_TOKEN, OAuth secrets or provider credentials.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "The npm version or release tag you ran. `npm view @opute/host-agent version` shows the latest."
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: Host
+      description: Distribution, CPU (x64 or arm64), WSL2 or not.
+      placeholder: Ubuntu 24.04, x64
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      placeholder: Claude Code 2.1, Cursor, VS Code, ...
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The tool you called (or the prompt you gave), the result, and what you expected instead. A refusal's text names the grant or condition; please include it.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Starting from a clean host if you can.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant agent output with secrets removed.
+      render: text
