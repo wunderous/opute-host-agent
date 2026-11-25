@@ -1,0 +1,44 @@
+D56 fresh-user check, 2026-11-24. Dev VM, Incus system container from the
+cached Ubuntu 24.04 image (parity-noble), Node 22.14.0. Launcher: the packed
+@opute/host-agent 0.5.1 (host-agents branch claude/d56-launcher-slice).
+Binary: the 0.5.0 release binary (OPUTE_HOST_AGENT_BINARY; 0.5.1 republishes
+it unchanged). Script: evidence/d56/user.sh. npm update notices removed.
+
+== session (login user s1: linger, su -, XDG_RUNTIME_DIR)
+slice before: absent
+created /home/s1/.config/systemd/user/opute-workload.slice: resource limits for the agent's changes (edit it to lower them)
+http://127.0.0.1:3014/mcp
+slice after: present, mode 644
+ensure_host_file: ok Managed host file reconciled.
+stopped standalone agent (pid 435)
+-- second start keeps the slice
+http://127.0.0.1:3014/mcp
+slice unchanged
+ensure_host_file: ok Managed host file reconciled.
+stopped standalone agent (pid 496)
+== no user session (s2, incus exec)
+exit 1
+--allow-mutations needs a systemd user session: the agent runs changes in opute-workload.slice and refuses them until it exists. Start from a login session, or create /home/s2/.config/systemd/user/opute-workload.slice with:
+
+[Unit]
+slice: absent; health: 000
+== read-only start (s3)
+http://127.0.0.1:3014/mcp
+slice: absent
+stopped standalone agent (pid 578)
+
+== published 0.5.1 (after release): a new login user p1 in a new container,
+   `npx -y @opute/host-agent` from the registry (latest 0.5.1, gitHead
+   e3881f2), no local binary. Publish run 45532389044; 9 release files equal
+   release/v0.5.1.json.
+slice before: absent
+created /home/p1/.config/systemd/user/opute-workload.slice: resource limits for the agent's changes (edit it to lower them)
+http://127.0.0.1:3014/mcp
+slice after: present, mode 644
+ensure_host_file: ok Managed host file reconciled.
+stopped standalone agent (pid 413)
+-- second start keeps the slice
+http://127.0.0.1:3014/mcp
+slice unchanged
+ensure_host_file: ok Managed host file reconciled.
+stopped standalone agent (pid 478)
