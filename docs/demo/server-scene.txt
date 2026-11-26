@@ -1,0 +1,5 @@
+# on the server: start the agent (Linux, Node 18+)
+export OPUTE_REMOTE_AGENT_ID="local-$(openssl rand -hex 8)"
+export MCP_AUTH_TOKEN="$(openssl rand -hex 32)"
+npx -y @opute/host-agent start --background --allow-mutations
+npx @opute/host-agent status

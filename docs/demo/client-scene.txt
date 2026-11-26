@@ -1,0 +1,7 @@
+# on your laptop: port 3014 is forwarded to the server over SSH
+mcp tools vm
+mcp call detect_host_platform | jq -c '{distribution, cpu: .cpu.model}'
+mcp call get_host_capacity | jq -c '{pressure, enforcement}'
+mcp call ensure_host_file '{"path":"hi.txt","content":"hi"}' | jq -c '{path,changed}'
+# a wrong token is refused
+MCP_AUTH_TOKEN=wrong mcp tools

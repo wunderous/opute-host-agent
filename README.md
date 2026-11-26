@@ -13,6 +13,12 @@ in plain language. The assistant calls typed, schema-checked tools that the
 agent carries out on the host. Nothing changes on your machine until you allow
 it.
 
+![Starting the agent on a server, then calling its tools from a laptop over SSH](docs/demo/demo.gif)
+
+*Start the agent on a server, then call it from a laptop over an SSH-forwarded
+port. The laptop uses a [scripted MCP client](docs/demo/mcp.mjs) so each call
+is visible. With Claude or Cursor, the assistant makes these calls for you.*
+
 ## What it can do
 
 - **Inspect the host.** Hardware, capacity, services, files and the
