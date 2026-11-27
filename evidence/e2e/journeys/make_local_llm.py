@@ -19,7 +19,7 @@ import make_e2e3a as ha
 import make_e2e4a as e4
 from make_e2e1 import HERE, a, inp, ok, req
 from make_e2e3a import call, direct, res, task
-from make_e2e4a import USER_SESSION, USER_SYSTEMCTL, linger
+from make_e2e4a import USER_SESSION, USER_SYSTEMCTL, linger, svc
 
 SPEC = "openspec/changes/recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md"
 GOAL = ".agents/goals/m32-local-llm.md (work 2 and 3)"
@@ -96,9 +96,11 @@ def local_llm() -> dict:
              {"endpoint": ENDPOINT, "modelRef": MODEL, "includeChat": True}),
         call("prereqAfter", "check_local_llm_prerequisites", {}),
         call("models", "list_local_llm_models", {"runtime": "ollama"}),
-        # stop: the unit stops and the port closes
+        # the legacy stop leaves the shared runtime running, as recorded; the unit is stopped as a host service
         *task("stop", "stop_local_llm_runtime", {"runtime": "ollama"}),
-        {"id": "stopped", "confirms": ["stop"], "guest": (
+        {"id": "stillServing", "guest": f"{USER_SYSTEMCTL} is-active {UNIT}", "confirms": ["stop"]},
+        svc("stopUnit", "stop", UNIT),
+        {"id": "stopped", "confirms": ["stopUnit"], "guest": (
             f"{USER_SYSTEMCTL} is-active {UNIT}; ss -ltnH 'sport = :11434' | wc -l")},
         # the legacy remove keeps the shared model, as recorded
         *task("removeModel", "remove_local_llm_model", {"modelRef": MODEL, "purge": True}),
@@ -131,13 +133,17 @@ def local_llm() -> dict:
                      "Qwen2.5-0.5B-Instruct Q4_K_M (the pulled GGUF matches its Hugging Face SHA-256), and activates "
                      "llm-serving after a streaming chat completion; a client's own chat request is answered"),
         req(SPEC, "The legacy LLM wrappers act on the shared Ollama runtime",
-            res("stop", "isError", **{"in": [False, "<absent>"]}),
+            res("stop", "structuredContent.stopped", equals=False),
+            res("stop", "structuredContent.shared", equals=True),
+            a("stillServing", "stdout", equals="active\n"),
+            direct("stopUnit", "structuredContent.status", equals="applied"),
             a("stopped", "stdout", equals="inactive\n0\n"),
             res("removeModel", "structuredContent.removed", equals=False),
             res("removeModel", "structuredContent.shared", equals=True),
             a("left", "stdout", matches=f"kept {HOME}/.ollama/models/blobs/sha256-{GGUF_SHA}\n"),
-            scenario="stop_local_llm_runtime stops the runtime's unit and closes its port; remove_local_llm_model "
-                     "keeps the shared model and says so, so the pulled model stays on disk until the user removes it"),
+            scenario="stop_local_llm_runtime leaves the shared Ollama runtime running and says so; the unit stops "
+                     "through set_host_service_state and its port closes; remove_local_llm_model keeps the shared "
+                     "model and says so, so the pulled model stays on disk until the user removes it"),
     ]
     cleanup = [{"id": "cleanLocalLlm", "guest": (
         f"{USER_SYSTEMCTL} disable --now {UNIT} 2>/dev/null; rm -f {UNIT_FILE}; {USER_SYSTEMCTL} daemon-reload; "
@@ -148,20 +154,16 @@ def local_llm() -> dict:
         f"{HOME}/.config/systemd/user {HOME}/.config/systemd 2>/dev/null; true")}]
     workload = f"processes//user.slice/user-{UID}.slice/user@{UID}.service/opute.slice/opute-workload.slice"
     allow = [f"files/{HOME}/m32", f"files/{HOME}/m32/local-llm.recipe.yaml",
-             f"files/{HOME}/.cache", f"files/{HOME}/.cache/opute", f"files/{HOME}/.cache/opute/ollama*",
              f"files/{HOME}/.local/share/opute/ollama*", f"files/{HOME}/.ollama*",
              f"files/{HOME}/.config/opute/ollama-runtime.json",
              f"files/{HOME}/.config/systemd", f"files/{HOME}/.config/systemd/user",
              f"files/{HOME}/.config/systemd/user/{UNIT}",
              f"files/{HOME}/.config/systemd/user/default.target.wants*",
-             f"opute/units/{UNIT}", "opute/units/opute-workload.slice", "opute/units/opute.slice",
-             f"{workload}*", "sockets/tcp 127.0.0.1:11434 ollama"] + USER_SESSION
+             f"opute/units/{UNIT}", f"{workload}/{UNIT} ollama", f"{workload}/{UNIT} llama-server",
+             "sockets/tcp 127.0.0.1:11434 ollama", "sockets/tcp 127.0.0.1:* llama-server"] + USER_SESSION
     optional = {p: "the user manager starts D-Bus on demand" for p in USER_SESSION if "dbus.service" in p}
-    optional.update({
-        f"files/{HOME}/.cache": "the snapshot's opute may already have a cache directory",
-        f"files/{HOME}/.cache/opute": "the snapshot's opute may already have a cache directory",
-        "opute/units/opute.slice": "whether systemd records the parent slice depends on the user manager",
-    })
+    # Ollama's model runner listens on a port it picks at random
+    optional["sockets/tcp 127.0.0.1:* llama-server"] = "Ollama's model runner listens on a random local port"
     return e4.journey(
         "e2e8.local-llm", "e2e-local-llm",
         "A real local LLM (m32): on a CPU-only host, the published recipe installs Ollama from its pinned upstream "

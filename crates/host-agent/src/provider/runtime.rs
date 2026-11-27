@@ -527,6 +527,7 @@ impl Runtime {
         server: &Server,
         run_id: &str,
         metadata: &Map<String, Value>,
+        ctx: &crate::plan::runner::RunCtx,
     ) -> (
         Option<crate::store::ActiveCapabilityRecord>,
         Option<Value>,
@@ -557,7 +558,7 @@ impl Runtime {
             );
         };
         let generation = string(metadata, "providerGenerationId");
-        let observation = match self.activation_flow(server, contract, bindings, generation) {
+        let observation = match self.activation_flow(server, contract, bindings, generation, ctx) {
             Some(Ok(observation)) => observation,
             Some(Err(error)) => {
                 return (
@@ -629,6 +630,7 @@ impl Runtime {
         contract: &str,
         bindings: &Map<String, Value>,
         generation: &str,
+        ctx: &crate::plan::runner::RunCtx,
     ) -> Option<Result<Map<String, Value>, String>> {
         Some(match contract {
             "kubernetes.v1" => self.kubernetes_activation(bindings, generation),
@@ -649,12 +651,14 @@ impl Runtime {
                     "includeChat": true,
                     "bearerToken": string(bindings, "bearerToken"),
                 });
+                // Admitted under the run it validates, as the run's nodes are
+                // (activation-probe-inherits-run-reservation).
                 let probe = crate::tools::dispatch(
                     server,
                     "probe_openai_compatible_server",
                     arguments.as_object().unwrap(),
                     None,
-                    None,
+                    Some(ctx),
                 );
                 if probe.get("isError") == Some(&Value::Bool(true)) {
                     Err("runtime probe returned an error".into())
