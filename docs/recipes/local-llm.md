@@ -15,6 +15,10 @@ host in one recipe run, with no GPU needed. It:
 Afterwards any OpenAI-compatible client on the host can use
 `http://127.0.0.1:11434/v1`.
 
+![The recipe runs, then curl gets an answer](../demo/local-llm/local-llm.gif)
+
+The waiting is sped up in this recording; [how it was made](../demo/local-llm/README.md).
+
 ## Requirements
 
 - Agent 0.5.4 or later, started with `--allow-mutations` (see the
@@ -22,6 +26,7 @@ Afterwards any OpenAI-compatible client on the host can use
   user session. 0.5.3 fails this recipe: its download gives up after 300
   seconds in all, and its activation check is refused.
 - Disk: about 4.4 GB (1.5 GB archive, 2.4 GB unpacked Ollama, 0.5 GB model).
+- Memory: the Ollama unit peaked at 1.4 GiB with the default model.
 - Network: HTTPS to github.com and huggingface.co.
 
 ## Run it

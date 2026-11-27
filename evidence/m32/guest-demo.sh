@@ -8,7 +8,7 @@ set -eo pipefail
 DIR=${1:?usage: guest-demo.sh DIR (holds node.tar.gz, mcp.mjs, typed.sh, scene.txt, asciinema)}
 U=llm
 H=/home/$U
-BIN=/opt/opute-e2e/releases/rust/v0.5.4/host-agent-linux-x64
+BIN=${BIN:-/opt/opute-e2e/releases/rust/v0.5.4/host-agent-linux-x64}
 cleanup() {
   if id "$U" >/dev/null 2>&1; then
     runuser -u "$U" -- env XDG_RUNTIME_DIR=/run/user/$(id -u "$U") systemctl --user stop opute-ollama.service 2>/dev/null || true
@@ -25,6 +25,9 @@ mkdir -p /opt/m32/bin
 tar -xzf "$DIR/node.tar.gz" -C /opt/m32
 install -m 0755 "$DIR/asciinema" /opt/m32/bin/asciinema
 install -m 0644 "$DIR/mcp.mjs" /opt/m32/mcp.mjs
+# where the demo user can run it
+install -m 0755 "$BIN" /opt/m32/host-agent
+BIN=/opt/m32/host-agent
 printf '#!/bin/sh\nexec /opt/m32/node/bin/node /opt/m32/mcp.mjs "$@"\n' > /opt/m32/bin/mcp
 chmod 0755 /opt/m32/bin/mcp
 useradd -m -s /bin/bash "$U"
@@ -42,7 +45,10 @@ as_user() {
 # the agent's identity and token, as the README quickstart makes them
 runuser -u "$U" -- bash -c 'umask 077; printf "export OPUTE_REMOTE_AGENT_ID=local-%s\nexport MCP_AUTH_TOKEN=%s\n" "$(openssl rand -hex 8)" "$(openssl rand -hex 32)" > ~/.agent-env'
 echo "### start"
-as_user 'npx -y @opute/host-agent@0.5.3 start --background --allow-mutations >/dev/null && npx -y @opute/host-agent@0.5.3 status | grep -E "running|version|url" || true'
+as_user 'npx -y @opute/host-agent@0.5.3 start --background --allow-mutations >/dev/null'
+status=$(as_user 'npx -y @opute/host-agent@0.5.3 status' | grep -v 'npm notice')
+echo "$status"
+jq -e '.running and .healthy' <<<"$status" >/dev/null
 
 echo "### record"
 as_user "DEMO_PROMPT='you@host:~\$ ' asciinema rec --headless --window-size 100x16 -c './typed.sh scene.txt' local-llm.cast >/dev/null 2>&1"
