@@ -1,0 +1,99 @@
+contractVersion: runtime-recipe.v1
+recipeId: com.opute.recipes.local-llm-ollama
+recipeVersion: 1.0.0
+# A local model on this host, CPU or GPU: Ollama from its upstream release,
+# pinned by SHA-256, and one model pulled through it. The run activates the
+# runtime only after a streaming chat completion succeeds. See
+# docs/recipes/local-llm.md.
+runtime:
+  id: local-ollama
+  servingContract: openai-chat.v1
+  capabilities: [llm-serving]
+activation:
+  capability: llm-serving
+  servingContract: openai-chat.v1
+  inputBindings:
+    endpoint: endpoint
+    modelRef: modelRef
+compatibility:
+  requiredTools:
+    - ensure_host_artifact
+    - extract_host_archive
+    - ensure_host_file
+    - install_local_llm_model
+    - probe_openai_compatible_server
+inputs:
+  ollamaUri:
+    default: https://github.com/ollama/ollama/releases/download/v0.40.17/ollama-linux-amd64.tar.zst
+    schema: {type: string, pattern: "^https://"}
+  ollamaSha256:
+    default: 1df9d6228bac5a22e420b242708c0d10e5b886db97bab99d446a41760f4e79af
+    schema: {type: string, pattern: "^[0-9a-f]{64}$"}
+  ollamaVersion:
+    default: v0.40.17
+    schema: {type: string, pattern: "^v[0-9.]+$"}
+  modelRef:
+    default: hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M
+    schema: {type: string, minLength: 1, maxLength: 200}
+  endpoint:
+    default: http://127.0.0.1:11434
+    schema: {type: string, const: "http://127.0.0.1:11434"}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.recipes.local-llm-ollama
+  generation: 1
+  idempotencyKey: local-llm-${vars.inputs.ollamaVersion}-${vars.inputs.modelRef}
+  nodes:
+    - id: download
+      action:
+        tool: ensure_host_artifact
+        args:
+          uri: ${vars.inputs.ollamaUri}
+          destination: .cache/opute/ollama/ollama-${vars.inputs.ollamaVersion}-linux-amd64.tar.zst
+          sha256: ${vars.inputs.ollamaSha256}
+      validate:
+        tool: inspect_host_file
+        args:
+          path: .cache/opute/ollama/ollama-${vars.inputs.ollamaVersion}-linux-amd64.tar.zst
+          expectedSha256: ${vars.inputs.ollamaSha256}
+        assert:
+          - {path: /matches, op: eq, value: true}
+    - id: extract
+      dependsOn: [download]
+      action:
+        tool: extract_host_archive
+        args:
+          archivePath: .cache/opute/ollama/ollama-${vars.inputs.ollamaVersion}-linux-amd64.tar.zst
+          destination: .local/share/opute/ollama/${vars.inputs.ollamaVersion}
+      validate:
+        tool: inspect_host_file
+        args: {path: ".local/share/opute/ollama/${vars.inputs.ollamaVersion}/bin/ollama"}
+        assert:
+          - {path: /exists, op: eq, value: true}
+    # The agent reads this file on every call; binaryPath tells it which
+    # Ollama to run, so no restart is needed.
+    - id: configure
+      dependsOn: [extract]
+      action:
+        tool: ensure_host_file
+        args:
+          path: .config/opute/ollama-runtime.json
+          content: '{"port": 11434, "modelRef": "${vars.inputs.modelRef}", "binaryPath": "${nodes.extract.output.destination}/bin/ollama"}'
+      validate:
+        tool: check_local_llm_prerequisites
+        args: {}
+        assert:
+          - {path: /ollamaBinaryPresent, op: eq, value: true}
+          - {path: /readyForInstall, op: eq, value: true}
+    # Starts the user unit opute-ollama.service, pulls and warms the model.
+    - id: model
+      dependsOn: [configure]
+      timeoutMs: 1800000
+      action:
+        tool: install_local_llm_model
+        args: {runtime: ollama, modelRef: "${vars.inputs.modelRef}"}
+      validate:
+        tool: probe_openai_compatible_server
+        args: {endpoint: "${vars.inputs.endpoint}", modelRef: "${vars.inputs.modelRef}", includeChat: true}
+        assert:
+          - {path: /streamingChatReady, op: eq, value: true}
