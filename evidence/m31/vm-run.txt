@@ -1,0 +1,5922 @@
+### version: ./host-agent --version
+0.5.4
+### version exit=0
+
+### help: ./host-agent help
+Usage: opute-host-agent [standalone|serve|public-mcp|recipe|provider|help] [flags]
+
+  opute-host-agent                   MCP server only (HTTP)
+  opute-host-agent serve             MCP server only (HTTP)
+  opute-host-agent recipe validate --source ./recipe.yaml
+  opute-host-agent recipe apply --allow-mutations --source ./recipe.yaml --activate --input model=hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M
+  opute-host-agent recipe status --run-id RUN_ID
+  opute-host-agent public-mcp --allow-mutations --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]
+  opute-host-agent provider install --allow-mutations --source ./plugin.yaml --activate
+
+recipe, provider and public-mcp run in this process on the agent's state, so
+they refuse while an agent holds it. Calls that change the host need
+--allow-mutations.
+### help exit=0
+
+### validate: ./host-agent recipe validate --source /home/m31cli/recipe.yaml --input word=vm
+{
+  "contractVersion": "runtime-recipe.v1",
+  "inputs": {
+    "word": "vm"
+  },
+  "plan": {
+    "catalogRevision": "sha256:6ceca36091c4fc214fac50a643f9dfad87cb4163fb6ebe8b1913a57286e0178c",
+    "contractVersion": "host-plan.v1",
+    "documentHash": "sha256:1f6dbb274f82773f49507594602d507ab2b814e83dfb369dd75a425dc1452da2",
+    "generation": 1,
+    "idempotencyKey": "cli-apply-vm",
+    "levels": [
+      [
+        "write"
+      ]
+    ],
+    "nodeCount": 1,
+    "planId": "com.opute.test.cli-apply",
+    "valid": true
+  },
+  "rawSha256": "sha256:b80ce3038bff2007409b7cd617f8bf9144cda57ecf795c4ae724b93570c33307",
+  "recipeHash": "sha256:8ee1e09b285623551fa681dccccddb2b9eb28088c0c54f9ca173de3d13b52560",
+  "recipeId": "com.opute.test.cli-apply",
+  "recipeVersion": "1.0.0",
+  "runtime": {
+    "id": "cli-apply",
+    "servingContract": "kubernetes.v1"
+  },
+  "source": {
+    "kind": "path",
+    "rawSha256": "sha256:b80ce3038bff2007409b7cd617f8bf9144cda57ecf795c4ae724b93570c33307",
+    "recipeHash": "sha256:8ee1e09b285623551fa681dccccddb2b9eb28088c0c54f9ca173de3d13b52560",
+    "source": "/home/m31cli/recipe.yaml"
+  },
+  "valid": true
+}
+### validate exit=0
+
+### applyRefused: ./host-agent recipe apply --source /home/m31cli/recipe.yaml --input word=vm
+recipe operation failed: Error: mutation refused: run_runtime_recipe has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.
+### applyRefused exit=1
+
+### fileAfterRefusal: absent
+### apply: ./host-agent recipe apply --allow-mutations --source /home/m31cli/recipe.yaml --input word=vm
+{
+  "catalogRevision": "sha256:6ceca36091c4fc214fac50a643f9dfad87cb4163fb6ebe8b1913a57286e0178c",
+  "createdAt": "2026-11-27T03:28:46.302264415Z",
+  "documentHash": "sha256:26bd9b6d062a185c70e59384c02d5594d65a665c3a63541545d433530aca96aa",
+  "generation": 1,
+  "idempotencyKey": "cli-apply-vm",
+  "nodes": {
+    "write": {
+      "attempts": 1,
+      "completedAt": "2026-11-27T03:28:46.599218493Z",
+      "id": "write",
+      "observed": {
+        "executable": false,
+        "exists": true,
+        "matches": true,
+        "mode": "600",
+        "path": "/home/m31cli/cli-apply.txt",
+        "regular": true,
+        "sha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85"
+      },
+      "output": {
+        "changed": true,
+        "contentSha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85",
+        "mode": "600",
+        "path": "/home/m31cli/cli-apply.txt",
+        "scope": "user"
+      },
+      "startedAt": "2026-11-27T03:28:46.395097275Z",
+      "status": "applied"
+    }
+  },
+  "planId": "com.opute.test.cli-apply",
+  "recipe": {
+    "activate": false,
+    "contractVersion": "runtime-recipe.v1",
+    "expandedPlan": {
+      "contractVersion": "host-plan.v1",
+      "converge": {},
+      "defaults": {
+        "retry": {}
+      },
+      "generation": 1,
+      "idempotencyKey": "cli-apply-vm",
+      "nodes": [
+        {
+          "action": {
+            "args": {
+              "content": "${vars.inputs.word}",
+              "path": "cli-apply.txt",
+              "scope": "user"
+            },
+            "tool": "ensure_host_file"
+          },
+          "id": "write",
+          "retry": {},
+          "validate": {
+            "args": {
+              "path": "cli-apply.txt",
+              "scope": "user"
+            },
+            "assert": [
+              {
+                "op": "eq",
+                "path": "/exists",
+                "value": true
+              }
+            ],
+            "tool": "inspect_host_file"
+          }
+        }
+      ],
+      "planId": "com.opute.test.cli-apply",
+      "variables": {
+        "inputs": {
+          "word": "vm"
+        },
+        "tenantId": "local"
+      }
+    },
+    "inputs": {
+      "word": "vm"
+    },
+    "outputMapping": null,
+    "recipeDocument": {
+      "compatibility": {},
+      "contractVersion": "runtime-recipe.v1",
+      "inputs": {
+        "word": {
+          "required": true
+        }
+      },
+      "plan": {
+        "contractVersion": "host-plan.v1",
+        "converge": {},
+        "defaults": {
+          "retry": {}
+        },
+        "generation": 1,
+        "idempotencyKey": "cli-apply-${vars.inputs.word}",
+        "nodes": [
+          {
+            "action": {
+              "args": {
+                "content": "${vars.inputs.word}",
+                "path": "cli-apply.txt",
+                "scope": "user"
+              },
+              "tool": "ensure_host_file"
+            },
+            "id": "write",
+            "retry": {},
+            "validate": {
+              "args": {
+                "path": "cli-apply.txt",
+                "scope": "user"
+              },
+              "assert": [
+                {
+                  "op": "eq",
+                  "path": "/exists",
+                  "value": true
+                }
+              ],
+              "tool": "inspect_host_file"
+            }
+          }
+        ],
+        "planId": "com.opute.test.cli-apply"
+      },
+      "recipeId": "com.opute.test.cli-apply",
+      "recipeVersion": "1.0.0",
+      "runtime": {
+        "id": "cli-apply",
+        "servingContract": "kubernetes.v1"
+      }
+    },
+    "recipeHash": "sha256:8ee1e09b285623551fa681dccccddb2b9eb28088c0c54f9ca173de3d13b52560",
+    "recipeId": "com.opute.test.cli-apply",
+    "recipeVersion": "1.0.0",
+    "runtime": {
+      "id": "cli-apply",
+      "servingContract": "kubernetes.v1"
+    },
+    "runtimeId": "cli-apply",
+    "secretInputs": [],
+    "source": {
+      "kind": "path",
+      "rawSha256": "sha256:b80ce3038bff2007409b7cd617f8bf9144cda57ecf795c4ae724b93570c33307",
+      "recipeHash": "sha256:8ee1e09b285623551fa681dccccddb2b9eb28088c0c54f9ca173de3d13b52560",
+      "source": "/home/m31cli/recipe.yaml"
+    }
+  },
+  "runId": "a035ca2e-b921-480c-ab9b-355698f6ead4",
+  "state": {
+    "context": {},
+    "error": "",
+    "generation": 1,
+    "nodes": {
+      "write": {
+        "attempts": 1,
+        "completedAt": "2026-11-27T03:28:46.599218493Z",
+        "id": "write",
+        "observed": {
+          "executable": false,
+          "exists": true,
+          "matches": true,
+          "mode": "600",
+          "path": "/home/m31cli/cli-apply.txt",
+          "regular": true,
+          "sha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85"
+        },
+        "output": {
+          "changed": true,
+          "contentSha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85",
+          "mode": "600",
+          "path": "/home/m31cli/cli-apply.txt",
+          "scope": "user"
+        },
+        "startedAt": "2026-11-27T03:28:46.395097275Z",
+        "status": "applied"
+      }
+    },
+    "outputs": {
+      "write": {
+        "changed": true,
+        "contentSha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85",
+        "mode": "600",
+        "path": "/home/m31cli/cli-apply.txt",
+        "scope": "user"
+      }
+    },
+    "planId": "com.opute.test.cli-apply",
+    "runId": "a035ca2e-b921-480c-ab9b-355698f6ead4",
+    "status": "completed"
+  },
+  "status": "completed",
+  "updatedAt": "2026-11-27T03:28:46.629999914Z"
+}
+### apply exit=0
+
+### fileAfterApply: vm
+### status: ./host-agent recipe status --run-id a035ca2e-b921-480c-ab9b-355698f6ead4
+{
+  "catalogRevision": "sha256:6ceca36091c4fc214fac50a643f9dfad87cb4163fb6ebe8b1913a57286e0178c",
+  "createdAt": "2026-11-27T03:28:46.302264415Z",
+  "documentHash": "sha256:26bd9b6d062a185c70e59384c02d5594d65a665c3a63541545d433530aca96aa",
+  "generation": 1,
+  "idempotencyKey": "cli-apply-vm",
+  "nodes": {
+    "write": {
+      "attempts": 1,
+      "completedAt": "2026-11-27T03:28:46.599218493Z",
+      "id": "write",
+      "observed": {
+        "executable": false,
+        "exists": true,
+        "matches": true,
+        "mode": "600",
+        "path": "/home/m31cli/cli-apply.txt",
+        "regular": true,
+        "sha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85"
+      },
+      "output": {
+        "changed": true,
+        "contentSha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85",
+        "mode": "600",
+        "path": "/home/m31cli/cli-apply.txt",
+        "scope": "user"
+      },
+      "startedAt": "2026-11-27T03:28:46.395097275Z",
+      "status": "applied"
+    }
+  },
+  "planId": "com.opute.test.cli-apply",
+  "recipe": {
+    "activate": false,
+    "contractVersion": "runtime-recipe.v1",
+    "expandedPlan": {
+      "contractVersion": "host-plan.v1",
+      "converge": {},
+      "defaults": {
+        "retry": {}
+      },
+      "generation": 1,
+      "idempotencyKey": "cli-apply-vm",
+      "nodes": [
+        {
+          "action": {
+            "args": {
+              "content": "${vars.inputs.word}",
+              "path": "cli-apply.txt",
+              "scope": "user"
+            },
+            "tool": "ensure_host_file"
+          },
+          "id": "write",
+          "retry": {},
+          "validate": {
+            "args": {
+              "path": "cli-apply.txt",
+              "scope": "user"
+            },
+            "assert": [
+              {
+                "op": "eq",
+                "path": "/exists",
+                "value": true
+              }
+            ],
+            "tool": "inspect_host_file"
+          }
+        }
+      ],
+      "planId": "com.opute.test.cli-apply",
+      "variables": {
+        "inputs": {
+          "word": "vm"
+        },
+        "tenantId": "local"
+      }
+    },
+    "inputs": {
+      "word": "vm"
+    },
+    "outputMapping": null,
+    "recipeDocument": {
+      "compatibility": {},
+      "contractVersion": "runtime-recipe.v1",
+      "inputs": {
+        "word": {
+          "required": true
+        }
+      },
+      "plan": {
+        "contractVersion": "host-plan.v1",
+        "converge": {},
+        "defaults": {
+          "retry": {}
+        },
+        "generation": 1,
+        "idempotencyKey": "cli-apply-${vars.inputs.word}",
+        "nodes": [
+          {
+            "action": {
+              "args": {
+                "content": "${vars.inputs.word}",
+                "path": "cli-apply.txt",
+                "scope": "user"
+              },
+              "tool": "ensure_host_file"
+            },
+            "id": "write",
+            "retry": {},
+            "validate": {
+              "args": {
+                "path": "cli-apply.txt",
+                "scope": "user"
+              },
+              "assert": [
+                {
+                  "op": "eq",
+                  "path": "/exists",
+                  "value": true
+                }
+              ],
+              "tool": "inspect_host_file"
+            }
+          }
+        ],
+        "planId": "com.opute.test.cli-apply"
+      },
+      "recipeId": "com.opute.test.cli-apply",
+      "recipeVersion": "1.0.0",
+      "runtime": {
+        "id": "cli-apply",
+        "servingContract": "kubernetes.v1"
+      }
+    },
+    "recipeHash": "sha256:8ee1e09b285623551fa681dccccddb2b9eb28088c0c54f9ca173de3d13b52560",
+    "recipeId": "com.opute.test.cli-apply",
+    "recipeVersion": "1.0.0",
+    "runtime": {
+      "id": "cli-apply",
+      "servingContract": "kubernetes.v1"
+    },
+    "runtimeId": "cli-apply",
+    "secretInputs": [],
+    "source": {
+      "kind": "path",
+      "rawSha256": "sha256:b80ce3038bff2007409b7cd617f8bf9144cda57ecf795c4ae724b93570c33307",
+      "recipeHash": "sha256:8ee1e09b285623551fa681dccccddb2b9eb28088c0c54f9ca173de3d13b52560",
+      "source": "/home/m31cli/recipe.yaml"
+    }
+  },
+  "runId": "a035ca2e-b921-480c-ab9b-355698f6ead4",
+  "state": {
+    "context": {},
+    "error": "",
+    "generation": 1,
+    "nodes": {
+      "write": {
+        "attempts": 1,
+        "completedAt": "2026-11-27T03:28:46.599218493Z",
+        "id": "write",
+        "observed": {
+          "executable": false,
+          "exists": true,
+          "matches": true,
+          "mode": "600",
+          "path": "/home/m31cli/cli-apply.txt",
+          "regular": true,
+          "sha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85"
+        },
+        "output": {
+          "changed": true,
+          "contentSha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85",
+          "mode": "600",
+          "path": "/home/m31cli/cli-apply.txt",
+          "scope": "user"
+        },
+        "startedAt": "2026-11-27T03:28:46.395097275Z",
+        "status": "applied"
+      }
+    },
+    "outputs": {
+      "write": {
+        "changed": true,
+        "contentSha256": "sha256:5bce98f73f3ed0c837f2729ed9509b38ea66a156db7f653356cb6fe37b366e85",
+        "mode": "600",
+        "path": "/home/m31cli/cli-apply.txt",
+        "scope": "user"
+      }
+    },
+    "planId": "com.opute.test.cli-apply",
+    "runId": "a035ca2e-b921-480c-ab9b-355698f6ead4",
+    "status": "completed"
+  },
+  "status": "completed",
+  "updatedAt": "2026-11-27T03:28:46.629999914Z"
+}
+### status exit=0
+
+### providerListening: 1
+### installRefused: ./host-agent provider install --source /home/m31cli/provider.json
+provider operation failed: Error: mutation refused: opute.provider.install has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.
+### installRefused exit=1
+
+### install: ./host-agent provider install --allow-mutations --activate --source /home/m31cli/provider.json
+{
+  "activeRuntime": {
+    "activatedAt": "2026-11-27T03:28:47.513378322Z",
+    "capability": "kubernetes",
+    "inputBindings": {
+      "providerId": "com.opute.k3s"
+    },
+    "observation": {
+      "contractVersion": "opute.capability.kubernetes.v1",
+      "ready": true
+    },
+    "recipeHash": "sha256:ef4c812066781196f5d12879767a8a74fdc24b8a9a41f923877d9bbc3a446b3d",
+    "recipeId": "com.opute.k3s.managed",
+    "recipeVersion": "1.0.0",
+    "runId": "cea6cf7a-82a9-4a0f-9487-e5a7494ad920",
+    "runtime": "com.opute.k3s",
+    "servingContract": "kubernetes.v1"
+  },
+  "catalogRevision": "sha256:0f60ffbacb2cce558ed18f63fb5f85b18cfff301facf045124320a2df9d3ec3c",
+  "createdAt": "2026-11-27T03:28:47.212948437Z",
+  "documentHash": "sha256:8cc9d57b1e353a4112a7076efae9da9cf5e867b00ba4d6e1cd1583dbdb50e33b",
+  "generation": 1,
+  "idempotencyKey": "com.opute.k3s-com.opute.k3s-default",
+  "nodes": {
+    "host": {
+      "attempts": 1,
+      "completedAt": "2026-11-27T03:28:47.407035097Z",
+      "id": "host",
+      "output": {
+        "agent": {
+          "agentId": "m31-cli-check",
+          "homeDir": "/home/m31cli",
+          "instanceId": "standalone",
+          "instanceRoot": "/home/m31cli/.config/opute/instances/standalone",
+          "mcpEndpoint": "http://127.0.0.1:3014/mcp",
+          "providerRoot": "/home/m31cli/.local/share/opute/providers",
+          "serviceScope": "user",
+          "serviceUnitDir": "/home/m31cli/.config/systemd/user",
+          "serviceWantedBy": "default.target"
+        },
+        "hostName": "opute-parity-t2",
+        "lxcBinaryPath": "/usr/bin/incus",
+        "providerId": "incus",
+        "supportedTools": [
+          "apply_manifest",
+          "build_and_push_oci_image",
+          "check_local_llm_prerequisites",
+          "cleanup_container_storage",
+          "compact_host_vm_disk",
+          "configure_agent_connection",
+          "configure_local_llm_model",
+          "configure_local_llm_runtime",
+          "configure_network",
+          "configure_oci_storage",
+          "create_vm",
+          "delete_cluster_resource",
+          "delete_oci_registry",
+          "delete_vm",
+          "detect_host_platform",
+          "diagnose_bridge",
+          "discover_service_ingress",
+          "ensure_container_engine",
+          "ensure_host_artifact",
+          "ensure_host_file",
+          "ensure_host_service_supervisor",
+          "ensure_host_tool",
+          "ensure_local_llm_k3s_proxy",
+          "ensure_local_llm_relay",
+          "ensure_local_llm_server_binary",
+          "ensure_oci_builder",
+          "ensure_public_mcp_quick_tunnel",
+          "ensure_public_mcp_tunnel",
+          "ensure_sqlite_database",
+          "exec_cluster_command",
+          "extract_host_archive",
+          "garbage_collect_cluster_registry",
+          "get_capability_catalog",
+          "get_host_capacity",
+          "get_host_info",
+          "get_host_plan_run",
+          "get_cluster_resource",
+          "get_cluster_resource_status",
+          "get_oci_registry_status",
+          "get_postgresql_service_status",
+          "get_runtime_recipe_run",
+          "get_sqlite_database_status",
+          "get_tunnel_run",
+          "get_vm_info",
+          "inspect_container_storage",
+          "inspect_guest_storage",
+          "inspect_host_file",
+          "inspect_host_service",
+          "inspect_host_service_supervisor",
+          "inspect_workload",
+          "install_cluster_agent",
+          "install_cluster_package",
+          "install_virtualization_stack",
+          "install_local_llm_model",
+          "install_oci_registry",
+          "install_provider_tools",
+          "list_agents",
+          "list_certificate_issuers",
+          "list_configmap_keys",
+          "list_deployments",
+          "list_host_services",
+          "list_ingress_classes",
+          "list_cluster_events",
+          "list_compute_clusters",
+          "list_local_llm_models",
+          "list_namespaces",
+          "list_pods",
+          "list_secret_keys",
+          "list_services",
+          "list_storage_classes",
+          "list_vms",
+          "open_assistant_session",
+          "opute.provider.install",
+          "opute.provider.reload",
+          "opute.provider.status",
+          "opute.provider.teardown",
+          "opute.provider.validate",
+          "prepare_host_agent_artifacts",
+          "probe_gpu_container",
+          "probe_http_endpoint",
+          "probe_virtualization_gpu",
+          "probe_local_llm",
+          "probe_openai_compatible_server",
+          "provision_container",
+          "provision_vm",
+          "prune_unused_cluster_images",
+          "put_cluster_secret",
+          "reconcile_host_resource_policy",
+          "reconcile_postgresql_service",
+          "reconcile_serving_assignment",
+          "recover_bridge",
+          "register_kubernetes_cluster",
+          "release_postgresql_service_relay",
+          "remove_host_file",
+          "remove_local_llm_k3s_proxy",
+          "remove_local_llm_model",
+          "remove_local_llm_relay",
+          "remove_postgresql_service",
+          "remove_public_mcp_quick_tunnel",
+          "remove_sqlite_database",
+          "remove_vm_network_device",
+          "render_cluster_package",
+          "reset_virtualization_stack",
+          "resize_console",
+          "restart_host_service",
+          "restart_vm",
+          "run_host_command",
+          "run_host_local_recipe",
+          "run_host_plan",
+          "run_instance_command",
+          "run_runtime_recipe",
+          "run_tunnel_recipe",
+          "send_console_input",
+          "set_host_service_state",
+          "shutdown_host_vm_subsystem",
+          "stage_build_context",
+          "start_local_llm_runtime",
+          "start_vm",
+          "stop_local_llm_runtime",
+          "stop_vm",
+          "stream_vm_console",
+          "terminate_host_vm_distribution",
+          "trim_guest_storage",
+          "uninstall_virtualization_stack",
+          "uninstall_provider_tools",
+          "update_vm_resources",
+          "validate_host_local_recipe",
+          "validate_host_plan",
+          "validate_runtime_recipe",
+          "validate_tunnel_recipe"
+        ],
+        "system": {
+          "cgroupControllers": [
+            "cpu",
+            "memory",
+            "pids"
+          ],
+          "cgroupMemory": {
+            "limitBytes": 0,
+            "usageBytes": 64741376
+          },
+          "cpuCount": 8,
+          "cpuLoad15m": 0.99,
+          "cpuLoad1m": 1.26,
+          "cpuLoad5m": 1.17,
+          "diskAvailableBytes": 96301387776,
+          "diskFilesystems": [
+            {
+              "availableBytes": 96301387776,
+              "mount": "/",
+              "pressure": "normal",
+              "totalBytes": 102888095744
+            },
+            {
+              "availableBytes": 96301387776,
+              "mount": "/home/m31cli",
+              "pressure": "normal",
+              "totalBytes": 102888095744
+            }
+          ],
+          "diskMount": "/",
+          "diskPressure": "normal",
+          "diskTotalBytes": 102888095744,
+          "enforcement": "enforced",
+          "memoryAvailableBytes": 15295049728,
+          "memoryEvents": {
+            "high": 0,
+            "low": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_group_kill": 0,
+            "oom_kill": 0
+          },
+          "memoryFreeBytes": 15295049728,
+          "memoryPressure": "normal",
+          "memoryTotalBytes": 16768626688,
+          "memoryUsageBytes": 64741376,
+          "memoryUsedBytes": 1473576960,
+          "psi": {
+            "cpu": {
+              "someAvg10": 0.04,
+              "someAvg300": 0.08,
+              "someAvg60": 0.05,
+              "someTotalUsec": 87130901
+            },
+            "io": {
+              "fullAvg10": 13.05,
+              "fullAvg300": 11.22,
+              "fullAvg60": 11.09,
+              "fullTotalUsec": 589177297,
+              "someAvg10": 13.09,
+              "someAvg300": 11.4,
+              "someAvg60": 11.17,
+              "someTotalUsec": 601936300
+            },
+            "memory": {
+              "fullTotalUsec": 66,
+              "someTotalUsec": 66
+            }
+          },
+          "resourceAdmission": {
+            "checkedAt": "2026-11-27T03:28:47Z",
+            "currentUsage": {
+              "diskAvailableBytes": 96301387776,
+              "diskBytes": 6586707968,
+              "memoryAvailableBytes": 15295049728,
+              "memoryBytes": 1473576960,
+              "tasks": 15
+            },
+            "diskAvailableBytes": 96301387776,
+            "diskPressure": "normal",
+            "effectiveLimits": {
+              "cpuCores": 6,
+              "diskBytes": 102888095744,
+              "memoryBytes": 11811160064,
+              "tasks": 4096
+            },
+            "enforcement": "unknown",
+            "heavyInFlight": 0,
+            "memoryAvailableBytes": 15295049728,
+            "memoryEvents": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "normalInFlight": 0,
+            "policyRevision": "opute-host-resource-policy.v2",
+            "pressure": "normal",
+            "psi": {
+              "cpu": {
+                "someAvg10": 0.04,
+                "someAvg300": 0.08,
+                "someAvg60": 0.05,
+                "someTotalUsec": 87130901
+              },
+              "io": {
+                "fullAvg10": 13.05,
+                "fullAvg300": 11.22,
+                "fullAvg60": 11.09,
+                "fullTotalUsec": 589177297,
+                "someAvg10": 13.09,
+                "someAvg300": 11.4,
+                "someAvg60": 11.17,
+                "someTotalUsec": 601936300
+              },
+              "memory": {
+                "fullTotalUsec": 66,
+                "someTotalUsec": 66
+              }
+            },
+            "queue": {
+              "heavyActive": 0,
+              "heavyQueued": 0,
+              "normalActive": 0,
+              "queued": 0
+            },
+            "queued": 0,
+            "reason": "",
+            "reservations": {
+              "count": 1,
+              "cpuCores": 2,
+              "memoryBytes": 2147483648,
+              "tasks": 8
+            }
+          },
+          "tasks": {
+            "current": 15,
+            "limit": 42117
+          }
+        },
+        "systemctlPath": "/usr/bin/systemctl",
+        "uri": "host:local:m31-cli-check"
+      },
+      "startedAt": "2026-11-27T03:28:47.283149388Z",
+      "status": "applied"
+    }
+  },
+  "planId": "com.opute.k3s.managed",
+  "recipe": {
+    "activate": true,
+    "activation": {
+      "capability": "kubernetes",
+      "inputBindings": {
+        "providerId": "com.opute.k3s"
+      },
+      "servingContract": "kubernetes.v1"
+    },
+    "activationInputNames": {
+      "providerId": "providerId"
+    },
+    "contractVersion": "runtime-recipe.v1",
+    "expandedPlan": {
+      "contractVersion": "host-plan.v1",
+      "converge": {},
+      "defaults": {
+        "retry": {}
+      },
+      "generation": 1,
+      "idempotencyKey": "com.opute.k3s-com.opute.k3s-default",
+      "nodes": [
+        {
+          "action": {
+            "tool": "get_host_info"
+          },
+          "id": "host",
+          "retry": {}
+        }
+      ],
+      "planId": "com.opute.k3s.managed",
+      "variables": {
+        "inputs": {
+          "activationNonce": "default",
+          "providerId": "com.opute.k3s"
+        },
+        "tenantId": "local"
+      }
+    },
+    "inputs": {
+      "activationNonce": "default",
+      "providerId": "com.opute.k3s"
+    },
+    "outputMapping": null,
+    "providerGenerationId": "com.opute.k3s-1",
+    "providerId": "com.opute.k3s",
+    "providerManifest": {
+      "hostAgent": {},
+      "provider": {
+        "id": "com.opute.k3s",
+        "version": "1.0.2"
+      },
+      "provides": [
+        {
+          "id": "opute.capability.kubernetes.v1",
+          "version": 1
+        }
+      ],
+      "recipes": [
+        {
+          "id": "com.opute.k3s.managed",
+          "mode": "kubernetes",
+          "source": {
+            "revision": "working-tree",
+            "sha256": "sha256:91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788",
+            "uri": "recipes/kubernetes.yaml"
+          }
+        }
+      ],
+      "schema": "opute-provider-install-manifest.v1",
+      "services": [
+        {
+          "capabilityId": "opute.capability.kubernetes.v1",
+          "id": "opute.capability.kubernetes",
+          "operations": [
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.validate",
+              "idempotent": true,
+              "inputSchema": {
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.provision",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "advertiseAddress": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "clusterInit": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "flannelIface": {
+                    "maxLength": 15,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "nodeIp": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^(vm|container):[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  },
+                  "tlsSan": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "version": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "version"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "vm"
+                },
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "container"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.status",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.configure-registry",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "endpoint": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "insecure": {
+                    "type": "boolean"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "registry": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "endpoint"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.restart",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.remove",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.apply-manifest",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "manifest": {
+                    "maxLength": 4194304,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "manifest"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.put-secret",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "data": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object",
+                    "writeOnly": true
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "namespace",
+                  "name",
+                  "data"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.get-resource",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "resourceKind": {
+                    "type": "string"
+                  },
+                  "resourceName": {
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "kind",
+                  "resourceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.delete-resource",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "resourceKind": {
+                    "type": "string"
+                  },
+                  "resourceName": {
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "kind",
+                  "resourceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.get-resource-status",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "resourceKind": {
+                    "type": "string"
+                  },
+                  "resourceName": {
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "resourceKind",
+                  "resourceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.list-events",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "limit": {
+                    "maximum": 200,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.list-clusters",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.get-cluster-info",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.inspect-membership",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "endpoint": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "expectedRole": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "expectedServers": {
+                    "maximum": 9,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "requireEmbeddedEtcd": {
+                    "type": "boolean"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.prepare-ha",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "endpoint": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "expectedRole": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "expectedServers": {
+                    "maximum": 9,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "requireEmbeddedEtcd": {
+                    "type": "boolean"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.prepare-join",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "destinationHostId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "destinationPublicKey": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "expiresInMs": {
+                    "maximum": 86400000,
+                    "minimum": 1000,
+                    "type": "integer"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "role": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "destinationHostId"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.get-join-receiver-key",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^(vm|container):[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "vm"
+                },
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "container"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.redeem-join",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "destinationHostId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "redemptionRef": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "sealedJoinMaterial": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "sourceTargetUri": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^(vm|container):[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "redemptionRef"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "vm"
+                },
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "container"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.join-node",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "advertiseAddress": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "clusterInit": {
+                    "const": false,
+                    "type": "boolean"
+                  },
+                  "flannelIface": {
+                    "maxLength": 15,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "joinToken": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "nodeIp": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "redemptionRef": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "role": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "serverAddress": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^(vm|container):[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  },
+                  "tlsSan": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "version": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "redemptionRef",
+                  "serverAddress",
+                  "clusterInit",
+                  "role"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "vm"
+                },
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "container"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.ensure-ha-endpoint",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "endpoint": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "endpoint"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.remove-node",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "nodeName": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "role": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "nodeName",
+                  "role"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.recover-quorum",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "acknowledgeSingleMemberReset": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "acknowledgeSingleMemberReset"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.exec-command",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "kubectlArgs": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "stdin": {
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "kubectlArgs"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.inspect-guest-storage",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "extraKeepTags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "includeRegistry": {
+                    "type": "boolean"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.prune-unused-images",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "dryRun": {
+                    "type": "boolean"
+                  },
+                  "extraKeepTags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "minAgeSeconds": {
+                    "minimum": 3600,
+                    "type": "integer"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "heavy",
+                "cpuCores": 2,
+                "memoryBytes": 2147483648,
+                "tasks": 8
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.garbage-collect-registry",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "dryRun": {
+                    "type": "boolean"
+                  },
+                  "extraKeepTags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "includeRegistry": {
+                    "type": "boolean"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "registryName": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "registryNamespace": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "heavy",
+                "cpuCores": 2,
+                "memoryBytes": 2147483648,
+                "tasks": 8
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.trim-guest-storage",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            }
+          ],
+          "version": 1
+        }
+      ],
+      "teardown": {
+        "effect": "destructive",
+        "id": "opute.provider.teardown",
+        "idempotent": true,
+        "inputSchema": {
+          "properties": {
+            "inputs": {
+              "properties": {
+                "phase": {
+                  "enum": [
+                    "prepare",
+                    "finalize"
+                  ],
+                  "type": "string"
+                },
+                "scope": {
+                  "enum": [
+                    "user",
+                    "system"
+                  ],
+                  "type": "string"
+                },
+                "serviceFile": {
+                  "type": "string"
+                },
+                "serviceName": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "inputs"
+          ],
+          "type": "object"
+        },
+        "outputSchema": {
+          "required": [
+            "contractVersion",
+            "plan"
+          ],
+          "type": "object"
+        },
+        "resourceCost": {
+          "class": "control"
+        },
+        "resourceKinds": [
+          "service"
+        ],
+        "supportsReadiness": true,
+        "taskSupport": "sync_only",
+        "version": 1
+      },
+      "validation": {
+        "capability": "opute.capability.kubernetes.v1",
+        "operation": "opute.capability.kubernetes.validate"
+      }
+    },
+    "providerVersion": "1.0.2",
+    "recipeDocument": {
+      "activation": {
+        "capability": "kubernetes",
+        "inputBindings": {
+          "providerId": "providerId"
+        },
+        "servingContract": "kubernetes.v1"
+      },
+      "compatibility": {
+        "requiredTools": [
+          "get_host_info"
+        ]
+      },
+      "contractVersion": "runtime-recipe.v1",
+      "inputs": {
+        "activationNonce": {
+          "default": "default",
+          "schema": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "providerId": {
+          "default": "com.opute.k3s",
+          "schema": {
+            "const": "com.opute.k3s",
+            "type": "string"
+          }
+        }
+      },
+      "plan": {
+        "contractVersion": "host-plan.v1",
+        "converge": {},
+        "defaults": {
+          "retry": {}
+        },
+        "generation": 1,
+        "idempotencyKey": "com.opute.k3s-${vars.inputs.providerId}-${vars.inputs.activationNonce}",
+        "nodes": [
+          {
+            "action": {
+              "tool": "get_host_info"
+            },
+            "id": "host",
+            "retry": {}
+          }
+        ],
+        "planId": "com.opute.k3s.managed"
+      },
+      "recipeId": "com.opute.k3s.managed",
+      "recipeVersion": "1.0.0",
+      "runtime": {
+        "capabilities": [
+          "kubernetes"
+        ],
+        "id": "provider-kubernetes",
+        "servingContract": "kubernetes.v1"
+      }
+    },
+    "recipeHash": "sha256:ef4c812066781196f5d12879767a8a74fdc24b8a9a41f923877d9bbc3a446b3d",
+    "recipeId": "com.opute.k3s.managed",
+    "recipeVersion": "1.0.0",
+    "runtime": {
+      "capabilities": [
+        "kubernetes"
+      ],
+      "id": "provider-kubernetes",
+      "servingContract": "kubernetes.v1"
+    },
+    "runtimeId": "provider-kubernetes",
+    "secretInputs": [],
+    "source": {
+      "kind": "path",
+      "rawSha256": "sha256:91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788",
+      "recipeHash": "sha256:ef4c812066781196f5d12879767a8a74fdc24b8a9a41f923877d9bbc3a446b3d",
+      "source": "/home/m31cli/recipes/kubernetes.yaml"
+    }
+  },
+  "runId": "cea6cf7a-82a9-4a0f-9487-e5a7494ad920",
+  "state": {
+    "context": {},
+    "error": "",
+    "generation": 1,
+    "nodes": {
+      "host": {
+        "attempts": 1,
+        "completedAt": "2026-11-27T03:28:47.407035097Z",
+        "id": "host",
+        "output": {
+          "agent": {
+            "agentId": "m31-cli-check",
+            "homeDir": "/home/m31cli",
+            "instanceId": "standalone",
+            "instanceRoot": "/home/m31cli/.config/opute/instances/standalone",
+            "mcpEndpoint": "http://127.0.0.1:3014/mcp",
+            "providerRoot": "/home/m31cli/.local/share/opute/providers",
+            "serviceScope": "user",
+            "serviceUnitDir": "/home/m31cli/.config/systemd/user",
+            "serviceWantedBy": "default.target"
+          },
+          "hostName": "opute-parity-t2",
+          "lxcBinaryPath": "/usr/bin/incus",
+          "providerId": "incus",
+          "supportedTools": [
+            "apply_manifest",
+            "build_and_push_oci_image",
+            "check_local_llm_prerequisites",
+            "cleanup_container_storage",
+            "compact_host_vm_disk",
+            "configure_agent_connection",
+            "configure_local_llm_model",
+            "configure_local_llm_runtime",
+            "configure_network",
+            "configure_oci_storage",
+            "create_vm",
+            "delete_cluster_resource",
+            "delete_oci_registry",
+            "delete_vm",
+            "detect_host_platform",
+            "diagnose_bridge",
+            "discover_service_ingress",
+            "ensure_container_engine",
+            "ensure_host_artifact",
+            "ensure_host_file",
+            "ensure_host_service_supervisor",
+            "ensure_host_tool",
+            "ensure_local_llm_k3s_proxy",
+            "ensure_local_llm_relay",
+            "ensure_local_llm_server_binary",
+            "ensure_oci_builder",
+            "ensure_public_mcp_quick_tunnel",
+            "ensure_public_mcp_tunnel",
+            "ensure_sqlite_database",
+            "exec_cluster_command",
+            "extract_host_archive",
+            "garbage_collect_cluster_registry",
+            "get_capability_catalog",
+            "get_host_capacity",
+            "get_host_info",
+            "get_host_plan_run",
+            "get_cluster_resource",
+            "get_cluster_resource_status",
+            "get_oci_registry_status",
+            "get_postgresql_service_status",
+            "get_runtime_recipe_run",
+            "get_sqlite_database_status",
+            "get_tunnel_run",
+            "get_vm_info",
+            "inspect_container_storage",
+            "inspect_guest_storage",
+            "inspect_host_file",
+            "inspect_host_service",
+            "inspect_host_service_supervisor",
+            "inspect_workload",
+            "install_cluster_agent",
+            "install_cluster_package",
+            "install_virtualization_stack",
+            "install_local_llm_model",
+            "install_oci_registry",
+            "install_provider_tools",
+            "list_agents",
+            "list_certificate_issuers",
+            "list_configmap_keys",
+            "list_deployments",
+            "list_host_services",
+            "list_ingress_classes",
+            "list_cluster_events",
+            "list_compute_clusters",
+            "list_local_llm_models",
+            "list_namespaces",
+            "list_pods",
+            "list_secret_keys",
+            "list_services",
+            "list_storage_classes",
+            "list_vms",
+            "open_assistant_session",
+            "opute.provider.install",
+            "opute.provider.reload",
+            "opute.provider.status",
+            "opute.provider.teardown",
+            "opute.provider.validate",
+            "prepare_host_agent_artifacts",
+            "probe_gpu_container",
+            "probe_http_endpoint",
+            "probe_virtualization_gpu",
+            "probe_local_llm",
+            "probe_openai_compatible_server",
+            "provision_container",
+            "provision_vm",
+            "prune_unused_cluster_images",
+            "put_cluster_secret",
+            "reconcile_host_resource_policy",
+            "reconcile_postgresql_service",
+            "reconcile_serving_assignment",
+            "recover_bridge",
+            "register_kubernetes_cluster",
+            "release_postgresql_service_relay",
+            "remove_host_file",
+            "remove_local_llm_k3s_proxy",
+            "remove_local_llm_model",
+            "remove_local_llm_relay",
+            "remove_postgresql_service",
+            "remove_public_mcp_quick_tunnel",
+            "remove_sqlite_database",
+            "remove_vm_network_device",
+            "render_cluster_package",
+            "reset_virtualization_stack",
+            "resize_console",
+            "restart_host_service",
+            "restart_vm",
+            "run_host_command",
+            "run_host_local_recipe",
+            "run_host_plan",
+            "run_instance_command",
+            "run_runtime_recipe",
+            "run_tunnel_recipe",
+            "send_console_input",
+            "set_host_service_state",
+            "shutdown_host_vm_subsystem",
+            "stage_build_context",
+            "start_local_llm_runtime",
+            "start_vm",
+            "stop_local_llm_runtime",
+            "stop_vm",
+            "stream_vm_console",
+            "terminate_host_vm_distribution",
+            "trim_guest_storage",
+            "uninstall_virtualization_stack",
+            "uninstall_provider_tools",
+            "update_vm_resources",
+            "validate_host_local_recipe",
+            "validate_host_plan",
+            "validate_runtime_recipe",
+            "validate_tunnel_recipe"
+          ],
+          "system": {
+            "cgroupControllers": [
+              "cpu",
+              "memory",
+              "pids"
+            ],
+            "cgroupMemory": {
+              "limitBytes": 0,
+              "usageBytes": 64741376
+            },
+            "cpuCount": 8,
+            "cpuLoad15m": 0.99,
+            "cpuLoad1m": 1.26,
+            "cpuLoad5m": 1.17,
+            "diskAvailableBytes": 96301387776,
+            "diskFilesystems": [
+              {
+                "availableBytes": 96301387776,
+                "mount": "/",
+                "pressure": "normal",
+                "totalBytes": 102888095744
+              },
+              {
+                "availableBytes": 96301387776,
+                "mount": "/home/m31cli",
+                "pressure": "normal",
+                "totalBytes": 102888095744
+              }
+            ],
+            "diskMount": "/",
+            "diskPressure": "normal",
+            "diskTotalBytes": 102888095744,
+            "enforcement": "enforced",
+            "memoryAvailableBytes": 15295049728,
+            "memoryEvents": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "memoryFreeBytes": 15295049728,
+            "memoryPressure": "normal",
+            "memoryTotalBytes": 16768626688,
+            "memoryUsageBytes": 64741376,
+            "memoryUsedBytes": 1473576960,
+            "psi": {
+              "cpu": {
+                "someAvg10": 0.04,
+                "someAvg300": 0.08,
+                "someAvg60": 0.05,
+                "someTotalUsec": 87130901
+              },
+              "io": {
+                "fullAvg10": 13.05,
+                "fullAvg300": 11.22,
+                "fullAvg60": 11.09,
+                "fullTotalUsec": 589177297,
+                "someAvg10": 13.09,
+                "someAvg300": 11.4,
+                "someAvg60": 11.17,
+                "someTotalUsec": 601936300
+              },
+              "memory": {
+                "fullTotalUsec": 66,
+                "someTotalUsec": 66
+              }
+            },
+            "resourceAdmission": {
+              "checkedAt": "2026-11-27T03:28:47Z",
+              "currentUsage": {
+                "diskAvailableBytes": 96301387776,
+                "diskBytes": 6586707968,
+                "memoryAvailableBytes": 15295049728,
+                "memoryBytes": 1473576960,
+                "tasks": 15
+              },
+              "diskAvailableBytes": 96301387776,
+              "diskPressure": "normal",
+              "effectiveLimits": {
+                "cpuCores": 6,
+                "diskBytes": 102888095744,
+                "memoryBytes": 11811160064,
+                "tasks": 4096
+              },
+              "enforcement": "unknown",
+              "heavyInFlight": 0,
+              "memoryAvailableBytes": 15295049728,
+              "memoryEvents": {
+                "high": 0,
+                "low": 0,
+                "max": 0,
+                "oom": 0,
+                "oom_group_kill": 0,
+                "oom_kill": 0
+              },
+              "normalInFlight": 0,
+              "policyRevision": "opute-host-resource-policy.v2",
+              "pressure": "normal",
+              "psi": {
+                "cpu": {
+                  "someAvg10": 0.04,
+                  "someAvg300": 0.08,
+                  "someAvg60": 0.05,
+                  "someTotalUsec": 87130901
+                },
+                "io": {
+                  "fullAvg10": 13.05,
+                  "fullAvg300": 11.22,
+                  "fullAvg60": 11.09,
+                  "fullTotalUsec": 589177297,
+                  "someAvg10": 13.09,
+                  "someAvg300": 11.4,
+                  "someAvg60": 11.17,
+                  "someTotalUsec": 601936300
+                },
+                "memory": {
+                  "fullTotalUsec": 66,
+                  "someTotalUsec": 66
+                }
+              },
+              "queue": {
+                "heavyActive": 0,
+                "heavyQueued": 0,
+                "normalActive": 0,
+                "queued": 0
+              },
+              "queued": 0,
+              "reason": "",
+              "reservations": {
+                "count": 1,
+                "cpuCores": 2,
+                "memoryBytes": 2147483648,
+                "tasks": 8
+              }
+            },
+            "tasks": {
+              "current": 15,
+              "limit": 42117
+            }
+          },
+          "systemctlPath": "/usr/bin/systemctl",
+          "uri": "host:local:m31-cli-check"
+        },
+        "startedAt": "2026-11-27T03:28:47.283149388Z",
+        "status": "applied"
+      }
+    },
+    "outputs": {
+      "activation": {
+        "redacted": true
+      },
+      "host": {
+        "agent": {
+          "agentId": "m31-cli-check",
+          "homeDir": "/home/m31cli",
+          "instanceId": "standalone",
+          "instanceRoot": "/home/m31cli/.config/opute/instances/standalone",
+          "mcpEndpoint": "http://127.0.0.1:3014/mcp",
+          "providerRoot": "/home/m31cli/.local/share/opute/providers",
+          "serviceScope": "user",
+          "serviceUnitDir": "/home/m31cli/.config/systemd/user",
+          "serviceWantedBy": "default.target"
+        },
+        "hostName": "opute-parity-t2",
+        "lxcBinaryPath": "/usr/bin/incus",
+        "providerId": "incus",
+        "supportedTools": [
+          "apply_manifest",
+          "build_and_push_oci_image",
+          "check_local_llm_prerequisites",
+          "cleanup_container_storage",
+          "compact_host_vm_disk",
+          "configure_agent_connection",
+          "configure_local_llm_model",
+          "configure_local_llm_runtime",
+          "configure_network",
+          "configure_oci_storage",
+          "create_vm",
+          "delete_cluster_resource",
+          "delete_oci_registry",
+          "delete_vm",
+          "detect_host_platform",
+          "diagnose_bridge",
+          "discover_service_ingress",
+          "ensure_container_engine",
+          "ensure_host_artifact",
+          "ensure_host_file",
+          "ensure_host_service_supervisor",
+          "ensure_host_tool",
+          "ensure_local_llm_k3s_proxy",
+          "ensure_local_llm_relay",
+          "ensure_local_llm_server_binary",
+          "ensure_oci_builder",
+          "ensure_public_mcp_quick_tunnel",
+          "ensure_public_mcp_tunnel",
+          "ensure_sqlite_database",
+          "exec_cluster_command",
+          "extract_host_archive",
+          "garbage_collect_cluster_registry",
+          "get_capability_catalog",
+          "get_host_capacity",
+          "get_host_info",
+          "get_host_plan_run",
+          "get_cluster_resource",
+          "get_cluster_resource_status",
+          "get_oci_registry_status",
+          "get_postgresql_service_status",
+          "get_runtime_recipe_run",
+          "get_sqlite_database_status",
+          "get_tunnel_run",
+          "get_vm_info",
+          "inspect_container_storage",
+          "inspect_guest_storage",
+          "inspect_host_file",
+          "inspect_host_service",
+          "inspect_host_service_supervisor",
+          "inspect_workload",
+          "install_cluster_agent",
+          "install_cluster_package",
+          "install_virtualization_stack",
+          "install_local_llm_model",
+          "install_oci_registry",
+          "install_provider_tools",
+          "list_agents",
+          "list_certificate_issuers",
+          "list_configmap_keys",
+          "list_deployments",
+          "list_host_services",
+          "list_ingress_classes",
+          "list_cluster_events",
+          "list_compute_clusters",
+          "list_local_llm_models",
+          "list_namespaces",
+          "list_pods",
+          "list_secret_keys",
+          "list_services",
+          "list_storage_classes",
+          "list_vms",
+          "open_assistant_session",
+          "opute.provider.install",
+          "opute.provider.reload",
+          "opute.provider.status",
+          "opute.provider.teardown",
+          "opute.provider.validate",
+          "prepare_host_agent_artifacts",
+          "probe_gpu_container",
+          "probe_http_endpoint",
+          "probe_virtualization_gpu",
+          "probe_local_llm",
+          "probe_openai_compatible_server",
+          "provision_container",
+          "provision_vm",
+          "prune_unused_cluster_images",
+          "put_cluster_secret",
+          "reconcile_host_resource_policy",
+          "reconcile_postgresql_service",
+          "reconcile_serving_assignment",
+          "recover_bridge",
+          "register_kubernetes_cluster",
+          "release_postgresql_service_relay",
+          "remove_host_file",
+          "remove_local_llm_k3s_proxy",
+          "remove_local_llm_model",
+          "remove_local_llm_relay",
+          "remove_postgresql_service",
+          "remove_public_mcp_quick_tunnel",
+          "remove_sqlite_database",
+          "remove_vm_network_device",
+          "render_cluster_package",
+          "reset_virtualization_stack",
+          "resize_console",
+          "restart_host_service",
+          "restart_vm",
+          "run_host_command",
+          "run_host_local_recipe",
+          "run_host_plan",
+          "run_instance_command",
+          "run_runtime_recipe",
+          "run_tunnel_recipe",
+          "send_console_input",
+          "set_host_service_state",
+          "shutdown_host_vm_subsystem",
+          "stage_build_context",
+          "start_local_llm_runtime",
+          "start_vm",
+          "stop_local_llm_runtime",
+          "stop_vm",
+          "stream_vm_console",
+          "terminate_host_vm_distribution",
+          "trim_guest_storage",
+          "uninstall_virtualization_stack",
+          "uninstall_provider_tools",
+          "update_vm_resources",
+          "validate_host_local_recipe",
+          "validate_host_plan",
+          "validate_runtime_recipe",
+          "validate_tunnel_recipe"
+        ],
+        "system": {
+          "cgroupControllers": [
+            "cpu",
+            "memory",
+            "pids"
+          ],
+          "cgroupMemory": {
+            "limitBytes": 0,
+            "usageBytes": 64741376
+          },
+          "cpuCount": 8,
+          "cpuLoad15m": 0.99,
+          "cpuLoad1m": 1.26,
+          "cpuLoad5m": 1.17,
+          "diskAvailableBytes": 96301387776,
+          "diskFilesystems": [
+            {
+              "availableBytes": 96301387776,
+              "mount": "/",
+              "pressure": "normal",
+              "totalBytes": 102888095744
+            },
+            {
+              "availableBytes": 96301387776,
+              "mount": "/home/m31cli",
+              "pressure": "normal",
+              "totalBytes": 102888095744
+            }
+          ],
+          "diskMount": "/",
+          "diskPressure": "normal",
+          "diskTotalBytes": 102888095744,
+          "enforcement": "enforced",
+          "memoryAvailableBytes": 15295049728,
+          "memoryEvents": {
+            "high": 0,
+            "low": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_group_kill": 0,
+            "oom_kill": 0
+          },
+          "memoryFreeBytes": 15295049728,
+          "memoryPressure": "normal",
+          "memoryTotalBytes": 16768626688,
+          "memoryUsageBytes": 64741376,
+          "memoryUsedBytes": 1473576960,
+          "psi": {
+            "cpu": {
+              "someAvg10": 0.04,
+              "someAvg300": 0.08,
+              "someAvg60": 0.05,
+              "someTotalUsec": 87130901
+            },
+            "io": {
+              "fullAvg10": 13.05,
+              "fullAvg300": 11.22,
+              "fullAvg60": 11.09,
+              "fullTotalUsec": 589177297,
+              "someAvg10": 13.09,
+              "someAvg300": 11.4,
+              "someAvg60": 11.17,
+              "someTotalUsec": 601936300
+            },
+            "memory": {
+              "fullTotalUsec": 66,
+              "someTotalUsec": 66
+            }
+          },
+          "resourceAdmission": {
+            "checkedAt": "2026-11-27T03:28:47Z",
+            "currentUsage": {
+              "diskAvailableBytes": 96301387776,
+              "diskBytes": 6586707968,
+              "memoryAvailableBytes": 15295049728,
+              "memoryBytes": 1473576960,
+              "tasks": 15
+            },
+            "diskAvailableBytes": 96301387776,
+            "diskPressure": "normal",
+            "effectiveLimits": {
+              "cpuCores": 6,
+              "diskBytes": 102888095744,
+              "memoryBytes": 11811160064,
+              "tasks": 4096
+            },
+            "enforcement": "unknown",
+            "heavyInFlight": 0,
+            "memoryAvailableBytes": 15295049728,
+            "memoryEvents": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "normalInFlight": 0,
+            "policyRevision": "opute-host-resource-policy.v2",
+            "pressure": "normal",
+            "psi": {
+              "cpu": {
+                "someAvg10": 0.04,
+                "someAvg300": 0.08,
+                "someAvg60": 0.05,
+                "someTotalUsec": 87130901
+              },
+              "io": {
+                "fullAvg10": 13.05,
+                "fullAvg300": 11.22,
+                "fullAvg60": 11.09,
+                "fullTotalUsec": 589177297,
+                "someAvg10": 13.09,
+                "someAvg300": 11.4,
+                "someAvg60": 11.17,
+                "someTotalUsec": 601936300
+              },
+              "memory": {
+                "fullTotalUsec": 66,
+                "someTotalUsec": 66
+              }
+            },
+            "queue": {
+              "heavyActive": 0,
+              "heavyQueued": 0,
+              "normalActive": 0,
+              "queued": 0
+            },
+            "queued": 0,
+            "reason": "",
+            "reservations": {
+              "count": 1,
+              "cpuCores": 2,
+              "memoryBytes": 2147483648,
+              "tasks": 8
+            }
+          },
+          "tasks": {
+            "current": 15,
+            "limit": 42117
+          }
+        },
+        "systemctlPath": "/usr/bin/systemctl",
+        "uri": "host:local:m31-cli-check"
+      }
+    },
+    "planId": "com.opute.k3s.managed",
+    "runId": "cea6cf7a-82a9-4a0f-9487-e5a7494ad920",
+    "status": "completed"
+  },
+  "status": "completed",
+  "updatedAt": "2026-11-27T03:28:47.513378322Z"
+}
+### install exit=0
+
+### providerStatus: ./host-agent provider status --provider com.opute.k3s
+{
+  "active": true,
+  "connected": true,
+  "generation": {
+    "ActiveAt": "2026-11-27T03:28:47.479139353Z",
+    "CatalogRevision": "sha256:0f60ffbacb2cce558ed18f63fb5f85b18cfff301facf045124320a2df9d3ec3c",
+    "CreatedAt": "2026-11-27T03:28:47.145556747Z",
+    "Endpoint": "http://127.0.0.1:4331/mcp",
+    "ID": "com.opute.k3s-1",
+    "ManifestHash": "sha256:de10fd025fe8ac3ad35d387a8cfe8622d2cf689f3183b671ae8561ca591e14cc",
+    "Provider": {
+      "id": "com.opute.k3s",
+      "version": "1.0.2"
+    },
+    "Sessions": 0,
+    "State": "active"
+  },
+  "providerId": "com.opute.k3s"
+}
+### providerStatus exit=0
+
+### validateProvider: ./host-agent provider validate --provider com.opute.k3s
+{
+  "contractVersion": "opute.capability.kubernetes.v1",
+  "ready": true
+}
+### validateProvider exit=0
+
+### reload: ./host-agent provider reload --allow-mutations --activate --source /home/m31cli/provider.json
+{
+  "activeRuntime": {
+    "activatedAt": "2026-11-27T03:28:48.286805765Z",
+    "capability": "kubernetes",
+    "inputBindings": {
+      "providerId": "com.opute.k3s"
+    },
+    "observation": {
+      "contractVersion": "opute.capability.kubernetes.v1",
+      "ready": true
+    },
+    "recipeHash": "sha256:ef4c812066781196f5d12879767a8a74fdc24b8a9a41f923877d9bbc3a446b3d",
+    "recipeId": "com.opute.k3s.managed",
+    "recipeVersion": "1.0.0",
+    "runId": "cea6cf7a-82a9-4a0f-9487-e5a7494ad920",
+    "runtime": "com.opute.k3s",
+    "servingContract": "kubernetes.v1"
+  },
+  "catalogRevision": "sha256:d67e02ecc64d588b4a8d08ac1f56cac16706e47a7555c681298470ff5bdce909",
+  "createdAt": "2026-11-27T03:28:47.212948437Z",
+  "documentHash": "sha256:8cc9d57b1e353a4112a7076efae9da9cf5e867b00ba4d6e1cd1583dbdb50e33b",
+  "generation": 1,
+  "idempotencyKey": "com.opute.k3s-com.opute.k3s-default",
+  "nodes": {
+    "host": {
+      "attempts": 1,
+      "completedAt": "2026-11-27T03:28:47.407035097Z",
+      "id": "host",
+      "output": {
+        "agent": {
+          "agentId": "m31-cli-check",
+          "homeDir": "/home/m31cli",
+          "instanceId": "standalone",
+          "instanceRoot": "/home/m31cli/.config/opute/instances/standalone",
+          "mcpEndpoint": "http://127.0.0.1:3014/mcp",
+          "providerRoot": "/home/m31cli/.local/share/opute/providers",
+          "serviceScope": "user",
+          "serviceUnitDir": "/home/m31cli/.config/systemd/user",
+          "serviceWantedBy": "default.target"
+        },
+        "hostName": "opute-parity-t2",
+        "lxcBinaryPath": "/usr/bin/incus",
+        "providerId": "incus",
+        "supportedTools": [
+          "apply_manifest",
+          "build_and_push_oci_image",
+          "check_local_llm_prerequisites",
+          "cleanup_container_storage",
+          "compact_host_vm_disk",
+          "configure_agent_connection",
+          "configure_local_llm_model",
+          "configure_local_llm_runtime",
+          "configure_network",
+          "configure_oci_storage",
+          "create_vm",
+          "delete_cluster_resource",
+          "delete_oci_registry",
+          "delete_vm",
+          "detect_host_platform",
+          "diagnose_bridge",
+          "discover_service_ingress",
+          "ensure_container_engine",
+          "ensure_host_artifact",
+          "ensure_host_file",
+          "ensure_host_service_supervisor",
+          "ensure_host_tool",
+          "ensure_local_llm_k3s_proxy",
+          "ensure_local_llm_relay",
+          "ensure_local_llm_server_binary",
+          "ensure_oci_builder",
+          "ensure_public_mcp_quick_tunnel",
+          "ensure_public_mcp_tunnel",
+          "ensure_sqlite_database",
+          "exec_cluster_command",
+          "extract_host_archive",
+          "garbage_collect_cluster_registry",
+          "get_capability_catalog",
+          "get_host_capacity",
+          "get_host_info",
+          "get_host_plan_run",
+          "get_cluster_resource",
+          "get_cluster_resource_status",
+          "get_oci_registry_status",
+          "get_postgresql_service_status",
+          "get_runtime_recipe_run",
+          "get_sqlite_database_status",
+          "get_tunnel_run",
+          "get_vm_info",
+          "inspect_container_storage",
+          "inspect_guest_storage",
+          "inspect_host_file",
+          "inspect_host_service",
+          "inspect_host_service_supervisor",
+          "inspect_workload",
+          "install_cluster_agent",
+          "install_cluster_package",
+          "install_virtualization_stack",
+          "install_local_llm_model",
+          "install_oci_registry",
+          "install_provider_tools",
+          "list_agents",
+          "list_certificate_issuers",
+          "list_configmap_keys",
+          "list_deployments",
+          "list_host_services",
+          "list_ingress_classes",
+          "list_cluster_events",
+          "list_compute_clusters",
+          "list_local_llm_models",
+          "list_namespaces",
+          "list_pods",
+          "list_secret_keys",
+          "list_services",
+          "list_storage_classes",
+          "list_vms",
+          "open_assistant_session",
+          "opute.provider.install",
+          "opute.provider.reload",
+          "opute.provider.status",
+          "opute.provider.teardown",
+          "opute.provider.validate",
+          "prepare_host_agent_artifacts",
+          "probe_gpu_container",
+          "probe_http_endpoint",
+          "probe_virtualization_gpu",
+          "probe_local_llm",
+          "probe_openai_compatible_server",
+          "provision_container",
+          "provision_vm",
+          "prune_unused_cluster_images",
+          "put_cluster_secret",
+          "reconcile_host_resource_policy",
+          "reconcile_postgresql_service",
+          "reconcile_serving_assignment",
+          "recover_bridge",
+          "register_kubernetes_cluster",
+          "release_postgresql_service_relay",
+          "remove_host_file",
+          "remove_local_llm_k3s_proxy",
+          "remove_local_llm_model",
+          "remove_local_llm_relay",
+          "remove_postgresql_service",
+          "remove_public_mcp_quick_tunnel",
+          "remove_sqlite_database",
+          "remove_vm_network_device",
+          "render_cluster_package",
+          "reset_virtualization_stack",
+          "resize_console",
+          "restart_host_service",
+          "restart_vm",
+          "run_host_command",
+          "run_host_local_recipe",
+          "run_host_plan",
+          "run_instance_command",
+          "run_runtime_recipe",
+          "run_tunnel_recipe",
+          "send_console_input",
+          "set_host_service_state",
+          "shutdown_host_vm_subsystem",
+          "stage_build_context",
+          "start_local_llm_runtime",
+          "start_vm",
+          "stop_local_llm_runtime",
+          "stop_vm",
+          "stream_vm_console",
+          "terminate_host_vm_distribution",
+          "trim_guest_storage",
+          "uninstall_virtualization_stack",
+          "uninstall_provider_tools",
+          "update_vm_resources",
+          "validate_host_local_recipe",
+          "validate_host_plan",
+          "validate_runtime_recipe",
+          "validate_tunnel_recipe"
+        ],
+        "system": {
+          "cgroupControllers": [
+            "cpu",
+            "memory",
+            "pids"
+          ],
+          "cgroupMemory": {
+            "limitBytes": 0,
+            "usageBytes": 64741376
+          },
+          "cpuCount": 8,
+          "cpuLoad15m": 0.99,
+          "cpuLoad1m": 1.26,
+          "cpuLoad5m": 1.17,
+          "diskAvailableBytes": 96301387776,
+          "diskFilesystems": [
+            {
+              "availableBytes": 96301387776,
+              "mount": "/",
+              "pressure": "normal",
+              "totalBytes": 102888095744
+            },
+            {
+              "availableBytes": 96301387776,
+              "mount": "/home/m31cli",
+              "pressure": "normal",
+              "totalBytes": 102888095744
+            }
+          ],
+          "diskMount": "/",
+          "diskPressure": "normal",
+          "diskTotalBytes": 102888095744,
+          "enforcement": "enforced",
+          "memoryAvailableBytes": 15295049728,
+          "memoryEvents": {
+            "high": 0,
+            "low": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_group_kill": 0,
+            "oom_kill": 0
+          },
+          "memoryFreeBytes": 15295049728,
+          "memoryPressure": "normal",
+          "memoryTotalBytes": 16768626688,
+          "memoryUsageBytes": 64741376,
+          "memoryUsedBytes": 1473576960,
+          "psi": {
+            "cpu": {
+              "someAvg10": 0.04,
+              "someAvg300": 0.08,
+              "someAvg60": 0.05,
+              "someTotalUsec": 87130901
+            },
+            "io": {
+              "fullAvg10": 13.05,
+              "fullAvg300": 11.22,
+              "fullAvg60": 11.09,
+              "fullTotalUsec": 589177297,
+              "someAvg10": 13.09,
+              "someAvg300": 11.4,
+              "someAvg60": 11.17,
+              "someTotalUsec": 601936300
+            },
+            "memory": {
+              "fullTotalUsec": 66,
+              "someTotalUsec": 66
+            }
+          },
+          "resourceAdmission": {
+            "checkedAt": "2026-11-27T03:28:47Z",
+            "currentUsage": {
+              "diskAvailableBytes": 96301387776,
+              "diskBytes": 6586707968,
+              "memoryAvailableBytes": 15295049728,
+              "memoryBytes": 1473576960,
+              "tasks": 15
+            },
+            "diskAvailableBytes": 96301387776,
+            "diskPressure": "normal",
+            "effectiveLimits": {
+              "cpuCores": 6,
+              "diskBytes": 102888095744,
+              "memoryBytes": 11811160064,
+              "tasks": 4096
+            },
+            "enforcement": "unknown",
+            "heavyInFlight": 0,
+            "memoryAvailableBytes": 15295049728,
+            "memoryEvents": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "normalInFlight": 0,
+            "policyRevision": "opute-host-resource-policy.v2",
+            "pressure": "normal",
+            "psi": {
+              "cpu": {
+                "someAvg10": 0.04,
+                "someAvg300": 0.08,
+                "someAvg60": 0.05,
+                "someTotalUsec": 87130901
+              },
+              "io": {
+                "fullAvg10": 13.05,
+                "fullAvg300": 11.22,
+                "fullAvg60": 11.09,
+                "fullTotalUsec": 589177297,
+                "someAvg10": 13.09,
+                "someAvg300": 11.4,
+                "someAvg60": 11.17,
+                "someTotalUsec": 601936300
+              },
+              "memory": {
+                "fullTotalUsec": 66,
+                "someTotalUsec": 66
+              }
+            },
+            "queue": {
+              "heavyActive": 0,
+              "heavyQueued": 0,
+              "normalActive": 0,
+              "queued": 0
+            },
+            "queued": 0,
+            "reason": "",
+            "reservations": {
+              "count": 1,
+              "cpuCores": 2,
+              "memoryBytes": 2147483648,
+              "tasks": 8
+            }
+          },
+          "tasks": {
+            "current": 15,
+            "limit": 42117
+          }
+        },
+        "systemctlPath": "/usr/bin/systemctl",
+        "uri": "host:local:m31-cli-check"
+      },
+      "startedAt": "2026-11-27T03:28:47.283149388Z",
+      "status": "satisfied"
+    }
+  },
+  "planId": "com.opute.k3s.managed",
+  "recipe": {
+    "activate": true,
+    "activation": {
+      "capability": "kubernetes",
+      "inputBindings": {
+        "providerId": "com.opute.k3s"
+      },
+      "servingContract": "kubernetes.v1"
+    },
+    "activationInputNames": {
+      "providerId": "providerId"
+    },
+    "contractVersion": "runtime-recipe.v1",
+    "expandedPlan": {
+      "contractVersion": "host-plan.v1",
+      "converge": {},
+      "defaults": {
+        "retry": {}
+      },
+      "generation": 1,
+      "idempotencyKey": "com.opute.k3s-com.opute.k3s-default",
+      "nodes": [
+        {
+          "action": {
+            "tool": "get_host_info"
+          },
+          "id": "host",
+          "retry": {}
+        }
+      ],
+      "planId": "com.opute.k3s.managed",
+      "variables": {
+        "inputs": {
+          "activationNonce": "default",
+          "providerId": "com.opute.k3s"
+        },
+        "tenantId": "local"
+      }
+    },
+    "inputs": {
+      "activationNonce": "default",
+      "providerId": "com.opute.k3s"
+    },
+    "outputMapping": null,
+    "providerGenerationId": "com.opute.k3s-1",
+    "providerId": "com.opute.k3s",
+    "providerManifest": {
+      "hostAgent": {},
+      "provider": {
+        "id": "com.opute.k3s",
+        "version": "1.0.2"
+      },
+      "provides": [
+        {
+          "id": "opute.capability.kubernetes.v1",
+          "version": 1
+        }
+      ],
+      "recipes": [
+        {
+          "id": "com.opute.k3s.managed",
+          "mode": "kubernetes",
+          "source": {
+            "revision": "working-tree",
+            "sha256": "sha256:91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788",
+            "uri": "recipes/kubernetes.yaml"
+          }
+        }
+      ],
+      "schema": "opute-provider-install-manifest.v1",
+      "services": [
+        {
+          "capabilityId": "opute.capability.kubernetes.v1",
+          "id": "opute.capability.kubernetes",
+          "operations": [
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.validate",
+              "idempotent": true,
+              "inputSchema": {
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.provision",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "advertiseAddress": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "clusterInit": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "flannelIface": {
+                    "maxLength": 15,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "nodeIp": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^(vm|container):[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  },
+                  "tlsSan": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "version": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "version"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "vm"
+                },
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "container"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.status",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.configure-registry",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "endpoint": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "insecure": {
+                    "type": "boolean"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "registry": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "endpoint"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.restart",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.remove",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.apply-manifest",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "manifest": {
+                    "maxLength": 4194304,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "manifest"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.put-secret",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "data": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object",
+                    "writeOnly": true
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "namespace",
+                  "name",
+                  "data"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.get-resource",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "resourceKind": {
+                    "type": "string"
+                  },
+                  "resourceName": {
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "kind",
+                  "resourceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.delete-resource",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "resourceKind": {
+                    "type": "string"
+                  },
+                  "resourceName": {
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "kind",
+                  "resourceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.get-resource-status",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "resourceKind": {
+                    "type": "string"
+                  },
+                  "resourceName": {
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "resourceKind",
+                  "resourceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.list-events",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "limit": {
+                    "maximum": 200,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.list-clusters",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.get-cluster-info",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.inspect-membership",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "endpoint": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "expectedRole": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "expectedServers": {
+                    "maximum": 9,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "requireEmbeddedEtcd": {
+                    "type": "boolean"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.prepare-ha",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "endpoint": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "expectedRole": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "expectedServers": {
+                    "maximum": 9,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "requireEmbeddedEtcd": {
+                    "type": "boolean"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.prepare-join",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "destinationHostId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "destinationPublicKey": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "expiresInMs": {
+                    "maximum": 86400000,
+                    "minimum": 1000,
+                    "type": "integer"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "role": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "destinationHostId"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.get-join-receiver-key",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^(vm|container):[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "vm"
+                },
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "container"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.redeem-join",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "destinationHostId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "redemptionRef": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "sealedJoinMaterial": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "sourceTargetUri": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^(vm|container):[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "redemptionRef"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "vm"
+                },
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "container"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.join-node",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "advertiseAddress": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "clusterInit": {
+                    "const": false,
+                    "type": "boolean"
+                  },
+                  "flannelIface": {
+                    "maxLength": 15,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "joinToken": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "nodeIp": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "redemptionRef": {
+                    "minLength": 1,
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "role": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "serverAddress": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^(vm|container):[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  },
+                  "tlsSan": {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  "version": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "redemptionRef",
+                  "serverAddress",
+                  "clusterInit",
+                  "role"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "vm"
+                },
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "container"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.ensure-ha-endpoint",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "endpoint": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "endpoint"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.remove-node",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "nodeName": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "role": {
+                    "enum": [
+                      "server"
+                    ],
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "nodeName",
+                  "role"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.recover-quorum",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "acknowledgeSingleMemberReset": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "acknowledgeSingleMemberReset"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.exec-command",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "kubectlArgs": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "stdin": {
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName",
+                  "kubectlArgs"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "read",
+              "id": "opute.capability.kubernetes.inspect-guest-storage",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "extraKeepTags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "includeRegistry": {
+                    "type": "boolean"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "supportsReadiness": false,
+              "taskSupport": "sync_only",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.prune-unused-images",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "dryRun": {
+                    "type": "boolean"
+                  },
+                  "extraKeepTags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "minAgeSeconds": {
+                    "minimum": 3600,
+                    "type": "integer"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "heavy",
+                "cpuCores": 2,
+                "memoryBytes": 2147483648,
+                "tasks": 8
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "destructive",
+              "id": "opute.capability.kubernetes.garbage-collect-registry",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "dryRun": {
+                    "type": "boolean"
+                  },
+                  "extraKeepTags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "includeRegistry": {
+                    "type": "boolean"
+                  },
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "registryName": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "registryNamespace": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "heavy",
+                "cpuCores": 2,
+                "memoryBytes": 2147483648,
+                "tasks": 8
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            },
+            {
+              "effect": "mutation",
+              "id": "opute.capability.kubernetes.trim-guest-storage",
+              "idempotent": true,
+              "inputSchema": {
+                "properties": {
+                  "instanceType": {
+                    "enum": [
+                      "vm",
+                      "container"
+                    ],
+                    "type": "string"
+                  },
+                  "providerInstanceName": {
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "type": "string"
+                  },
+                  "targetUri": {
+                    "pattern": "^cluster:[a-z][a-z0-9-]{0,31}:.+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "targetUri",
+                  "providerInstanceName"
+                ],
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              },
+              "requires": [
+                {
+                  "argument": "targetUri",
+                  "required": true,
+                  "resourceType": "cluster"
+                }
+              ],
+              "resourceCost": {
+                "class": "control"
+              },
+              "supportsReadiness": true,
+              "taskSupport": "bridged",
+              "version": 1
+            }
+          ],
+          "version": 1
+        }
+      ],
+      "teardown": {
+        "effect": "destructive",
+        "id": "opute.provider.teardown",
+        "idempotent": true,
+        "inputSchema": {
+          "properties": {
+            "inputs": {
+              "properties": {
+                "phase": {
+                  "enum": [
+                    "prepare",
+                    "finalize"
+                  ],
+                  "type": "string"
+                },
+                "scope": {
+                  "enum": [
+                    "user",
+                    "system"
+                  ],
+                  "type": "string"
+                },
+                "serviceFile": {
+                  "type": "string"
+                },
+                "serviceName": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "inputs"
+          ],
+          "type": "object"
+        },
+        "outputSchema": {
+          "required": [
+            "contractVersion",
+            "plan"
+          ],
+          "type": "object"
+        },
+        "resourceCost": {
+          "class": "control"
+        },
+        "resourceKinds": [
+          "service"
+        ],
+        "supportsReadiness": true,
+        "taskSupport": "sync_only",
+        "version": 1
+      },
+      "validation": {
+        "capability": "opute.capability.kubernetes.v1",
+        "operation": "opute.capability.kubernetes.validate"
+      }
+    },
+    "providerVersion": "1.0.2",
+    "recipeDocument": {
+      "activation": {
+        "capability": "kubernetes",
+        "inputBindings": {
+          "providerId": "providerId"
+        },
+        "servingContract": "kubernetes.v1"
+      },
+      "compatibility": {
+        "requiredTools": [
+          "get_host_info"
+        ]
+      },
+      "contractVersion": "runtime-recipe.v1",
+      "inputs": {
+        "activationNonce": {
+          "default": "default",
+          "schema": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "providerId": {
+          "default": "com.opute.k3s",
+          "schema": {
+            "const": "com.opute.k3s",
+            "type": "string"
+          }
+        }
+      },
+      "plan": {
+        "contractVersion": "host-plan.v1",
+        "converge": {},
+        "defaults": {
+          "retry": {}
+        },
+        "generation": 1,
+        "idempotencyKey": "com.opute.k3s-${vars.inputs.providerId}-${vars.inputs.activationNonce}",
+        "nodes": [
+          {
+            "action": {
+              "tool": "get_host_info"
+            },
+            "id": "host",
+            "retry": {}
+          }
+        ],
+        "planId": "com.opute.k3s.managed"
+      },
+      "recipeId": "com.opute.k3s.managed",
+      "recipeVersion": "1.0.0",
+      "runtime": {
+        "capabilities": [
+          "kubernetes"
+        ],
+        "id": "provider-kubernetes",
+        "servingContract": "kubernetes.v1"
+      }
+    },
+    "recipeHash": "sha256:ef4c812066781196f5d12879767a8a74fdc24b8a9a41f923877d9bbc3a446b3d",
+    "recipeId": "com.opute.k3s.managed",
+    "recipeVersion": "1.0.0",
+    "runtime": {
+      "capabilities": [
+        "kubernetes"
+      ],
+      "id": "provider-kubernetes",
+      "servingContract": "kubernetes.v1"
+    },
+    "runtimeId": "provider-kubernetes",
+    "secretInputs": [],
+    "source": {
+      "kind": "path",
+      "rawSha256": "sha256:91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788",
+      "recipeHash": "sha256:ef4c812066781196f5d12879767a8a74fdc24b8a9a41f923877d9bbc3a446b3d",
+      "source": "/home/m31cli/recipes/kubernetes.yaml"
+    }
+  },
+  "runId": "cea6cf7a-82a9-4a0f-9487-e5a7494ad920",
+  "state": {
+    "context": {},
+    "error": "",
+    "generation": 1,
+    "nodes": {
+      "host": {
+        "attempts": 1,
+        "completedAt": "2026-11-27T03:28:47.407035097Z",
+        "id": "host",
+        "output": {
+          "agent": {
+            "agentId": "m31-cli-check",
+            "homeDir": "/home/m31cli",
+            "instanceId": "standalone",
+            "instanceRoot": "/home/m31cli/.config/opute/instances/standalone",
+            "mcpEndpoint": "http://127.0.0.1:3014/mcp",
+            "providerRoot": "/home/m31cli/.local/share/opute/providers",
+            "serviceScope": "user",
+            "serviceUnitDir": "/home/m31cli/.config/systemd/user",
+            "serviceWantedBy": "default.target"
+          },
+          "hostName": "opute-parity-t2",
+          "lxcBinaryPath": "/usr/bin/incus",
+          "providerId": "incus",
+          "supportedTools": [
+            "apply_manifest",
+            "build_and_push_oci_image",
+            "check_local_llm_prerequisites",
+            "cleanup_container_storage",
+            "compact_host_vm_disk",
+            "configure_agent_connection",
+            "configure_local_llm_model",
+            "configure_local_llm_runtime",
+            "configure_network",
+            "configure_oci_storage",
+            "create_vm",
+            "delete_cluster_resource",
+            "delete_oci_registry",
+            "delete_vm",
+            "detect_host_platform",
+            "diagnose_bridge",
+            "discover_service_ingress",
+            "ensure_container_engine",
+            "ensure_host_artifact",
+            "ensure_host_file",
+            "ensure_host_service_supervisor",
+            "ensure_host_tool",
+            "ensure_local_llm_k3s_proxy",
+            "ensure_local_llm_relay",
+            "ensure_local_llm_server_binary",
+            "ensure_oci_builder",
+            "ensure_public_mcp_quick_tunnel",
+            "ensure_public_mcp_tunnel",
+            "ensure_sqlite_database",
+            "exec_cluster_command",
+            "extract_host_archive",
+            "garbage_collect_cluster_registry",
+            "get_capability_catalog",
+            "get_host_capacity",
+            "get_host_info",
+            "get_host_plan_run",
+            "get_cluster_resource",
+            "get_cluster_resource_status",
+            "get_oci_registry_status",
+            "get_postgresql_service_status",
+            "get_runtime_recipe_run",
+            "get_sqlite_database_status",
+            "get_tunnel_run",
+            "get_vm_info",
+            "inspect_container_storage",
+            "inspect_guest_storage",
+            "inspect_host_file",
+            "inspect_host_service",
+            "inspect_host_service_supervisor",
+            "inspect_workload",
+            "install_cluster_agent",
+            "install_cluster_package",
+            "install_virtualization_stack",
+            "install_local_llm_model",
+            "install_oci_registry",
+            "install_provider_tools",
+            "list_agents",
+            "list_certificate_issuers",
+            "list_configmap_keys",
+            "list_deployments",
+            "list_host_services",
+            "list_ingress_classes",
+            "list_cluster_events",
+            "list_compute_clusters",
+            "list_local_llm_models",
+            "list_namespaces",
+            "list_pods",
+            "list_secret_keys",
+            "list_services",
+            "list_storage_classes",
+            "list_vms",
+            "open_assistant_session",
+            "opute.provider.install",
+            "opute.provider.reload",
+            "opute.provider.status",
+            "opute.provider.teardown",
+            "opute.provider.validate",
+            "prepare_host_agent_artifacts",
+            "probe_gpu_container",
+            "probe_http_endpoint",
+            "probe_virtualization_gpu",
+            "probe_local_llm",
+            "probe_openai_compatible_server",
+            "provision_container",
+            "provision_vm",
+            "prune_unused_cluster_images",
+            "put_cluster_secret",
+            "reconcile_host_resource_policy",
+            "reconcile_postgresql_service",
+            "reconcile_serving_assignment",
+            "recover_bridge",
+            "register_kubernetes_cluster",
+            "release_postgresql_service_relay",
+            "remove_host_file",
+            "remove_local_llm_k3s_proxy",
+            "remove_local_llm_model",
+            "remove_local_llm_relay",
+            "remove_postgresql_service",
+            "remove_public_mcp_quick_tunnel",
+            "remove_sqlite_database",
+            "remove_vm_network_device",
+            "render_cluster_package",
+            "reset_virtualization_stack",
+            "resize_console",
+            "restart_host_service",
+            "restart_vm",
+            "run_host_command",
+            "run_host_local_recipe",
+            "run_host_plan",
+            "run_instance_command",
+            "run_runtime_recipe",
+            "run_tunnel_recipe",
+            "send_console_input",
+            "set_host_service_state",
+            "shutdown_host_vm_subsystem",
+            "stage_build_context",
+            "start_local_llm_runtime",
+            "start_vm",
+            "stop_local_llm_runtime",
+            "stop_vm",
+            "stream_vm_console",
+            "terminate_host_vm_distribution",
+            "trim_guest_storage",
+            "uninstall_virtualization_stack",
+            "uninstall_provider_tools",
+            "update_vm_resources",
+            "validate_host_local_recipe",
+            "validate_host_plan",
+            "validate_runtime_recipe",
+            "validate_tunnel_recipe"
+          ],
+          "system": {
+            "cgroupControllers": [
+              "cpu",
+              "memory",
+              "pids"
+            ],
+            "cgroupMemory": {
+              "limitBytes": 0,
+              "usageBytes": 64741376
+            },
+            "cpuCount": 8,
+            "cpuLoad15m": 0.99,
+            "cpuLoad1m": 1.26,
+            "cpuLoad5m": 1.17,
+            "diskAvailableBytes": 96301387776,
+            "diskFilesystems": [
+              {
+                "availableBytes": 96301387776,
+                "mount": "/",
+                "pressure": "normal",
+                "totalBytes": 102888095744
+              },
+              {
+                "availableBytes": 96301387776,
+                "mount": "/home/m31cli",
+                "pressure": "normal",
+                "totalBytes": 102888095744
+              }
+            ],
+            "diskMount": "/",
+            "diskPressure": "normal",
+            "diskTotalBytes": 102888095744,
+            "enforcement": "enforced",
+            "memoryAvailableBytes": 15295049728,
+            "memoryEvents": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "memoryFreeBytes": 15295049728,
+            "memoryPressure": "normal",
+            "memoryTotalBytes": 16768626688,
+            "memoryUsageBytes": 64741376,
+            "memoryUsedBytes": 1473576960,
+            "psi": {
+              "cpu": {
+                "someAvg10": 0.04,
+                "someAvg300": 0.08,
+                "someAvg60": 0.05,
+                "someTotalUsec": 87130901
+              },
+              "io": {
+                "fullAvg10": 13.05,
+                "fullAvg300": 11.22,
+                "fullAvg60": 11.09,
+                "fullTotalUsec": 589177297,
+                "someAvg10": 13.09,
+                "someAvg300": 11.4,
+                "someAvg60": 11.17,
+                "someTotalUsec": 601936300
+              },
+              "memory": {
+                "fullTotalUsec": 66,
+                "someTotalUsec": 66
+              }
+            },
+            "resourceAdmission": {
+              "checkedAt": "2026-11-27T03:28:47Z",
+              "currentUsage": {
+                "diskAvailableBytes": 96301387776,
+                "diskBytes": 6586707968,
+                "memoryAvailableBytes": 15295049728,
+                "memoryBytes": 1473576960,
+                "tasks": 15
+              },
+              "diskAvailableBytes": 96301387776,
+              "diskPressure": "normal",
+              "effectiveLimits": {
+                "cpuCores": 6,
+                "diskBytes": 102888095744,
+                "memoryBytes": 11811160064,
+                "tasks": 4096
+              },
+              "enforcement": "unknown",
+              "heavyInFlight": 0,
+              "memoryAvailableBytes": 15295049728,
+              "memoryEvents": {
+                "high": 0,
+                "low": 0,
+                "max": 0,
+                "oom": 0,
+                "oom_group_kill": 0,
+                "oom_kill": 0
+              },
+              "normalInFlight": 0,
+              "policyRevision": "opute-host-resource-policy.v2",
+              "pressure": "normal",
+              "psi": {
+                "cpu": {
+                  "someAvg10": 0.04,
+                  "someAvg300": 0.08,
+                  "someAvg60": 0.05,
+                  "someTotalUsec": 87130901
+                },
+                "io": {
+                  "fullAvg10": 13.05,
+                  "fullAvg300": 11.22,
+                  "fullAvg60": 11.09,
+                  "fullTotalUsec": 589177297,
+                  "someAvg10": 13.09,
+                  "someAvg300": 11.4,
+                  "someAvg60": 11.17,
+                  "someTotalUsec": 601936300
+                },
+                "memory": {
+                  "fullTotalUsec": 66,
+                  "someTotalUsec": 66
+                }
+              },
+              "queue": {
+                "heavyActive": 0,
+                "heavyQueued": 0,
+                "normalActive": 0,
+                "queued": 0
+              },
+              "queued": 0,
+              "reason": "",
+              "reservations": {
+                "count": 1,
+                "cpuCores": 2,
+                "memoryBytes": 2147483648,
+                "tasks": 8
+              }
+            },
+            "tasks": {
+              "current": 15,
+              "limit": 42117
+            }
+          },
+          "systemctlPath": "/usr/bin/systemctl",
+          "uri": "host:local:m31-cli-check"
+        },
+        "startedAt": "2026-11-27T03:28:47.283149388Z",
+        "status": "satisfied"
+      }
+    },
+    "outputs": {
+      "activation": {
+        "redacted": true
+      },
+      "host": {
+        "agent": {
+          "agentId": "m31-cli-check",
+          "homeDir": "/home/m31cli",
+          "instanceId": "standalone",
+          "instanceRoot": "/home/m31cli/.config/opute/instances/standalone",
+          "mcpEndpoint": "http://127.0.0.1:3014/mcp",
+          "providerRoot": "/home/m31cli/.local/share/opute/providers",
+          "serviceScope": "user",
+          "serviceUnitDir": "/home/m31cli/.config/systemd/user",
+          "serviceWantedBy": "default.target"
+        },
+        "hostName": "opute-parity-t2",
+        "lxcBinaryPath": "/usr/bin/incus",
+        "providerId": "incus",
+        "supportedTools": [
+          "apply_manifest",
+          "build_and_push_oci_image",
+          "check_local_llm_prerequisites",
+          "cleanup_container_storage",
+          "compact_host_vm_disk",
+          "configure_agent_connection",
+          "configure_local_llm_model",
+          "configure_local_llm_runtime",
+          "configure_network",
+          "configure_oci_storage",
+          "create_vm",
+          "delete_cluster_resource",
+          "delete_oci_registry",
+          "delete_vm",
+          "detect_host_platform",
+          "diagnose_bridge",
+          "discover_service_ingress",
+          "ensure_container_engine",
+          "ensure_host_artifact",
+          "ensure_host_file",
+          "ensure_host_service_supervisor",
+          "ensure_host_tool",
+          "ensure_local_llm_k3s_proxy",
+          "ensure_local_llm_relay",
+          "ensure_local_llm_server_binary",
+          "ensure_oci_builder",
+          "ensure_public_mcp_quick_tunnel",
+          "ensure_public_mcp_tunnel",
+          "ensure_sqlite_database",
+          "exec_cluster_command",
+          "extract_host_archive",
+          "garbage_collect_cluster_registry",
+          "get_capability_catalog",
+          "get_host_capacity",
+          "get_host_info",
+          "get_host_plan_run",
+          "get_cluster_resource",
+          "get_cluster_resource_status",
+          "get_oci_registry_status",
+          "get_postgresql_service_status",
+          "get_runtime_recipe_run",
+          "get_sqlite_database_status",
+          "get_tunnel_run",
+          "get_vm_info",
+          "inspect_container_storage",
+          "inspect_guest_storage",
+          "inspect_host_file",
+          "inspect_host_service",
+          "inspect_host_service_supervisor",
+          "inspect_workload",
+          "install_cluster_agent",
+          "install_cluster_package",
+          "install_virtualization_stack",
+          "install_local_llm_model",
+          "install_oci_registry",
+          "install_provider_tools",
+          "list_agents",
+          "list_certificate_issuers",
+          "list_configmap_keys",
+          "list_deployments",
+          "list_host_services",
+          "list_ingress_classes",
+          "list_cluster_events",
+          "list_compute_clusters",
+          "list_local_llm_models",
+          "list_namespaces",
+          "list_pods",
+          "list_secret_keys",
+          "list_services",
+          "list_storage_classes",
+          "list_vms",
+          "open_assistant_session",
+          "opute.provider.install",
+          "opute.provider.reload",
+          "opute.provider.status",
+          "opute.provider.teardown",
+          "opute.provider.validate",
+          "prepare_host_agent_artifacts",
+          "probe_gpu_container",
+          "probe_http_endpoint",
+          "probe_virtualization_gpu",
+          "probe_local_llm",
+          "probe_openai_compatible_server",
+          "provision_container",
+          "provision_vm",
+          "prune_unused_cluster_images",
+          "put_cluster_secret",
+          "reconcile_host_resource_policy",
+          "reconcile_postgresql_service",
+          "reconcile_serving_assignment",
+          "recover_bridge",
+          "register_kubernetes_cluster",
+          "release_postgresql_service_relay",
+          "remove_host_file",
+          "remove_local_llm_k3s_proxy",
+          "remove_local_llm_model",
+          "remove_local_llm_relay",
+          "remove_postgresql_service",
+          "remove_public_mcp_quick_tunnel",
+          "remove_sqlite_database",
+          "remove_vm_network_device",
+          "render_cluster_package",
+          "reset_virtualization_stack",
+          "resize_console",
+          "restart_host_service",
+          "restart_vm",
+          "run_host_command",
+          "run_host_local_recipe",
+          "run_host_plan",
+          "run_instance_command",
+          "run_runtime_recipe",
+          "run_tunnel_recipe",
+          "send_console_input",
+          "set_host_service_state",
+          "shutdown_host_vm_subsystem",
+          "stage_build_context",
+          "start_local_llm_runtime",
+          "start_vm",
+          "stop_local_llm_runtime",
+          "stop_vm",
+          "stream_vm_console",
+          "terminate_host_vm_distribution",
+          "trim_guest_storage",
+          "uninstall_virtualization_stack",
+          "uninstall_provider_tools",
+          "update_vm_resources",
+          "validate_host_local_recipe",
+          "validate_host_plan",
+          "validate_runtime_recipe",
+          "validate_tunnel_recipe"
+        ],
+        "system": {
+          "cgroupControllers": [
+            "cpu",
+            "memory",
+            "pids"
+          ],
+          "cgroupMemory": {
+            "limitBytes": 0,
+            "usageBytes": 64741376
+          },
+          "cpuCount": 8,
+          "cpuLoad15m": 0.99,
+          "cpuLoad1m": 1.26,
+          "cpuLoad5m": 1.17,
+          "diskAvailableBytes": 96301387776,
+          "diskFilesystems": [
+            {
+              "availableBytes": 96301387776,
+              "mount": "/",
+              "pressure": "normal",
+              "totalBytes": 102888095744
+            },
+            {
+              "availableBytes": 96301387776,
+              "mount": "/home/m31cli",
+              "pressure": "normal",
+              "totalBytes": 102888095744
+            }
+          ],
+          "diskMount": "/",
+          "diskPressure": "normal",
+          "diskTotalBytes": 102888095744,
+          "enforcement": "enforced",
+          "memoryAvailableBytes": 15295049728,
+          "memoryEvents": {
+            "high": 0,
+            "low": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_group_kill": 0,
+            "oom_kill": 0
+          },
+          "memoryFreeBytes": 15295049728,
+          "memoryPressure": "normal",
+          "memoryTotalBytes": 16768626688,
+          "memoryUsageBytes": 64741376,
+          "memoryUsedBytes": 1473576960,
+          "psi": {
+            "cpu": {
+              "someAvg10": 0.04,
+              "someAvg300": 0.08,
+              "someAvg60": 0.05,
+              "someTotalUsec": 87130901
+            },
+            "io": {
+              "fullAvg10": 13.05,
+              "fullAvg300": 11.22,
+              "fullAvg60": 11.09,
+              "fullTotalUsec": 589177297,
+              "someAvg10": 13.09,
+              "someAvg300": 11.4,
+              "someAvg60": 11.17,
+              "someTotalUsec": 601936300
+            },
+            "memory": {
+              "fullTotalUsec": 66,
+              "someTotalUsec": 66
+            }
+          },
+          "resourceAdmission": {
+            "checkedAt": "2026-11-27T03:28:47Z",
+            "currentUsage": {
+              "diskAvailableBytes": 96301387776,
+              "diskBytes": 6586707968,
+              "memoryAvailableBytes": 15295049728,
+              "memoryBytes": 1473576960,
+              "tasks": 15
+            },
+            "diskAvailableBytes": 96301387776,
+            "diskPressure": "normal",
+            "effectiveLimits": {
+              "cpuCores": 6,
+              "diskBytes": 102888095744,
+              "memoryBytes": 11811160064,
+              "tasks": 4096
+            },
+            "enforcement": "unknown",
+            "heavyInFlight": 0,
+            "memoryAvailableBytes": 15295049728,
+            "memoryEvents": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "normalInFlight": 0,
+            "policyRevision": "opute-host-resource-policy.v2",
+            "pressure": "normal",
+            "psi": {
+              "cpu": {
+                "someAvg10": 0.04,
+                "someAvg300": 0.08,
+                "someAvg60": 0.05,
+                "someTotalUsec": 87130901
+              },
+              "io": {
+                "fullAvg10": 13.05,
+                "fullAvg300": 11.22,
+                "fullAvg60": 11.09,
+                "fullTotalUsec": 589177297,
+                "someAvg10": 13.09,
+                "someAvg300": 11.4,
+                "someAvg60": 11.17,
+                "someTotalUsec": 601936300
+              },
+              "memory": {
+                "fullTotalUsec": 66,
+                "someTotalUsec": 66
+              }
+            },
+            "queue": {
+              "heavyActive": 0,
+              "heavyQueued": 0,
+              "normalActive": 0,
+              "queued": 0
+            },
+            "queued": 0,
+            "reason": "",
+            "reservations": {
+              "count": 1,
+              "cpuCores": 2,
+              "memoryBytes": 2147483648,
+              "tasks": 8
+            }
+          },
+          "tasks": {
+            "current": 15,
+            "limit": 42117
+          }
+        },
+        "systemctlPath": "/usr/bin/systemctl",
+        "uri": "host:local:m31-cli-check"
+      }
+    },
+    "planId": "com.opute.k3s.managed",
+    "runId": "cea6cf7a-82a9-4a0f-9487-e5a7494ad920",
+    "status": "completed"
+  },
+  "status": "completed",
+  "updatedAt": "2026-11-27T03:28:48.286805765Z"
+}
+### reload exit=0
+
+### publicRefused: ./host-agent public-mcp --binding-id m31 --endpoint https://m31.invalid/mcp --local-target http://127.0.0.1:3004/mcp --token-file /home/m31cli/tunnel.env
+public MCP operation failed: Error: mutation refused: ensure_public_mcp_tunnel has effect credential_bearing; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.
+### publicRefused exit=1
+
+### agentListening: 1
+### besideAgent: ./host-agent provider status --provider com.opute.k3s
+host agent instance is already in use: /home/m31cli/.config/opute/instances/standalone/host-agent.lock is locked by another process
+### besideAgent exit=1
+

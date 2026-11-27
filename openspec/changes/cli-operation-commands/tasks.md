@@ -1,15 +1,16 @@
 ## 1. Decision
 
-- [ ] 1.1 Owner: option A (wire the three commands) or B (withdraw them and their docs).
+- [x] 1.1 Owner: option A (wire the three commands), 2026-11-26.
 
-## 2. Tests first (after the decision)
+## 2. Tests first
 
-- [ ] 2.1 CLI tests that fail against 0.5.2: each command calls its tool and prints its result (A), or is unknown (B).
+- [x] 2.1 `tests/cli_operations.rs`: each command calls its tool and prints its result, a mutating call needs `--allow-mutations`, a tool error exits non-zero with no JSON, and a held instance refuses. Six of the seven fail against 0.5.3's code (the instance-lock guard passes on both).
 
 ## 3. Change
 
-- [ ] 3.1 A: in-process tool calls in `cli.rs`. B: remove the commands, the help text and the docs page lines.
+- [x] 3.1 In-process tool calls in `cli.rs` through `app::with_local_server`; the help text names `--allow-mutations` and the instance rule.
 
 ## 4. Evidence
 
-- [ ] 4.1 A fresh-user run of each command on the dev VM against a release candidate.
+- [x] 4.1 A fresh-user run of each command on the dev VM against `rust-0.5.4-rc1`: `evidence/m31` (`public-mcp --allow-mutations` needs a real tunnel token and is not run).
+- [ ] 4.2 host-agents' Configuration page names `--allow-mutations` for the three commands, in the release that ships them.

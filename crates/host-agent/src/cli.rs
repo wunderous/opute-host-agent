@@ -1,16 +1,22 @@
 //! Command dispatch (`internal/cli`).
 //!
 //! The command surface, flag sets, precedence and error text follow the Go
-//! baseline. `recipe`, `provider` and `public-mcp` validate their arguments
-//! and configuration exactly as Go does; the operations they then invoke are
-//! implemented by later milestones (M6/M7) and report that explicitly.
+//! baseline. `recipe`, `provider` and `public-mcp` call the agent's published
+//! tools in process, as Go's wrappers did (`cli-operation-commands`); a
+//! mutating call needs `--allow-mutations`, the D55 grant of the operator.
 
 use std::io::Write;
+use std::sync::Arc;
+
+use serde_json::{json, Map, Value as J};
 
 use crate::app;
 use crate::config::Env;
 use crate::goerr::{self, quote, Result};
 use crate::goflag::{FlagSet, Values};
+use crate::mcpsdk::ToolCallOutcome;
+use crate::tools::Caller;
+use crate::transport::Server;
 
 /// The release version, stamped at build time as Go's release build stamps
 /// `internal/version.Version` (`make artifacts VERSION=...`); without it, the
@@ -86,10 +92,14 @@ const USAGE: &str = "Usage: opute-host-agent [standalone|serve|public-mcp|recipe
   opute-host-agent                   MCP server only (HTTP)
   opute-host-agent serve             MCP server only (HTTP)
   opute-host-agent recipe validate --source ./recipe.yaml
-  opute-host-agent recipe apply --source ./recipe.yaml --activate --input model=hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M
+  opute-host-agent recipe apply --allow-mutations --source ./recipe.yaml --activate --input model=hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M
   opute-host-agent recipe status --run-id RUN_ID
-  opute-host-agent public-mcp --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]
-  opute-host-agent provider install --source ./plugin.yaml --activate
+  opute-host-agent public-mcp --allow-mutations --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]
+  opute-host-agent provider install --allow-mutations --source ./plugin.yaml --activate
+
+recipe, provider and public-mcp run in this process on the agent's state, so
+they refuse while an agent holds it. Calls that change the host need
+--allow-mutations.
 ";
 
 fn parse(fs: &FlagSet, args: &[String], io: &mut Io<'_>) -> Result<Values> {
@@ -152,19 +162,193 @@ fn run_server(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
     app::run(&env, flags.bool("allow-mutations"), io.stderr)
 }
 
-/// Placeholder for the host operations later milestones implement. It runs
-/// only after the same argument and configuration validation Go performs.
-fn not_yet_implemented(env: &Env, what: &str, milestone: &str) -> Result<()> {
-    let runtime = app::new_runtime(env)?;
-    if let Ok(mut state) = runtime.state.lock() {
-        state.close();
+const ALLOW_MUTATIONS: &str =
+    "let this command run tools that change the host, as the agent's --allow-mutations does";
+
+/// `hostToolCaller.Call`: a `tools/call` on the agent's own server, through
+/// the admission, mutation authority (D55: the operator is the bootstrap
+/// bearer, mutating only with `--allow-mutations`) and plan runner any client
+/// meets. A tool that runs as an MCP task is awaited, and its result is the
+/// task's result.
+fn call_tool(
+    server: &Arc<Server>,
+    caller: &Caller,
+    name: &str,
+    arguments: &Map<String, J>,
+) -> Result<J> {
+    let params = json!({
+        "name": name,
+        "arguments": arguments,
+        "_meta": {"io.modelcontextprotocol/clientCapabilities": {
+            "extensions": {"io.modelcontextprotocol/tasks": {}}}},
+    });
+    let params = crate::gojson::parse(crate::gojson::encode_to_string(&params).as_bytes())
+        .map_err(|_| go_err!("encode {name} arguments"))?;
+    let result = match crate::tools::call(server, caller, name, Some(&params)) {
+        ToolCallOutcome::Result(result) => result,
+        ToolCallOutcome::Unknown => return Err(go_err!("unknown tool {}", quote(name))),
+        ToolCallOutcome::Protocol(_, message, _) => return Err(goerr::Error(message)),
+    };
+    let task = result
+        .pointer("/structuredContent/resultType")
+        .and_then(J::as_str)
+        == Some("task");
+    if !task {
+        return Ok(result);
     }
-    Err(go_err!(
-        "{what} is not implemented in this build yet (planned in {milestone})"
-    ))
+    let id = result
+        .pointer("/structuredContent/taskId")
+        .and_then(J::as_str)
+        .unwrap_or_default()
+        .to_string();
+    loop {
+        let Some(snapshot) = server.tasks.get(&id) else {
+            return Err(go_err!("task not found: {id}"));
+        };
+        let state = snapshot.get_result();
+        match state.get("status").and_then(J::as_str).unwrap_or_default() {
+            "completed" => return Ok(state.get("result").cloned().unwrap_or(J::Null)),
+            "working" => std::thread::sleep(POLL),
+            status => {
+                let message = state
+                    .get("statusMessage")
+                    .and_then(J::as_str)
+                    .unwrap_or_default();
+                return Err(if message.is_empty() {
+                    go_err!("{name} task ended with status {}", quote(status))
+                } else {
+                    go_err!("{name} task ended with status {}: {message}", quote(status))
+                });
+            }
+        }
+    }
 }
 
-fn parse_inputs(values: &[String], env: &Env) -> Result<()> {
+/// `waitForRecipeRun`'s poll interval.
+const POLL: std::time::Duration = std::time::Duration::from_millis(500);
+
+/// `waitForRecipeRun`: poll the run's status tool until it is terminal.
+fn wait_for_run(server: &Arc<Server>, caller: &Caller, run_id: &str, tool: &str) -> Result<J> {
+    let mut arguments = Map::new();
+    arguments.insert("runId".into(), J::from(run_id));
+    loop {
+        let result = call_tool(server, caller, tool, &arguments)?;
+        let Some(status) = result.get("structuredContent").and_then(J::as_object) else {
+            return Err(go_err!("recipe status returned no structured result"));
+        };
+        match status.get("status").and_then(J::as_str).unwrap_or_default() {
+            "completed" | "failed" | "cancelled" | "unknown" => return Ok(result),
+            _ => std::thread::sleep(POLL),
+        }
+    }
+}
+
+fn is_error(result: &J) -> bool {
+    result.get("isError") == Some(&J::Bool(true))
+}
+
+/// `cliResultText`: the result's text content, joined.
+fn result_text(result: &J) -> String {
+    result
+        .get("content")
+        .and_then(J::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|c| c.get("text").and_then(J::as_str))
+        .filter(|t| !t.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+/// The run a started operation names ended other than completed.
+fn run_outcome(operation: &str, result: &J) -> Result<()> {
+    let status = result.get("structuredContent");
+    let value = status
+        .and_then(|s| s.get("status"))
+        .and_then(J::as_str)
+        .unwrap_or_default();
+    if value == "completed" {
+        return Ok(());
+    }
+    match status.and_then(|s| s.get("error")).and_then(J::as_str) {
+        Some(message) if !message.is_empty() => Err(go_err!(
+            "{operation} operation ended with status {}: {message}",
+            quote(value)
+        )),
+        _ => Err(go_err!(
+            "{operation} operation ended with status {}",
+            quote(value)
+        )),
+    }
+}
+
+/// `json.MarshalIndent(result.StructuredContent, "", "  ")` and a newline.
+fn print_structured(io: &mut Io<'_>, result: &J) {
+    let structured = result.get("structuredContent").unwrap_or(&J::Null);
+    let encoded = crate::gojson::indent(&crate::gojson::encode_to_string(structured), "  ");
+    let _ = writeln!(io.stdout, "{encoded}");
+}
+
+/// One operation command's tool call, its wait for a started run, and its
+/// printed result. `wait` names the status tool when the started run is
+/// awaited; `required` refuses a start that names no run.
+fn operate(
+    env: &Env,
+    io: &mut Io<'_>,
+    operation: &'static str,
+    mutate: bool,
+    tool: String,
+    arguments: Map<String, J>,
+    wait: Option<(&'static str, bool)>,
+) -> Result<()> {
+    let caller = Caller::Bearer { mutate };
+    let result = app::with_local_server(env, move |server| -> Result<J> {
+        let result = call_tool(server, &caller, &tool, &arguments)?;
+        if is_error(&result) {
+            return Err(go_err!(
+                "{operation} operation failed: {}",
+                result_text(&result)
+            ));
+        }
+        let Some((status_tool, required)) = wait else {
+            return Ok(result);
+        };
+        let run_id = result
+            .pointer("/structuredContent/runId")
+            .and_then(J::as_str)
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        if run_id.is_empty() {
+            if required {
+                return Err(
+                    if result.get("structuredContent").is_some_and(J::is_object) {
+                        go_err!("{operation} apply returned no run ID")
+                    } else {
+                        go_err!("{operation} apply returned no structured run identity")
+                    },
+                );
+            }
+            return Ok(result);
+        }
+        let result = wait_for_run(server, &caller, &run_id, status_tool)?;
+        if is_error(&result) {
+            return Err(go_err!(
+                "{operation} operation failed: {}",
+                result_text(&result)
+            ));
+        }
+        run_outcome(operation, &result)?;
+        Ok(result)
+    })??;
+    print_structured(io, &result);
+    Ok(())
+}
+
+/// `parseRecipeInputs`: `key=value`, the value read from the environment
+/// for `@env:NAME`, else decoded as JSON when it parses, else the string.
+fn parse_inputs(values: &[String], env: &Env) -> Result<Map<String, J>> {
+    let mut inputs = Map::new();
     for value in values {
         let Some((key, raw)) = value.split_once('=') else {
             return Err(go_err!("--input requires key=value"));
@@ -172,14 +356,18 @@ fn parse_inputs(values: &[String], env: &Env) -> Result<()> {
         if key.trim().is_empty() {
             return Err(go_err!("--input requires key=value"));
         }
-        if let Some(name) = raw.strip_prefix("@env:") {
+        let value = if let Some(name) = raw.strip_prefix("@env:") {
             let name = name.trim();
             if name.is_empty() || env.get(name).is_empty() {
                 return Err(go_err!("environment input {} is missing", quote(name)));
             }
-        }
+            J::from(env.get(name))
+        } else {
+            serde_json::from_str(raw).unwrap_or_else(|_| J::from(raw))
+        };
+        inputs.insert(key.trim().to_string(), value);
     }
-    Ok(())
+    Ok(inputs)
 }
 
 fn run_recipe(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
@@ -207,7 +395,8 @@ fn run_recipe(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
             false,
             "after successful validation, make this runtime active for its declared capability",
         )
-        .multi("input", "recipe input as key=value; repeatable");
+        .multi("input", "recipe input as key=value; repeatable")
+        .bool("allow-mutations", false, ALLOW_MUTATIONS);
     let flags = parse(&fs, &args[1..], io)?;
     let sub = subcommand.as_str();
     if !matches!(sub, "validate" | "apply" | "status") {
@@ -225,17 +414,67 @@ fn run_recipe(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
     if kind != "runtime" && kind != "tunnel" {
         return Err(go_err!("recipe kind must be runtime or tunnel"));
     }
-    if sub == "status" {
-        if flags.string("run-id").trim().is_empty() {
-            return Err(go_err!("recipe status requires --run-id"));
-        }
+    let (validate, run, get) = if kind == "tunnel" {
+        (
+            "validate_tunnel_recipe",
+            "run_tunnel_recipe",
+            "get_tunnel_run",
+        )
     } else {
-        if flags.string("source").trim().is_empty() {
-            return Err(go_err!("recipe {sub} requires --source"));
+        (
+            "validate_runtime_recipe",
+            "run_runtime_recipe",
+            "get_runtime_recipe_run",
+        )
+    };
+    let mut arguments = Map::new();
+    let tool = match sub {
+        "status" => {
+            let run_id = flags.string("run-id").trim().to_string();
+            if run_id.is_empty() {
+                return Err(go_err!("recipe status requires --run-id"));
+            }
+            arguments.insert("runId".into(), J::from(run_id));
+            get
         }
-        parse_inputs(&flags.multi("input"), &env)?;
-    }
-    not_yet_implemented(&env, "recipe operations", "M6")
+        _ => {
+            let source = flags.string("source").trim().to_string();
+            if source.is_empty() {
+                return Err(go_err!("recipe {sub} requires --source"));
+            }
+            arguments.insert("source".into(), J::from(source));
+            for key in ["revision", "sha256"] {
+                let value = flags.string(key).trim().to_string();
+                if !value.is_empty() {
+                    arguments.insert(key.into(), J::from(value));
+                }
+            }
+            let inputs = flags.multi("input");
+            if !inputs.is_empty() {
+                arguments.insert("inputs".into(), J::Object(parse_inputs(&inputs, &env)?));
+            }
+            if sub == "apply" {
+                for key in ["resume", "activate"] {
+                    if flags.bool(key) {
+                        arguments.insert(key.into(), J::Bool(true));
+                    }
+                }
+                run
+            } else {
+                validate
+            }
+        }
+    };
+    let wait = (sub == "apply").then_some((get, true));
+    operate(
+        &env,
+        io,
+        "recipe",
+        flags.bool("allow-mutations"),
+        tool.to_string(),
+        arguments,
+        wait,
+    )
 }
 
 fn run_provider(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
@@ -260,7 +499,8 @@ fn run_provider(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
             false,
             "after successful validation, make this provider active",
         )
-        .multi("input", "provider input as key=value; repeatable");
+        .multi("input", "provider input as key=value; repeatable")
+        .bool("allow-mutations", false, ALLOW_MUTATIONS);
     let flags = parse(&fs, &args[1..], io)?;
     let sub = subcommand.as_str();
     if !matches!(sub, "install" | "validate" | "status" | "reload") {
@@ -269,14 +509,47 @@ fn run_provider(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
             quote(sub)
         ));
     }
-    parse_inputs(&flags.multi("input"), &env)?;
+    let mut arguments = Map::new();
+    for key in ["source", "endpoint", "token", "mode"] {
+        let value = flags.string(key);
+        if !value.is_empty() {
+            arguments.insert(key.into(), J::from(value));
+        }
+    }
+    if flags.bool("activate") {
+        arguments.insert("activate".into(), J::Bool(true));
+    }
+    let inputs = flags.multi("input");
+    if !inputs.is_empty() {
+        arguments.insert("inputs".into(), J::Object(parse_inputs(&inputs, &env)?));
+    }
+    for key in ["provider", "operation"] {
+        let value = flags.string(key);
+        if !value.is_empty() {
+            arguments.insert(key.into(), J::from(value));
+        }
+    }
     if (sub == "install" || sub == "reload") && flags.string("source").is_empty() {
         return Err(go_err!("provider {sub} requires --source"));
     }
     if (sub == "validate" || sub == "status") && flags.string("provider").is_empty() {
         return Err(go_err!("provider {sub} requires --provider"));
     }
-    not_yet_implemented(&env, "provider operations", "M7")
+    let status_tool = if flags.string("mode") == "tunnel" {
+        "get_tunnel_run"
+    } else {
+        "get_runtime_recipe_run"
+    };
+    let wait = matches!(sub, "install" | "reload").then_some((status_tool, false));
+    operate(
+        &env,
+        io,
+        "provider",
+        flags.bool("allow-mutations"),
+        format!("opute.provider.{sub}"),
+        arguments,
+        wait,
+    )
 }
 
 const OAUTH_USAGE: &str =
@@ -521,7 +794,8 @@ fn run_public_mcp(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> 
             "",
             "Opute-owned connector service file override",
         )
-        .string("scope", "user", "systemd service scope: user or system");
+        .string("scope", "user", "systemd service scope: user or system")
+        .bool("allow-mutations", false, ALLOW_MUTATIONS);
     let flags = parse(&fs, args, io)?;
     let env_file = flags.string("env-file").trim().to_string();
     if !env_file.is_empty() {
@@ -536,8 +810,35 @@ fn run_public_mcp(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> 
             "public-mcp requires --binding-id, --endpoint, --local-target, and --token-file"
         ));
     }
-    read_tunnel_token(&flags.string("token-file"))?;
-    not_yet_implemented(&env, "public MCP exposure", "M8a")
+    let tunnel_token = read_tunnel_token(&flags.string("token-file"))?;
+    let mut arguments = Map::new();
+    arguments.insert("bindingId".into(), J::from(flags.string("binding-id")));
+    arguments.insert("endpoint".into(), J::from(flags.string("endpoint")));
+    arguments.insert("localTarget".into(), J::from(flags.string("local-target")));
+    arguments.insert("tunnelToken".into(), J::from(tunnel_token));
+    arguments.insert("scope".into(), J::from(flags.string("scope")));
+    for (flag, key) in [
+        ("origin-host-id", "originHostId"),
+        ("artifact-uri", "artifactUri"),
+        ("artifact-sha256", "artifactSha256"),
+        ("artifact-path", "artifactPath"),
+        ("service-name", "serviceName"),
+        ("service-file", "serviceFile"),
+    ] {
+        let value = flags.string(flag).trim().to_string();
+        if !value.is_empty() {
+            arguments.insert(key.into(), J::from(value));
+        }
+    }
+    operate(
+        &env,
+        io,
+        "public MCP",
+        flags.bool("allow-mutations"),
+        "ensure_public_mcp_tunnel".into(),
+        arguments,
+        None,
+    )
 }
 
 /// `readPublicMcpTunnelToken`.

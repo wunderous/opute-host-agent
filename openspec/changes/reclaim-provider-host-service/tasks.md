@@ -13,4 +13,4 @@
 
 ## 4. Release
 
-- [ ] 4.1 With the owner's sign-off, the candidate is published as 0.5.3.
+- [x] 4.1 With the owner's sign-off (2026-11-26), the candidate is published as 0.5.3: opute-host-agent v0.5.3 on `7f66afd2d`, host-agents#42 (pin, Publish run 45932146871, npm latest 0.5.3), MCP Registry run 45932443611, site promotion host-agents#43.

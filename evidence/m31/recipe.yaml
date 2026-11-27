@@ -1,0 +1,21 @@
+contractVersion: runtime-recipe.v1
+recipeId: com.opute.test.cli-apply
+recipeVersion: 1.0.0
+runtime: {id: cli-apply, servingContract: kubernetes.v1}
+inputs:
+  word: {required: true}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.test.cli-apply
+  generation: 1
+  idempotencyKey: cli-apply-${vars.inputs.word}
+  nodes:
+    - id: write
+      action:
+        tool: ensure_host_file
+        args: {path: cli-apply.txt, content: "${vars.inputs.word}", scope: user}
+      validate:
+        tool: inspect_host_file
+        args: {path: cli-apply.txt, scope: user}
+        assert:
+          - {path: /exists, op: eq, value: true}
