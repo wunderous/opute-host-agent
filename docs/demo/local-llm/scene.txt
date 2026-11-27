@@ -1,0 +1,12 @@
+# a Linux host with no GPU; the agent runs as this user with --allow-mutations
+REPO=https://raw.githubusercontent.com/wunderous/opute-host-agent/main
+curl -fsSLO $REPO/docs/recipes/local-llm.recipe.yaml
+ARGS="{\"source\":\"$PWD/local-llm.recipe.yaml\",\"activate\":true}"
+RUN=$(mcp call run_runtime_recipe "$ARGS" | jq -r .runId)
+run() { mcp call get_runtime_recipe_run "{\"runId\":\"$RUN\"}"; }
+# Ollama downloads (1.5 GB) and the model loads: about 5 minutes, sped up here
+until [[ $(run | jq -r .status) =~ completed|failed ]]; do sleep 5; done
+run | jq -c '{status, active: .activeRuntime.capability}'
+M=hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M
+B=$(jq -nc --arg m $M '{model:$m,messages:[{role:"user",content:"Capital of France"}]}')
+curl -s localhost:11434/v1/chat/completions -d "$B" | jq -r .choices[0].message.content

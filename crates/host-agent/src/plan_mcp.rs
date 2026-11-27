@@ -809,7 +809,7 @@ fn spawn_plan_execution(
             if run_err.is_ok() && status == "completed" && bool_field(metadata, "activate") {
                 let (active, observation, outcome) = server
                     .providers
-                    .validate_activation(&server, &run_id, metadata);
+                    .validate_activation(&server, &run_id, metadata, &ctx);
                 if let Some(observation) = observation {
                     final_state.outputs.insert("activation".into(), observation);
                 }

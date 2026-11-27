@@ -212,6 +212,108 @@ fn public_mcp_without_the_grant_is_refused() {
     assert!(!err.contains("not-a-real-token"), "{err}");
 }
 
+/// A minimal OpenAI-compatible endpoint: `/v1/models` lists `fixture`, and a
+/// chat completion streams one content chunk, a finish and `[DONE]`.
+fn openai_fixture() -> String {
+    use std::io::{BufRead, BufReader, Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let endpoint = format!("http://{}", listener.local_addr().unwrap());
+    std::thread::spawn(move || {
+        for stream in listener.incoming().flatten() {
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut request = String::new();
+            let mut length = 0usize;
+            let mut line = String::new();
+            while reader.read_line(&mut line).is_ok_and(|n| n > 2) {
+                if request.is_empty() {
+                    request = line.clone();
+                }
+                if let Some(v) = line.to_ascii_lowercase().strip_prefix("content-length:") {
+                    length = v.trim().parse().unwrap_or(0);
+                }
+                line.clear();
+            }
+            let mut body = vec![0u8; length];
+            let _ = reader.read_exact(&mut body);
+            let mut out = stream;
+            let reply = if request.starts_with("GET /v1/models") {
+                let json = r#"{"object":"list","data":[{"id":"fixture","object":"model"}]}"#;
+                format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{json}",
+                    json.len()
+                )
+            } else if request.starts_with("POST /v1/chat/completions") {
+                let chunk =
+                    r#"{"choices":[{"index":0,"delta":{"content":"hi"},"finish_reason":null}]}"#;
+                let done = r#"{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}"#;
+                format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\ndata: {chunk}\n\ndata: {done}\n\ndata: [DONE]\n\n"
+                )
+            } else {
+                "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".into()
+            };
+            let _ = out.write_all(reply.as_bytes());
+        }
+    });
+    endpoint
+}
+
+#[test]
+fn openai_chat_activation_probes_under_the_run() {
+    // activation-probe-inherits-run-reservation: the activation probe is
+    // admitted under the run it validates, as the run's nodes are.
+    let host = Host::new();
+    let endpoint = openai_fixture();
+    let recipe = format!(
+        r#"contractVersion: runtime-recipe.v1
+recipeId: com.opute.test.cli-activate
+recipeVersion: 1.0.0
+runtime: {{id: cli-activate, servingContract: openai-chat.v1, capabilities: [llm-serving]}}
+activation:
+  capability: llm-serving
+  servingContract: openai-chat.v1
+  inputBindings: {{endpoint: endpoint, modelRef: modelRef}}
+inputs:
+  endpoint: {{default: "{endpoint}"}}
+  modelRef: {{default: fixture}}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.test.cli-activate
+  generation: 1
+  idempotencyKey: cli-activate-1
+  nodes:
+    - id: write
+      action:
+        tool: ensure_host_file
+        args: {{path: cli-activate.txt, content: x, scope: user}}
+      validate:
+        tool: probe_openai_compatible_server
+        args: {{endpoint: "${{vars.inputs.endpoint}}", modelRef: "${{vars.inputs.modelRef}}", includeChat: true}}
+        assert:
+          - {{path: /streamingChatReady, op: eq, value: true}}
+"#
+    );
+    let path = host.dir.path().join("activate.yaml");
+    std::fs::write(&path, recipe).unwrap();
+    let result = stdout_json(&host.run(&[
+        "recipe",
+        "apply",
+        "--allow-mutations",
+        "--activate",
+        "--source",
+        path.to_str().unwrap(),
+    ]));
+    assert_eq!(result["status"], "completed", "{result}");
+    assert_eq!(
+        result["activeRuntime"]["capability"], "llm-serving",
+        "{result}"
+    );
+    assert_eq!(
+        result["activeRuntime"]["observation"]["streamingChatReady"], true,
+        "{result}"
+    );
+}
+
 #[test]
 fn a_running_agent_holds_the_instance() {
     let host = Host::new();

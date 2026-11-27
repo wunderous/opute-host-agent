@@ -3,8 +3,10 @@
 //! verified against its SHA-256 before it is installed.
 //!
 //! The client follows Go's `http.Client` as the artifact tool configures it:
-//! system roots (honouring `SSL_CERT_FILE` and `SSL_CERT_DIR`), a five-minute
-//! timeout, and redirects followed only while they stay HTTPS. A custom
+//! system roots (honouring `SSL_CERT_FILE` and `SSL_CERT_DIR`) and redirects
+//! followed only while they stay HTTPS. Go's five-minute timeout covered the
+//! whole transfer; here it is the limit without progress, with one hour in
+//! all (artifact-download-progress-timeout). A custom
 //! `CheckRedirect` replaces Go's default ten-redirect limit, so none applies.
 
 use crate::goerr::{errno_text, path_error};
@@ -264,12 +266,35 @@ fn fetch(agent: &ureq::Agent, uri: &str) -> Result<ureq::Response, String> {
     }
 }
 
+/// How long a download may go without progress, and in all
+/// (artifact-download-progress-timeout).
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct DownloadLimits {
+    pub idle: Duration,
+    pub total: Duration,
+}
+
+pub(crate) const DOWNLOAD_LIMITS: DownloadLimits = DownloadLimits {
+    idle: Duration::from_secs(300),
+    total: Duration::from_secs(3600),
+};
+
 /// `ensureHostArtifactAt`, shared with the public MCP connector install.
 pub(crate) fn ensure_at(
     uri: &str,
     destination: &str,
     expected: &str,
     executable: bool,
+) -> Result<J, String> {
+    ensure_at_with(uri, destination, expected, executable, DOWNLOAD_LIMITS)
+}
+
+fn ensure_at_with(
+    uri: &str,
+    destination: &str,
+    expected: &str,
+    executable: bool,
+    limits: DownloadLimits,
 ) -> Result<J, String> {
     use std::os::unix::fs::PermissionsExt;
     match std::fs::metadata(destination) {
@@ -306,9 +331,15 @@ pub(crate) fn ensure_at(
     }
     let builder = ureq::AgentBuilder::new()
         .redirects(0)
-        .timeout(Duration::from_secs(300))
+        // No progress for `idle` fails the download, and so does `total` in
+        // all, checked below: ureq's own overall timeout would replace the
+        // per-read one.
+        .timeout_connect(limits.idle)
+        .timeout_read(limits.idle)
+        .timeout_write(limits.idle)
         .tls_config(tls_config());
     let agent = crate::providers::env_proxy(builder, uri).build();
+    let started = std::time::Instant::now();
     let response = fetch(&agent, uri)?;
     let status = response.status();
     if !(200..300).contains(&status) {
@@ -341,6 +372,12 @@ pub(crate) fn ensure_at(
     let mut body = response.into_reader().take(MAX_ARTIFACT_BYTES + 1);
     let mut buf = vec![0u8; 32 * 1024];
     loop {
+        if started.elapsed() > limits.total {
+            return Err(format!(
+                "read host artifact: download did not finish within {} seconds",
+                limits.total.as_secs_f64()
+            ));
+        }
         let n = match body.read(&mut buf) {
             Ok(0) => break,
             Ok(n) => n,
@@ -525,6 +562,87 @@ mod tests {
         assert!(!valid_https_uri("/a"));
         assert!(!valid_https_uri("https://example.com:x/a"));
         assert!(!valid_https_uri("https://example.com/%zz"));
+    }
+
+    /// A local server that sends `chunks` body pieces of 100 bytes, waiting
+    /// `gap` before each one after the first `stall_after` (and `stall`
+    /// before piece `stall_after`). Returns the URL and the body's digest.
+    fn slow_server(
+        chunks: usize,
+        gap: Duration,
+        stall_after: usize,
+        stall: Duration,
+    ) -> (String, String) {
+        use std::io::BufRead;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/artifact", listener.local_addr().unwrap());
+        let body = vec![b'x'; chunks * 100];
+        let digest = format!("sha256:{}", hex::encode(Sha256::digest(&body)));
+        std::thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            let mut reader = io::BufReader::new(stream.try_clone().unwrap());
+            let mut line = String::new();
+            while reader.read_line(&mut line).is_ok_and(|n| n > 2) {
+                line.clear();
+            }
+            let mut out = stream;
+            let _ = write!(
+                out,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",
+                body.len()
+            );
+            for (i, piece) in body.chunks(100).enumerate() {
+                std::thread::sleep(if i == stall_after { stall } else { gap });
+                if out.write_all(piece).and_then(|_| out.flush()).is_err() {
+                    return;
+                }
+            }
+        });
+        (url, digest)
+    }
+
+    const LIMITS: DownloadLimits = DownloadLimits {
+        idle: Duration::from_millis(1000),
+        total: Duration::from_secs(20),
+    };
+
+    #[test]
+    fn a_download_that_keeps_progressing_outlasts_the_idle_limit() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("a.bin").display().to_string();
+        // 12 pieces, 250 ms apart: 3 s in all, never 1 s without a byte.
+        let (url, digest) = slow_server(12, Duration::from_millis(250), usize::MAX, Duration::ZERO);
+        let out = ensure_at_with(&url, &dest, &digest, false, LIMITS).unwrap();
+        assert_eq!(out["changed"], true);
+        assert_eq!(out["sha256"], digest.as_str());
+        assert_eq!(std::fs::read(&dest).unwrap().len(), 1200);
+    }
+
+    #[test]
+    fn a_stalled_download_fails_and_installs_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("a.bin").display().to_string();
+        let (url, digest) = slow_server(4, Duration::ZERO, 2, Duration::from_millis(2500));
+        let err = ensure_at_with(&url, &dest, &digest, false, LIMITS).unwrap_err();
+        assert_eq!(err, "read host artifact: timed out reading response");
+        assert!(!Path::new(&dest).exists());
+    }
+
+    #[test]
+    fn a_download_past_the_total_limit_fails_and_installs_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("a.bin").display().to_string();
+        let (url, digest) = slow_server(12, Duration::from_millis(250), usize::MAX, Duration::ZERO);
+        let limits = DownloadLimits {
+            total: Duration::from_millis(1500),
+            ..LIMITS
+        };
+        let err = ensure_at_with(&url, &dest, &digest, false, limits).unwrap_err();
+        assert_eq!(
+            err,
+            "read host artifact: download did not finish within 1.5 seconds"
+        );
+        assert!(!Path::new(&dest).exists());
     }
 
     #[test]

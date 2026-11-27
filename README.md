@@ -130,6 +130,16 @@ and publishes it through a Cloudflare tunnel.
 removes all of it. Recipes like these run on every release candidate, on a
 disposable VM.
 
+## Example: a local model from one recipe
+
+[`docs/recipes/local-llm.recipe.yaml`](docs/recipes/local-llm.recipe.yaml)
+installs Ollama from its pinned upstream release, pulls a small model and
+checks a streaming chat reply before it marks the runtime active. It needs no
+GPU and agent 0.5.4 or later. On the project's test VM (8 vCPU, no GPU) the
+run took 5 min 20 s, most of it downloading, and the first token of a reply
+came after 95 ms. [Run a local model](docs/recipes/local-llm.md) has the
+steps, the measurements and how to clean up.
+
 ## Install without npm
 
 Each [GitHub release](https://github.com/wunderous/opute-host-agent/releases)
@@ -159,7 +169,7 @@ Configuration is environment-based. See the
 
 ## Status and limits
 
-- 0.5.0 is the current release. Each release is accepted on end-to-end
+- 0.5.3 is the current release. Each release is accepted on end-to-end
   journeys that run on a disposable VM, including rollback to the previous
   release.
 - Hosts must run Linux or WSL2. Native macOS and Windows hosts aren't

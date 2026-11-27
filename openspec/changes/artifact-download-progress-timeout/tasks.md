@@ -1,0 +1,11 @@
+## 1. Tests first
+
+- [x] 1.1 `hostartifact.rs` tests against a local server that sends the body slowly: a download that keeps making progress past the no-progress limit completes; a stall fails; one past the total limit fails. The first fails with the 0.5.3 single deadline.
+
+## 2. Change
+
+- [x] 2.1 The download agent takes a no-progress limit (300 s) for connect, reads and writes, and a total limit (one hour).
+
+## 3. Evidence
+
+- [x] 3.1 Journey `e2e8.local-llm` downloads the 1.5 GB Ollama archive through `ensure_host_artifact` on the dev VM in 234 s, on `rust-0.5.4-rc3` (run `m32-r1`, gate `e2e-local-llm`).
