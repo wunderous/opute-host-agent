@@ -1,0 +1,278 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "files//home/opute/.config/systemd",
+   "files//home/opute/.config/systemd/user",
+   "files//home/opute/.config/systemd/user/default.target.wants",
+   "files//home/opute/.config/systemd/user/default.target.wants/opute-provider-k3s.service",
+   "files//home/opute/.config/systemd/user/opute-provider-k3s.service",
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "files//var/lib/systemd/linger/opute",
+   "linger",
+   "mounts//run/user/1001 tmpfs",
+   "opute/running",
+   "opute/units/dbus.socket",
+   "opute/units/dirmngr.socket",
+   "opute/units/gpg-agent-browser.socket",
+   "opute/units/gpg-agent-extra.socket",
+   "opute/units/gpg-agent-ssh.socket",
+   "opute/units/gpg-agent.socket",
+   "opute/units/init.scope",
+   "opute/units/keyboxd.socket",
+   "opute/units/launchpadlib-cache-clean.timer",
+   "opute/units/opute-provider-k3s.service",
+   "opute/units/pk-debconf-helper.socket",
+   "opute/units/snapd.session-agent.socket",
+   "processes//user.slice/user-1001.slice/user@1001.service/app.slice/opute-provider-k3s.service opute-provider-",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope systemd",
+   "sockets/tcp 127.0.0.1:4320 opute-provider-",
+   "system/units/run-user-1001.mount",
+   "system/units/user-1001.slice",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user@1001.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [
+  "pass-condition",
+  "harness-error"
+ ],
+ "gate": "e2e-teardown",
+ "harnessErrors": [
+  {
+   "error": "restore did not return the baseline",
+   "step": "snapshot"
+  }
+ ],
+ "journey": "e2e2.provider-teardown",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.changed",
+     "step": "unit"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "enable"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "start"
+    },
+    {
+     "actual": "enabled\nfile\n",
+     "equals": "enabled\nfile\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "unitEnabled"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "listening"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "installA"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "providerToolsA"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "statusBefore"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "teardownCall"
+    },
+    {
+     "actual": "opute-provider-k3s.service",
+     "equals": "opute-provider-k3s.service",
+     "ok": true,
+     "path": "response.body.result.structuredContent.recipe.providerTeardownInputs.serviceName",
+     "step": "teardownCall"
+    },
+    {
+     "actual": "failed",
+     "equals": "completed",
+     "ok": false,
+     "path": "response.body.result.structuredContent.status",
+     "step": "teardown"
+    },
+    {
+     "actual": "",
+     "equals": "gone\n",
+     "ok": false,
+     "path": "stdout",
+     "step": "unitGone"
+    },
+    {
+     "actual": "ActiveState=active\nUnitFileState=enabled\n",
+     "equals": "ActiveState=inactive\nUnitFileState=\n",
+     "ok": false,
+     "path": "stdout",
+     "step": "unitState"
+    },
+    {
+     "actual": "1\n",
+     "equals": "0\n",
+     "ok": false,
+     "path": "stdout",
+     "step": "portClosed"
+    },
+    {
+     "actual": true,
+     "equals": false,
+     "ok": false,
+     "path": "json.provision",
+     "step": "toolsAfter"
+    },
+    {
+     "actual": "<absent>",
+     "equals": true,
+     "ok": false,
+     "path": "response.body.result.isError",
+     "step": "statusAfter"
+    },
+    {
+     "actual": "<absent>",
+     "matches": "no active generation|not installed|not active",
+     "ok": false,
+     "path": "response.body.result.content[0].text",
+     "step": "statusAfter"
+    }
+   ],
+   "outcome": "fail",
+   "requirement": "Provider teardown reclaims the provider's host service",
+   "spec": "openspec/changes/reclaim-provider-host-service/specs/provider-teardown/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "supervisor"
+    },
+    {
+     "actual": "ready",
+     "equals": "ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "actual": "yes\nbus\n",
+     "equals": "yes\nbus\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "linger"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "recipeOwner"
+    },
+    {
+     "actual": "up\n",
+     "equals": "up\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "userBus"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "ensure_host_service_supervisor settles the user manager",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "catalog": 23,
+   "catalogAfter": 25,
+   "catalogAfterA": 25,
+   "enable": 290,
+   "installA": 385,
+   "linger": 153,
+   "listening": 154,
+   "portClosed": 142,
+   "providerCopy": 495,
+   "providerToolsA": 240,
+   "recipeCopy": 463,
+   "recipeOwner": 151,
+   "start": 155,
+   "statusAfter": 12,
+   "statusBefore": 11,
+   "supervisor": 394,
+   "supervisorAgain": 61,
+   "teardown": 2023,
+   "teardownCall": 42,
+   "tool": 306,
+   "toolsAfter": 224,
+   "unit": 53,
+   "unitEnabled": 151,
+   "unitGone": 142,
+   "unitState": 160,
+   "userBus": 153,
+   "wire": 335
+  },
+  "stepsSeconds": 52.2
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

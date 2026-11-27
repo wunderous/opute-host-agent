@@ -1,0 +1,454 @@
+{
+ "id": "e2e2.provider-teardown",
+ "gate": "e2e-teardown",
+ "description": "Provider teardown (m30): the k3s provider runs as a user unit of the agent's user, written, enabled and started through typed calls; it is installed and activated, then torn down with its serviceName. Pass: the teardown completes, the unit file is gone, the unit is inactive, its port is closed and the provider's tools leave tools/list.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.3 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release as user unit opute-provider-k3s.service (port 4320)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "providerK3s": {
+    "path": "${PARITY}/e2e/release/rust-0.5.3-rc1/opute-provider-k3s-linux-x64",
+    "sha256": "74686571cba88b347826167eb7f952e8ffb9fdf0b4ffa5e697594ca3c1d185ea"
+   },
+   "activate": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
+    "sha256": "91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "openspec/changes/reclaim-provider-host-service/specs/provider-teardown/spec.md",
+   "requirement": "Provider teardown reclaims the provider's host service",
+   "pass": [
+    {
+     "step": "unit",
+     "path": "response.body.result.structuredContent.changed",
+     "equals": true
+    },
+    {
+     "step": "enable",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "applied"
+    },
+    {
+     "step": "start",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "applied"
+    },
+    {
+     "step": "unitEnabled",
+     "path": "stdout",
+     "equals": "enabled\nfile\n"
+    },
+    {
+     "step": "listening",
+     "path": "stdout",
+     "equals": "1\n"
+    },
+    {
+     "step": "installA",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "providerToolsA",
+     "path": "json.listed",
+     "equals": true
+    },
+    {
+     "step": "statusBefore",
+     "path": "response.body.result.structuredContent.active",
+     "equals": true
+    },
+    {
+     "step": "teardownCall",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "teardownCall",
+     "path": "response.body.result.structuredContent.recipe.providerTeardownInputs.serviceName",
+     "equals": "opute-provider-k3s.service"
+    },
+    {
+     "step": "teardown",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "unitGone",
+     "path": "stdout",
+     "equals": "gone\n"
+    },
+    {
+     "step": "unitState",
+     "path": "stdout",
+     "equals": "ActiveState=inactive\nUnitFileState=\n"
+    },
+    {
+     "step": "portClosed",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
+     "step": "toolsAfter",
+     "path": "json.provision",
+     "equals": false
+    },
+    {
+     "step": "statusAfter",
+     "path": "response.body.result.structuredContent.active",
+     "equals": false
+    },
+    {
+     "step": "statusAfter",
+     "path": "response.body.result.structuredContent.connected",
+     "equals": false
+    }
+   ],
+   "scenario": "A provider running as a user unit is torn down"
+  },
+  {
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
+   "requirement": "ensure_host_service_supervisor settles the user manager",
+   "pass": [
+    {
+     "step": "supervisor",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "supervisorAgain",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "ready"
+    },
+    {
+     "step": "linger",
+     "path": "stdout",
+     "equals": "yes\nbus\n"
+    },
+    {
+     "step": "recipeOwner",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "userBus",
+     "path": "stdout",
+     "equals": "up\n"
+    }
+   ],
+   "scenario": "The user manager the provider's unit runs under"
+  }
+ ],
+ "effects": {
+  "allow": [
+   "files//home/opute/.config/systemd",
+   "files//home/opute/.config/systemd/user",
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "linger",
+   "files//var/lib/systemd/linger/opute",
+   "system/units/user@1001.service",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user-1001.slice",
+   "system/units/run-user-1001.mount",
+   "opute/running",
+   "mounts//run/user/1001 tmpfs",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope systemd",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon",
+   "opute/units/dbus.service",
+   "opute/units/dbus.socket",
+   "opute/units/dirmngr.socket",
+   "opute/units/gpg-agent-browser.socket",
+   "opute/units/gpg-agent-extra.socket",
+   "opute/units/gpg-agent-ssh.socket",
+   "opute/units/gpg-agent.socket",
+   "opute/units/init.scope",
+   "opute/units/keyboxd.socket",
+   "opute/units/launchpadlib-cache-clean.timer",
+   "opute/units/pk-debconf-helper.socket",
+   "opute/units/snapd.session-agent.socket"
+  ],
+  "persist": [],
+  "optional": {
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon": "the user manager starts D-Bus on demand",
+   "opute/units/dbus.service": "the user manager starts D-Bus on demand"
+  }
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "providerCopy",
+   "copy": "providerK3s",
+   "to": "/opt/opute-e2e/providers/opute-provider-k3s",
+   "mode": "0755"
+  },
+  {
+   "id": "recipeCopy",
+   "copy": "activate",
+   "to": "/home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "mode": "0644"
+  },
+  {
+   "id": "recipeOwner",
+   "guest": "chown -R opute /home/opute/.config/opute-e2e && echo owned"
+  },
+  {
+   "id": "catalog",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "supervisor",
+   "mcp": "tools/call",
+   "tool": "ensure_host_service_supervisor",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "userBus",
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; test -S /run/user/$(id -u opute)/bus && echo up"
+  },
+  {
+   "id": "supervisorAgain",
+   "mcp": "tools/call",
+   "tool": "ensure_host_service_supervisor",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "linger",
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "confirms": [
+    "supervisor",
+    "supervisorAgain"
+   ]
+  },
+  {
+   "id": "unit",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file",
+   "arguments": {
+    "path": "~/.config/systemd/user/opute-provider-k3s.service",
+    "content": "[Unit]\nDescription=Opute k3s provider (e2e)\n\n[Service]\nEnvironment=OPUTE_PROVIDER_PORT=4320\nExecStart=/opt/opute-e2e/providers/opute-provider-k3s\n\n[Install]\nWantedBy=default.target\n"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "enable",
+   "mcp": "tools/call",
+   "tool": "set_host_service_state",
+   "arguments": {
+    "uri": "host-service:local:system/dbus.service",
+    "serviceName": "opute-provider-k3s.service",
+    "state": "enable",
+    "scope": "user"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "start",
+   "mcp": "tools/call",
+   "tool": "set_host_service_state",
+   "arguments": {
+    "uri": "host-service:local:system/dbus.service",
+    "serviceName": "opute-provider-k3s.service",
+    "state": "start",
+    "scope": "user"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "unitEnabled",
+   "guest": "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user is-enabled opute-provider-k3s.service; test -f /home/opute/.config/systemd/user/opute-provider-k3s.service && echo file",
+   "confirms": [
+    "unit",
+    "enable"
+   ]
+  },
+  {
+   "id": "listening",
+   "guest": "for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4320' | wc -l",
+   "confirms": [
+    "start"
+   ]
+  },
+  {
+   "id": "installA",
+   "mcp": "tools/call",
+   "tool": "opute.provider.install",
+   "arguments": {
+    "descriptor": {
+     "schema": "opute-provider-plugin.v1",
+     "pluginId": "com.opute.k3s",
+     "version": "1.0.2",
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "server": {
+      "transport": "streamable_http",
+      "endpoint": "http://127.0.0.1:4320/mcp"
+     }
+    },
+    "activate": true,
+    "recipeSource": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "providerToolsA",
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "confirms": [
+    "installA"
+   ]
+  },
+  {
+   "id": "catalogAfterA",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "statusBefore",
+   "mcp": "tools/call",
+   "tool": "opute.provider.status",
+   "arguments": {
+    "provider": "com.opute.k3s"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "teardownCall",
+   "mcp": "tools/call",
+   "tool": "opute.provider.teardown",
+   "arguments": {
+    "provider": "com.opute.k3s",
+    "confirm": true,
+    "inputs": {
+     "serviceName": "opute-provider-k3s.service"
+    }
+   },
+   "capture": {
+    "TRUN": "response.body.result.structuredContent.runId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "teardown",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${TRUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 120,
+   "interval": 2,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "unitGone",
+   "guest": "test ! -e /home/opute/.config/systemd/user/opute-provider-k3s.service && echo gone",
+   "confirms": [
+    "teardownCall"
+   ]
+  },
+  {
+   "id": "unitState",
+   "guest": "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user show -p ActiveState -p UnitFileState opute-provider-k3s.service | sort",
+   "confirms": [
+    "teardownCall"
+   ]
+  },
+  {
+   "id": "portClosed",
+   "guest": "ss -ltnH 'sport = :4320' | wc -l",
+   "confirms": [
+    "teardownCall"
+   ]
+  },
+  {
+   "id": "catalogAfter",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "toolsAfter",
+   "guest": "python3 -c 'import sys, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nr = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=1)\nnames = [t[\"name\"] for t in r[\"body\"][\"result\"][\"tools\"]]\nprint(json.dumps({\"provision\": \"opute.capability.kubernetes.provision\" in names}))' '${TOKEN}'",
+   "confirms": [
+    "teardownCall"
+   ]
+  },
+  {
+   "id": "statusAfter",
+   "mcp": "tools/call",
+   "tool": "opute.provider.status",
+   "arguments": {
+    "provider": "com.opute.k3s"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "cleanTeardown",
+   "guest": "uid=$(id -u opute); runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user disable --now opute-provider-k3s.service 2>/dev/null; rm -f /home/opute/.config/systemd/user/opute-provider-k3s.service; runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user daemon-reload; loginctl disable-linger opute; rmdir /home/opute/.config/systemd/user /home/opute/.config/systemd 2>/dev/null; rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true"
+  }
+ ],
+ "maxMinutes": 10
+}

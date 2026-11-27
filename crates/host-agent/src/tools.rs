@@ -4,9 +4,10 @@
 //! module resolves the wire name to a registered capability, decodes the
 //! arguments the way `json.Unmarshal` into `map[string]any` does, checks the
 //! requested catalog revision, applies the caller's mutation authority, and
-//! dispatches. Capabilities whose handlers have not been ported yet fail
-//! closed with a typed `not_implemented` capability error; the catalog still
-//! publishes them, so `tools/list` stays identical to Go.
+//! dispatches. Every published capability has a handler (the seam verifier
+//! checks this). A name no mounted service offers, such as an unpublished
+//! internal descriptor a plan names, fails closed with a typed
+//! `not_implemented` capability error.
 
 use crate::admission::{self, Binding};
 use crate::catalog;

@@ -808,7 +808,7 @@ fn remove_ha_endpoint(ctx: &Ctx, args: &Args) -> Outcome {
     }
     let ingress = store().ingresses.remove(&endpoint_ref);
     let Some(ingress) = ingress else {
-        return Ok(ha_endpoint_removed("vm:local:placeholder", None));
+        return Ok(ha_endpoint_removed(None, &endpoint_ref));
     };
     if ingress.generation != GENERATION {
         return Err("refusing to delete endpoint owned by a foreign generation".into());
@@ -820,8 +820,8 @@ fn remove_ha_endpoint(ctx: &Ctx, args: &Args) -> Outcome {
         );
     }
     Ok(ha_endpoint_removed(
-        &ingress.target_uri,
-        Some(&endpoint_ref),
+        Some(&ingress.target_uri),
+        &endpoint_ref,
     ))
 }
 

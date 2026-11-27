@@ -101,3 +101,20 @@ fn the_auth_key_never_reaches_tailscales_arguments() {
         key
     );
 }
+
+/// Removing an endpoint the provider does not know is idempotent, but the
+/// result names no target: there is none. It used to report
+/// `vm:local:placeholder`, a resource that does not exist.
+#[test]
+fn removing_an_unknown_ha_endpoint_names_no_target() {
+    let args = super::super::support::Args::from_map(
+        serde_json::json!({"endpointRef": "unknown-ref"})
+            .as_object()
+            .unwrap()
+            .clone(),
+    );
+    let out = super::overlay::remove_ha_endpoint(&args).unwrap();
+    assert_eq!(out["deleted"], true);
+    assert_eq!(out["endpointRef"], "unknown-ref");
+    assert!(out.get("targetUri").is_none(), "{out}");
+}

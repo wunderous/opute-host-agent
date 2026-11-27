@@ -438,7 +438,29 @@ impl Runtime {
                 ));
             }
         }
-        cleanup_host_service(&inputs)?;
+        let host = &server.host;
+        let owner = crate::hostfiles::Owner {
+            instance_id: &host.instance_id,
+            owner_instance: &host.shared_host_owner_instance,
+        };
+        cleanup_host_service(
+            &inputs,
+            &ServiceOps {
+                inspect: &|service, scope| {
+                    crate::hostread::inspect_host_service(&host.env, service, scope, 0)
+                },
+                set_state: &|service, state, scope| {
+                    crate::hostservice::set_host_service_state(
+                        &host.env, &owner, service, state, scope,
+                    )
+                    .map(drop)
+                },
+                remove_file: &|path, scope| {
+                    crate::hostfiles::remove_host_file(&owner, path, "", true, scope).map(drop)
+                },
+                reload: &|scope| crate::hostservice::reload_service_manager(&host.env, scope),
+            },
+        )?;
         drop(session);
         self.announce_reason("provider.draining", provider, generation, "teardown");
         lifecycle
@@ -691,21 +713,7 @@ impl Runtime {
                 }
                 Ok(serde_json::json!({"servingContract": "http-exposure.v1", "ready": true, "checks": checks}).as_object().unwrap().clone())
             }
-            // The authenticated MCP exposure probe belongs to tunnel recipes,
-            // whose host-service operations are not part of this build. It
-            // fails closed rather than reporting an unproven exposure.
-            "mcp-exposure.v1" => {
-                let endpoint = string(bindings, "endpoint");
-                if endpoint.is_empty() {
-                    return Some(Err(
-                        "mcp-exposure.v1 activation requires input binding endpoint".into(),
-                    ));
-                }
-                Err(
-                    "mcp-exposure.v1 activation probe is not implemented by this Host Agent build"
-                        .into(),
-                )
-            }
+            "mcp-exposure.v1" => mcp_exposure_activation(&server.host.env, bindings),
             _ => return None,
         })
     }
@@ -941,11 +949,39 @@ impl Runtime {
         io.block_on(adapter.call_synchronous_only(ctx, operation, Some(arguments.clone()), ""))
     }
 }
-/// `cleanupProviderHostService`. The host-owned unit operations (inspect,
-/// disable, remove, reload, stop) are host-service domain operations this
-/// build does not carry, so a named unit fails closed instead of being left
-/// running behind a completed teardown.
-fn cleanup_host_service(inputs: &Map<String, Value>) -> Result<(), String> {
+/// `mcp-exposure.v1` activation: the authenticated `tools/list` proof public
+/// exposure uses (`probeAuthenticatedMCPEndpoint`), with the recipe's bearer or
+/// the agent's machine client.
+fn mcp_exposure_activation(
+    env: &crate::config::Env,
+    bindings: &Map<String, Value>,
+) -> Result<Map<String, Value>, String> {
+    let endpoint = string(bindings, "endpoint");
+    if endpoint.is_empty() {
+        return Err("mcp-exposure.v1 activation requires input binding endpoint".into());
+    }
+    let client = crate::oauth::probe_credential(env);
+    let observation = crate::mcpprobe::probe_authenticated(
+        endpoint,
+        string(bindings, "bearerToken"),
+        client.as_ref(),
+    )?;
+    observation
+        .as_object()
+        .cloned()
+        .ok_or_else(|| "MCP exposure probe returned no observation".into())
+}
+/// The host-service operations provider teardown reclaims a unit with.
+pub(crate) struct ServiceOps<'a> {
+    pub inspect: &'a dyn Fn(&str, &str) -> Result<Value, String>,
+    pub set_state: &'a dyn Fn(&str, &str, &str) -> Result<(), String>,
+    pub remove_file: &'a dyn Fn(&str, &str) -> Result<(), String>,
+    pub reload: &'a dyn Fn(&str) -> Result<(), String>,
+}
+/// `cleanupProviderHostService`: the host-owned half of teardown, after the
+/// provider has finalized. The unit is disabled and removed before its
+/// still-running process is stopped, so a failed step stays retryable.
+fn cleanup_host_service(inputs: &Map<String, Value>, ops: &ServiceOps) -> Result<(), String> {
     let service = string(inputs, "serviceName");
     if service.is_empty() {
         if string(inputs, "hostService") == "none" {
@@ -953,10 +989,42 @@ fn cleanup_host_service(inputs: &Map<String, Value>) -> Result<(), String> {
         }
         return Err("provider_host_service_unknown: provider teardown reached host cleanup without a service to reclaim".into());
     }
-    Err(format!(
-        "inspect provider service {}: host service operations are not implemented by this Host Agent build",
-        crate::goerr::quote(service)
-    ))
+    let quoted = crate::goerr::quote(service);
+    let scope = match string(inputs, "scope") {
+        "" => "user",
+        scope => scope,
+    };
+    let service_file = match string(inputs, "serviceFile") {
+        "" if scope == "system" => format!("/etc/systemd/system/{service}"),
+        "" => format!("~/.config/systemd/user/{service}"),
+        file => file.to_string(),
+    };
+    let observed = (ops.inspect)(service, scope)
+        .map_err(|e| format!("inspect provider service {quoted}: {e}"))?;
+    let (Some(active), Some(enabled)) = (
+        observed.get("active").and_then(Value::as_bool),
+        observed.get("enabled").and_then(Value::as_bool),
+    ) else {
+        return Err(format!(
+            "inspect provider service {quoted} returned incomplete state"
+        ));
+    };
+    if enabled {
+        (ops.set_state)(service, "disable", scope)
+            .map_err(|e| format!("disable provider service {quoted}: {e}"))?;
+    }
+    (ops.remove_file)(&service_file, scope).map_err(|e| {
+        format!(
+            "remove provider service unit {}: {e}",
+            crate::goerr::quote(&service_file)
+        )
+    })?;
+    (ops.reload)(scope).map_err(|e| format!("reload provider service manager: {e}"))?;
+    if active {
+        (ops.set_state)(service, "stop", scope)
+            .map_err(|e| format!("stop provider service {quoted}: {e}"))?;
+    }
+    Ok(())
 }
 fn first_non_empty<'a>(first: &'a str, second: &'a str) -> &'a str {
     if first.trim().is_empty() {
@@ -1021,6 +1089,148 @@ fn string<'a>(arguments: &'a Map<String, Value>, key: &str) -> &'a str {
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
+
+    /// A one-shot MCP endpoint on loopback answering `tools/list` with one tool.
+    fn one_tool_endpoint() -> String {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0u8; 4096];
+            let _ = stream.read(&mut request);
+            let body = r#"{"jsonrpc":"2.0","id":"host-agent-mcp-probe","result":{"tools":[{"name":"a"}]}}"#;
+            let _ = write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+        });
+        format!("http://127.0.0.1:{port}/mcp")
+    }
+
+    /// The `mcp-exposure.v1` activation probe used to fail for every endpoint.
+    #[test]
+    fn mcp_exposure_activation_probes_the_endpoint() {
+        let env =
+            crate::config::Env::from_pairs([("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner")]);
+        let endpoint = one_tool_endpoint();
+        let bindings = json!({"endpoint": endpoint, "bearerToken": "probe-bearer"});
+        let observation = mcp_exposure_activation(&env, bindings.as_object().unwrap()).unwrap();
+        assert_eq!(observation["ready"], true);
+        assert_eq!(observation["authenticated"], true);
+        assert_eq!(observation["authorizationMode"], "provided-bearer");
+        assert_eq!(observation["toolCount"], 1);
+        assert_eq!(observation["endpoint"], endpoint);
+    }
+
+    /// Without a bearer or a machine client nothing is sent, and the
+    /// observation is not ready, so activation refuses it.
+    #[test]
+    fn mcp_exposure_activation_without_credentials_is_not_ready() {
+        let env =
+            crate::config::Env::from_pairs([("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner")]);
+        let bindings = json!({"endpoint": "http://127.0.0.1:1/mcp"});
+        let observation = mcp_exposure_activation(&env, bindings.as_object().unwrap()).unwrap();
+        assert_eq!(observation["ready"], false);
+        assert_eq!(observation["verified"], false);
+        let missing = mcp_exposure_activation(&env, json!({}).as_object().unwrap());
+        assert_eq!(
+            missing,
+            Err("mcp-exposure.v1 activation requires input binding endpoint".into())
+        );
+    }
+
+    /// Runs `cleanup_host_service` against recording operations; `observed`
+    /// is what inspect reports. Returns the result and the calls in order.
+    fn reclaim(inputs: Value, observed: Value) -> (Result<(), String>, Vec<String>) {
+        let calls = std::cell::RefCell::new(Vec::new());
+        let log = |call: String| calls.borrow_mut().push(call);
+        let ops = ServiceOps {
+            inspect: &|service, scope| {
+                log(format!("inspect {service} {scope}"));
+                Ok(observed.clone())
+            },
+            set_state: &|service, state, scope| {
+                log(format!("{state} {service} {scope}"));
+                Ok(())
+            },
+            remove_file: &|path, scope| {
+                log(format!("remove {path} {scope}"));
+                Ok(())
+            },
+            reload: &|scope| {
+                log(format!("reload {scope}"));
+                Ok(())
+            },
+        };
+        let result = cleanup_host_service(inputs.as_object().unwrap(), &ops);
+        (result, calls.into_inner())
+    }
+
+    /// `cleanupProviderHostService`: a named unit is disabled and removed
+    /// before its still-running process is stopped, so a failed step can be
+    /// retried. It used to fail for every named unit, so a provider with a
+    /// service could never be torn down.
+    #[test]
+    fn teardown_reclaims_a_named_user_service_in_go_order() {
+        let (result, calls) = reclaim(
+            json!({"serviceName": "opute-cloudflare.service"}),
+            json!({"active": true, "enabled": true}),
+        );
+        assert_eq!(result, Ok(()));
+        assert_eq!(
+            calls,
+            [
+                "inspect opute-cloudflare.service user",
+                "disable opute-cloudflare.service user",
+                "remove ~/.config/systemd/user/opute-cloudflare.service user",
+                "reload user",
+                "stop opute-cloudflare.service user",
+            ]
+        );
+    }
+
+    #[test]
+    fn teardown_skips_disable_and_stop_for_an_idle_unit() {
+        let (result, calls) = reclaim(
+            json!({"serviceName": "p.service", "scope": "system", "serviceFile": "/etc/systemd/system/p.service"}),
+            json!({"active": false, "enabled": false}),
+        );
+        assert_eq!(result, Ok(()));
+        assert_eq!(
+            calls,
+            [
+                "inspect p.service system",
+                "remove /etc/systemd/system/p.service system",
+                "reload system",
+            ]
+        );
+    }
+
+    #[test]
+    fn teardown_refuses_an_incomplete_inspection() {
+        let (result, calls) = reclaim(json!({"serviceName": "p.service"}), json!({"active": true}));
+        assert_eq!(
+            result,
+            Err("inspect provider service \"p.service\" returned incomplete state".into())
+        );
+        assert_eq!(calls, ["inspect p.service user"]);
+    }
+
+    #[test]
+    fn teardown_without_a_service_needs_an_explicit_none() {
+        assert_eq!(
+            reclaim(json!({"hostService": "none"}), json!({})),
+            (Ok(()), vec![])
+        );
+        let (result, calls) = reclaim(json!({}), json!({}));
+        assert!(result
+            .unwrap_err()
+            .starts_with("provider_host_service_unknown:"));
+        assert!(calls.is_empty());
+    }
+
     #[tokio::test(flavor = "current_thread")]
     async fn shutdown_keeps_io_alive_until_accepted_factory_call_finishes() {
         use std::{
