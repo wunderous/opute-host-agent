@@ -75,17 +75,22 @@
      ]
     },
     {
-     "step": "teardown",
-     "path": "response.body.result.status",
-     "equals": "completed"
-    },
-    {
-     "step": "teardown",
-     "path": "response.body.result.result.isError",
+     "step": "teardownCall",
+     "path": "response.body.result.isError",
      "in": [
       false,
       "<absent>"
      ]
+    },
+    {
+     "step": "teardownCall",
+     "path": "response.body.result.structuredContent.recipe.providerTeardownInputs.serviceName",
+     "equals": "opute-provider-k3s.service"
+    },
+    {
+     "step": "teardown",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
     },
     {
      "step": "unitGone",
@@ -161,6 +166,8 @@
    "files//home/opute/.config/systemd",
    "files//home/opute/.config/systemd/user",
    "files//home/opute/.config/systemd/user/opute-provider-k3s.service",
+   "files//home/opute/.config/systemd/user/default.target.wants",
+   "files//home/opute/.config/systemd/user/default.target.wants/opute-provider-k3s.service",
    "files//home/opute/.config/opute-e2e",
    "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
    "files//opt/opute-e2e/providers",
@@ -192,7 +199,11 @@
    "opute/units/pk-debconf-helper.socket",
    "opute/units/snapd.session-agent.socket"
   ],
-  "persist": []
+  "persist": [],
+  "optional": {
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon": "the user manager starts D-Bus on demand",
+   "opute/units/dbus.service": "the user manager starts D-Bus on demand"
+  }
  },
  "steps": [
   {
@@ -370,15 +381,8 @@
      "serviceName": "opute-provider-k3s.service"
     }
    },
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
    "capture": {
-    "TID_teardown": "response.body.result.taskId"
+    "TRUN": "response.body.result.structuredContent.runId"
    },
    "retryOn": [
     "host_capacity_saturated"
@@ -386,47 +390,44 @@
   },
   {
    "id": "teardown",
-   "mcp": "tasks/get",
-   "params": {
-    "taskId": "${TID_teardown}"
-   },
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${TRUN}"
    },
    "until": {
-    "path": "response.body.result.status",
+    "path": "response.body.result.structuredContent.status",
     "in": [
      "completed",
      "failed",
      "cancelled"
     ]
    },
-   "timeout": 600,
-   "interval": 3
+   "timeout": 120,
+   "interval": 2,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
   },
   {
    "id": "unitGone",
    "guest": "test ! -e /home/opute/.config/systemd/user/opute-provider-k3s.service && echo gone",
    "confirms": [
-    "teardown"
+    "teardownCall"
    ]
   },
   {
    "id": "unitState",
    "guest": "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user show -p ActiveState -p UnitFileState opute-provider-k3s.service | sort",
    "confirms": [
-    "teardown"
+    "teardownCall"
    ]
   },
   {
    "id": "portClosed",
    "guest": "ss -ltnH 'sport = :4320' | wc -l",
    "confirms": [
-    "teardown"
+    "teardownCall"
    ]
   },
   {
@@ -437,7 +438,7 @@
    "id": "toolsAfter",
    "guest": "python3 -c 'import sys, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nr = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=1)\nnames = [t[\"name\"] for t in r[\"body\"][\"result\"][\"tools\"]]\nprint(json.dumps({\"provision\": \"opute.capability.kubernetes.provision\" in names}))' '${TOKEN}'",
    "confirms": [
-    "teardown"
+    "teardownCall"
    ]
   },
   {
