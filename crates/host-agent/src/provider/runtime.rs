@@ -713,21 +713,7 @@ impl Runtime {
                 }
                 Ok(serde_json::json!({"servingContract": "http-exposure.v1", "ready": true, "checks": checks}).as_object().unwrap().clone())
             }
-            // The authenticated MCP exposure probe belongs to tunnel recipes,
-            // whose host-service operations are not part of this build. It
-            // fails closed rather than reporting an unproven exposure.
-            "mcp-exposure.v1" => {
-                let endpoint = string(bindings, "endpoint");
-                if endpoint.is_empty() {
-                    return Some(Err(
-                        "mcp-exposure.v1 activation requires input binding endpoint".into(),
-                    ));
-                }
-                Err(
-                    "mcp-exposure.v1 activation probe is not implemented by this Host Agent build"
-                        .into(),
-                )
-            }
+            "mcp-exposure.v1" => mcp_exposure_activation(&server.host.env, bindings),
             _ => return None,
         })
     }
@@ -963,6 +949,28 @@ impl Runtime {
         io.block_on(adapter.call_synchronous_only(ctx, operation, Some(arguments.clone()), ""))
     }
 }
+/// `mcp-exposure.v1` activation: the authenticated `tools/list` proof public
+/// exposure uses (`probeAuthenticatedMCPEndpoint`), with the recipe's bearer or
+/// the agent's machine client.
+fn mcp_exposure_activation(
+    env: &crate::config::Env,
+    bindings: &Map<String, Value>,
+) -> Result<Map<String, Value>, String> {
+    let endpoint = string(bindings, "endpoint");
+    if endpoint.is_empty() {
+        return Err("mcp-exposure.v1 activation requires input binding endpoint".into());
+    }
+    let client = crate::oauth::probe_credential(env);
+    let observation = crate::mcpprobe::probe_authenticated(
+        endpoint,
+        string(bindings, "bearerToken"),
+        client.as_ref(),
+    )?;
+    observation
+        .as_object()
+        .cloned()
+        .ok_or_else(|| "MCP exposure probe returned no observation".into())
+}
 /// The host-service operations provider teardown reclaims a unit with.
 pub(crate) struct ServiceOps<'a> {
     pub inspect: &'a dyn Fn(&str, &str) -> Result<Value, String>,
@@ -1081,6 +1089,57 @@ fn string<'a>(arguments: &'a Map<String, Value>, key: &str) -> &'a str {
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
+
+    /// A one-shot MCP endpoint on loopback answering `tools/list` with one tool.
+    fn one_tool_endpoint() -> String {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0u8; 4096];
+            let _ = stream.read(&mut request);
+            let body = r#"{"jsonrpc":"2.0","id":"host-agent-mcp-probe","result":{"tools":[{"name":"a"}]}}"#;
+            let _ = write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+        });
+        format!("http://127.0.0.1:{port}/mcp")
+    }
+
+    /// The `mcp-exposure.v1` activation probe used to fail for every endpoint.
+    #[test]
+    fn mcp_exposure_activation_probes_the_endpoint() {
+        let env =
+            crate::config::Env::from_pairs([("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner")]);
+        let endpoint = one_tool_endpoint();
+        let bindings = json!({"endpoint": endpoint, "bearerToken": "probe-bearer"});
+        let observation = mcp_exposure_activation(&env, bindings.as_object().unwrap()).unwrap();
+        assert_eq!(observation["ready"], true);
+        assert_eq!(observation["authenticated"], true);
+        assert_eq!(observation["authorizationMode"], "provided-bearer");
+        assert_eq!(observation["toolCount"], 1);
+        assert_eq!(observation["endpoint"], endpoint);
+    }
+
+    /// Without a bearer or a machine client nothing is sent, and the
+    /// observation is not ready, so activation refuses it.
+    #[test]
+    fn mcp_exposure_activation_without_credentials_is_not_ready() {
+        let env =
+            crate::config::Env::from_pairs([("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner")]);
+        let bindings = json!({"endpoint": "http://127.0.0.1:1/mcp"});
+        let observation = mcp_exposure_activation(&env, bindings.as_object().unwrap()).unwrap();
+        assert_eq!(observation["ready"], false);
+        assert_eq!(observation["verified"], false);
+        let missing = mcp_exposure_activation(&env, json!({}).as_object().unwrap());
+        assert_eq!(
+            missing,
+            Err("mcp-exposure.v1 activation requires input binding endpoint".into())
+        );
+    }
 
     /// Runs `cleanup_host_service` against recording operations; `observed`
     /// is what inspect reports. Returns the result and the calls in order.
