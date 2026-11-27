@@ -20,7 +20,7 @@ import make_e2e3a as ha
 import make_e2e4a as e4
 from make_e2e1 import HERE, a, ok, req
 from make_e2e3a import call, direct
-from make_e2e4a import OPUTE_UID, USER_SESSION, USER_SYSTEMCTL, linger, svc
+from make_e2e4a import USER_SESSION, USER_SYSTEMCTL, linger, svc
 
 SPEC = "openspec/changes/reclaim-provider-host-service/specs/provider-teardown/spec.md"
 UNIT = "opute-provider-k3s.service"
@@ -89,7 +89,7 @@ def teardown() -> dict:
             a("unitEnabled", "stdout", equals="enabled\nfile\n"), a("listening", "stdout", equals="1\n"),
             direct("installA", "isError", **{"in": [False, "<absent>"]}),
             a("providerToolsA", "json.listed", equals=True),
-            direct("statusBefore", "isError", **{"in": [False, "<absent>"]}),
+            direct("statusBefore", "structuredContent.active", equals=True),
             direct("teardownCall", "isError", **{"in": [False, "<absent>"]}),
             direct("teardownCall", "structuredContent.recipe.providerTeardownInputs.serviceName", equals=UNIT),
             direct("teardown", "structuredContent.status", equals="completed"),
@@ -97,8 +97,8 @@ def teardown() -> dict:
             a("unitState", "stdout", equals="ActiveState=inactive\nUnitFileState=\n"),
             a("portClosed", "stdout", equals="0\n"),
             a("toolsAfter", "json.provision", equals=False),
-            direct("statusAfter", "isError", equals=True),
-            direct("statusAfter", "content[0].text", matches="no active generation|not installed|not active"),
+            direct("statusAfter", "structuredContent.active", equals=False),
+            direct("statusAfter", "structuredContent.connected", equals=False),
             scenario="A provider running as a user unit is torn down"),
         req(e4.CATALOG, "ensure_host_service_supervisor settles the user manager",
             direct("supervisor", "isError", **{"in": [False, "<absent>"]}),
@@ -111,14 +111,12 @@ def teardown() -> dict:
         f"{USER_SYSTEMCTL} daemon-reload; loginctl disable-linger opute; "
         "rmdir /home/opute/.config/systemd/user /home/opute/.config/systemd 2>/dev/null; "
         "rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true")}]
-    proc = f"processes//user.slice/user-{OPUTE_UID}.slice/user@{OPUTE_UID}.service/app.slice/{UNIT} opute-provider-"
+    # The provider's unit, process and port are gone after a teardown that works, so they are not allowed:
+    # a teardown that leaves them fails as undeclared effects too.
     allow = (["files//home/opute/.config/systemd", "files//home/opute/.config/systemd/user",
-              f"files/{UNIT_FILE}", "files//home/opute/.config/systemd/user/default.target.wants",
-              f"files//home/opute/.config/systemd/user/default.target.wants/{UNIT}",
               "files//home/opute/.config/opute-e2e",
               "files//home/opute/.config/opute-e2e/k3s-activate.yaml", "files//opt/opute-e2e/providers",
-              "files//opt/opute-e2e/providers/opute-provider-k3s", f"opute/units/{UNIT}", proc,
-              "sockets/tcp 127.0.0.1:4320 opute-provider-"] + USER_SESSION)
+              "files//opt/opute-e2e/providers/opute-provider-k3s"] + USER_SESSION)
     # the user manager's D-Bus starts only when something asks for it
     optional = {p: "the user manager starts D-Bus on demand" for p in USER_SESSION if "dbus.service" in p}
     return e4.journey(

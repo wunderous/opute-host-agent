@@ -68,11 +68,8 @@
     },
     {
      "step": "statusBefore",
-     "path": "response.body.result.isError",
-     "in": [
-      false,
-      "<absent>"
-     ]
+     "path": "response.body.result.structuredContent.active",
+     "equals": true
     },
     {
      "step": "teardownCall",
@@ -114,13 +111,13 @@
     },
     {
      "step": "statusAfter",
-     "path": "response.body.result.isError",
-     "equals": true
+     "path": "response.body.result.structuredContent.active",
+     "equals": false
     },
     {
      "step": "statusAfter",
-     "path": "response.body.result.content[0].text",
-     "matches": "no active generation|not installed|not active"
+     "path": "response.body.result.structuredContent.connected",
+     "equals": false
     }
    ],
    "scenario": "A provider running as a user unit is torn down"
@@ -165,16 +162,10 @@
   "allow": [
    "files//home/opute/.config/systemd",
    "files//home/opute/.config/systemd/user",
-   "files//home/opute/.config/systemd/user/opute-provider-k3s.service",
-   "files//home/opute/.config/systemd/user/default.target.wants",
-   "files//home/opute/.config/systemd/user/default.target.wants/opute-provider-k3s.service",
    "files//home/opute/.config/opute-e2e",
    "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
    "files//opt/opute-e2e/providers",
    "files//opt/opute-e2e/providers/opute-provider-k3s",
-   "opute/units/opute-provider-k3s.service",
-   "processes//user.slice/user-1001.slice/user@1001.service/app.slice/opute-provider-k3s.service opute-provider-",
-   "sockets/tcp 127.0.0.1:4320 opute-provider-",
    "linger",
    "files//var/lib/systemd/linger/opute",
    "system/units/user@1001.service",
