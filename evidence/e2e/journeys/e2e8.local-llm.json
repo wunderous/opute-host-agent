@@ -197,11 +197,6 @@
    "files//home/opute/.config/systemd/user",
    "files//home/opute/.config/systemd/user/opute-ollama.service",
    "files//home/opute/.config/systemd/user/default.target.wants*",
-   "opute/units/opute-ollama.service",
-   "processes//user.slice/user-1001.slice/user@1001.service/opute.slice/opute-workload.slice/opute-ollama.service ollama",
-   "processes//user.slice/user-1001.slice/user@1001.service/opute.slice/opute-workload.slice/opute-ollama.service llama-server",
-   "sockets/tcp 127.0.0.1:11434 ollama",
-   "sockets/tcp 127.0.0.1:* llama-server",
    "linger",
    "files//var/lib/systemd/linger/opute",
    "system/units/user@1001.service",
@@ -229,8 +224,7 @@
   "persist": [],
   "optional": {
    "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon": "the user manager starts D-Bus on demand",
-   "opute/units/dbus.service": "the user manager starts D-Bus on demand",
-   "sockets/tcp 127.0.0.1:* llama-server": "Ollama's model runner listens on a random local port"
+   "opute/units/dbus.service": "the user manager starts D-Bus on demand"
   }
  },
  "steps": [

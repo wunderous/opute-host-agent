@@ -24,7 +24,6 @@ from make_e2e4a import USER_SESSION, USER_SYSTEMCTL, linger, svc
 SPEC = "openspec/changes/recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md"
 GOAL = ".agents/goals/m32-local-llm.md (work 2 and 3)"
 HOME = e4.HOME
-UID = e4.OPUTE_UID
 RECIPE = f"{HOME}/m32/local-llm.recipe.yaml"
 OLLAMA = "v0.40.17"
 OLLAMA_DIR = f"{HOME}/.local/share/opute/ollama/{OLLAMA}"
@@ -152,18 +151,15 @@ def local_llm() -> dict:
         f"{HOME}/.config/opute/ollama-runtime.json; "
         f"rmdir {HOME}/.cache/opute {HOME}/.cache {HOME}/.config/systemd/user/default.target.wants "
         f"{HOME}/.config/systemd/user {HOME}/.config/systemd 2>/dev/null; true")}]
-    workload = f"processes//user.slice/user-{UID}.slice/user@{UID}.service/opute.slice/opute-workload.slice"
     allow = [f"files/{HOME}/m32", f"files/{HOME}/m32/local-llm.recipe.yaml",
              f"files/{HOME}/.local/share/opute/ollama*", f"files/{HOME}/.ollama*",
              f"files/{HOME}/.config/opute/ollama-runtime.json",
              f"files/{HOME}/.config/systemd", f"files/{HOME}/.config/systemd/user",
              f"files/{HOME}/.config/systemd/user/{UNIT}",
              f"files/{HOME}/.config/systemd/user/default.target.wants*",
-             f"opute/units/{UNIT}", f"{workload}/{UNIT} ollama", f"{workload}/{UNIT} llama-server",
-             "sockets/tcp 127.0.0.1:11434 ollama", "sockets/tcp 127.0.0.1:* llama-server"] + USER_SESSION
+             # the runtime's unit, processes and ports are gone once the unit is stopped
+             ] + USER_SESSION
     optional = {p: "the user manager starts D-Bus on demand" for p in USER_SESSION if "dbus.service" in p}
-    # Ollama's model runner listens on a port it picks at random
-    optional["sockets/tcp 127.0.0.1:* llama-server"] = "Ollama's model runner listens on a random local port"
     return e4.journey(
         "e2e8.local-llm", "e2e-local-llm",
         "A real local LLM (m32): on a CPU-only host, the published recipe installs Ollama from its pinned upstream "
