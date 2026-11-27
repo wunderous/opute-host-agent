@@ -58,9 +58,14 @@ pulled blob's sha256 against the pin above.
 
 ## Questions the journey answers
 
-1. Does the agent find an Ollama it installed under the user's home? That
-   needs `OPUTE_OLLAMA_BINARY` or a `PATH` entry at agent start, which is
-   configuration, not an MCP call.
+1. Does the agent find an Ollama it installed under the user's home? The
+   archive holds `bin/ollama` and `lib/ollama/`, so extracting it into
+   `~/.local` gives `~/.local/bin/ollama`. The agent looks the binary up on
+   each call, but on the `PATH` it started with; the npm launcher passes the
+   user's environment. Ubuntu's `~/.profile` adds `~/.local/bin` only if it
+   exists at login, so on a fresh user the agent needs a restart, or
+   `OPUTE_OLLAMA_BINARY`, before it sees the binary. The journey measures
+   which one applies, and the docs say so.
 2. Does `ensure_host_artifact` finish a 1.5 GB download inside its 300 s
    request timeout on the dev VM?
 3. Does `install_local_llm_model` (which warms the model) leave a runtime
