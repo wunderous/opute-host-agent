@@ -8,8 +8,8 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 Journey `e2e2.provider-teardown`, run once on the published 0.5.0 binary, which fails at teardown (the reproduction).
-- [ ] 3.2 The same journey passes once on the release candidate.
+- [x] 3.1 Journey `e2e2.provider-teardown`, run once on the published 0.5.0 binary, which fails at teardown (the reproduction): `evidence/e2e/runs/m30-before`.
+- [x] 3.2 The same journey passes once on the release candidate: `m30-r2` on `rust-0.5.3-rc1`, gate `e2e-teardown`.
 
 ## 4. Release
 
