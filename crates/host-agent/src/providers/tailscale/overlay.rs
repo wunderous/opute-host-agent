@@ -1020,37 +1020,39 @@ fn promote_public_ingress(args: &Args) -> Outcome {
     promote(args, false)
 }
 
-pub(super) fn ha_endpoint_removed(target_uri: &str, endpoint_ref: Option<&str>) -> J {
+/// An endpoint removal. A reference the provider does not hold is already
+/// gone: the removal succeeds and names no target, since there is none.
+pub(super) fn ha_endpoint_removed(target_uri: Option<&str>, endpoint_ref: &str) -> J {
     let mut out = json!({
         "contractVersion": NETWORK_OVERLAY,
         "ready": true,
         "provider": PROVIDER_NAME,
         "generation": GENERATION,
         "deleted": true,
-        "targetUri": target_uri,
+        "endpointRef": endpoint_ref,
     });
-    if let Some(reference) = endpoint_ref {
-        out["endpointRef"] = J::from(reference);
+    if let Some(target_uri) = target_uri {
+        out["targetUri"] = J::from(target_uri);
     }
     out
 }
 
-fn remove_ha_endpoint(args: &Args) -> Outcome {
+pub(super) fn remove_ha_endpoint(args: &Args) -> Outcome {
     let endpoint_ref = args.string("endpointRef", "");
     if endpoint_ref.is_empty() {
         return Err("endpointRef is required".into());
     }
     let mut store = store();
     let Some(ingress) = store.ingresses.get(&endpoint_ref).cloned() else {
-        return Ok(ha_endpoint_removed("vm:local:placeholder", None));
+        return Ok(ha_endpoint_removed(None, &endpoint_ref));
     };
     if ingress.generation != GENERATION {
         return Err("refusing to delete endpoint owned by a foreign generation".into());
     }
     store.ingresses.remove(&endpoint_ref);
     Ok(ha_endpoint_removed(
-        &ingress.target_uri,
-        Some(&endpoint_ref),
+        Some(&ingress.target_uri),
+        &endpoint_ref,
     ))
 }
 
