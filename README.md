@@ -169,7 +169,7 @@ Configuration is environment-based. See the
 
 ## Status and limits
 
-- 0.5.3 is the current release. Each release is accepted on end-to-end
+- 0.5.4 is the current release. Each release is accepted on end-to-end
   journeys that run on a disposable VM, including rollback to the previous
   release.
 - Hosts must run Linux or WSL2. Native macOS and Windows hosts aren't

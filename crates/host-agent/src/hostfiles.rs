@@ -4,7 +4,9 @@
 //! account home through no symlink, system scope one systemd service unit.
 
 use crate::goerr::{path_error, quote};
-use crate::hostread::{home_dir, host_owned_path, sha256_label, systemd_unit_path};
+use crate::hostread::{
+    home_dir, host_owned_path, sha256_label, sha256_label_of, systemd_unit_path,
+};
 use serde_json::{json, Value as J};
 use std::io::{self, Read, Write};
 use std::path::Path;
@@ -46,6 +48,14 @@ fn read_file(path: &str) -> Result<Vec<u8>, (io::Error, String)> {
     file.read_to_end(&mut content)
         .map_err(|e| (clone_error(&e), path_error("read", Path::new(path), &e).0))?;
     Ok(content)
+}
+
+/// `read_file`'s errors, with the content streamed into its hash.
+fn hash_file(path: &str) -> Result<String, (io::Error, String)> {
+    let mut file = std::fs::File::open(path)
+        .map_err(|e| (clone_error(&e), path_error("open", Path::new(path), &e).0))?;
+    sha256_label_of(&mut file)
+        .map_err(|e| (clone_error(&e), path_error("read", Path::new(path), &e).0))
 }
 
 fn clone_error(e: &io::Error) -> io::Error {
@@ -186,9 +196,8 @@ pub fn remove_host_file(
             quote(&path)
         ));
     }
-    let content =
-        read_file(&path).map_err(|(_, text)| format!("read removable host file: {text}"))?;
-    let observed = sha256_label(&content);
+    let observed =
+        hash_file(&path).map_err(|(_, text)| format!("read removable host file: {text}"))?;
     let expected = expected_sha256.trim();
     if !expected.is_empty() {
         let expected = format!(

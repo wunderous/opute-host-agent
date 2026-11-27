@@ -13,4 +13,4 @@
 ## 4. Evidence
 
 - [x] 4.1 A fresh-user run of each command on the dev VM against `rust-0.5.4-rc1`: `evidence/m31` (`public-mcp --allow-mutations` needs a real tunnel token and is not run).
-- [ ] 4.2 host-agents' Configuration page names `--allow-mutations` for the three commands, in the release that ships them.
+- [x] 4.2 host-agents' Configuration page names `--allow-mutations` for the three commands, in the release that ships them: host-agents#44 (0.5.4).
