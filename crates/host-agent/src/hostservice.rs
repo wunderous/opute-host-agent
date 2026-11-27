@@ -108,18 +108,7 @@ pub fn set_host_service_state(
     }
     // Reload the matching manager first, so a unit file reconciled just
     // before this call is not acted on stale.
-    let reload = if scope == "user" {
-        argv(&[SYSTEMCTL, "--user", "daemon-reload"])
-    } else {
-        argv(&["sudo", "-n", SYSTEMCTL, "daemon-reload"])
-    };
-    let res = run(env, reload, Duration::ZERO);
-    if res.exit_code != 0 {
-        return Err(format!(
-            "service manager reload failed: {}",
-            first_non_empty(&[&res.stderr, &res.stdout, "command failed"])
-        ));
-    }
+    reload_service_manager(env, &scope)?;
     let res = run(env, state_command(service, &state, &scope), Duration::ZERO);
     if res.exit_code != 0 {
         return Err(format!(
@@ -133,6 +122,23 @@ pub fn set_host_service_state(
         "applied"
     };
     Ok(json!({"serviceName": service, "state": state, "scope": scope, "status": status}))
+}
+
+/// `ReloadHostServiceManager`: `daemon-reload` for the scope's manager.
+pub fn reload_service_manager(env: &Env, scope: &str) -> Result<(), String> {
+    let reload = if scope_of(scope)? == "user" {
+        argv(&[SYSTEMCTL, "--user", "daemon-reload"])
+    } else {
+        argv(&["sudo", "-n", SYSTEMCTL, "daemon-reload"])
+    };
+    let res = run(env, reload, Duration::ZERO);
+    if res.exit_code != 0 {
+        return Err(format!(
+            "service manager reload failed: {}",
+            first_non_empty(&[&res.stderr, &res.stdout, "command failed"])
+        ));
+    }
+    Ok(())
 }
 
 /// `Service.RestartHostService`.
