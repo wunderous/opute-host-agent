@@ -18,7 +18,8 @@ It was recorded with asciinema 3.2.1 at 100x16 and rendered with agg 1.9.0
 - **The agent is a release candidate.** A fresh user started it with the
   published npm launcher (`npx @opute/host-agent@0.5.3 start --background
   --allow-mutations`) and `OPUTE_HOST_AGENT_BINARY` set to the
-  `rust-0.5.4-rc3` binary. The recipe needs 0.5.4, which isn't published yet.
+  `rust-0.5.4-rc3` binary, whose files were later published unchanged as
+  0.5.4.
 - **The host** is an Incus container on the project's test VM:
   6 CPUs, 6 GiB, no GPU.
 
