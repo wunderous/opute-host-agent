@@ -53,5 +53,27 @@ Pinned hashes, checked in the guest:
 `make e2e-verify E2E_GATE=e2e-local-llm` re-derives the pass from the
 committed receipts.
 
+## The docs, as written, and the demo
+
+[`docs-run.txt`](docs-run.txt) is from `guest-demo.sh`, run after PR #86
+merged (`ebde82356`). It ran in an Incus container on the dev VM (6 CPUs, 6 GiB),
+so minimal.opute.io kept serving.
+
+A fresh user started the agent with the published launcher
+(`npx @opute/host-agent@0.5.3 start --background --allow-mutations`), with
+`OPUTE_HOST_AGENT_BINARY` set to the `rust-0.5.4-rc3` binary. Then, in this
+order:
+- **The demo scene** (`docs/demo/local-llm/scene.txt`) downloaded the recipe
+  from `main` with the docs' URL and ran it with `activate: true`. The run
+  reported `completed` with `llm-serving` active. The model answered "Paris".
+- **"Use the model"** ran verbatim and got a completion.
+- **Memory:** the unit's `MemoryPeak` was 1,461,592,064 bytes (1.4 GiB). An
+  earlier dry run measured 1,475,788,800.
+- **"Stop and clean up"** ran verbatim. Nothing it lists was left, the unit
+  was inactive and port 11434 was closed.
+
+The GIF is `docs/demo/local-llm/local-llm.gif`: 53.3 s, 315 KB. The session
+took 414 s, and pauses are cut to 2 s. The cast holds no token.
+
 Not verified: a GPU host, arm64, and the published 0.5.3. 0.5.3 has F1 and F2,
 so the recipe needs 0.5.4.
