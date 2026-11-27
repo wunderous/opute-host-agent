@@ -3,7 +3,7 @@
  "gate": "e2e-teardown",
  "description": "Provider teardown (m30): the k3s provider runs as a user unit of the agent's user, written, enabled and started through typed calls; it is installed and activated, then torn down with its serviceName. Pass: the teardown completes, the unit file is gone, the unit is inactive, its port is closed and the provider's tools leave tools/list.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release as user unit opute-provider-k3s.service (port 4320)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.3 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release as user unit opute-provider-k3s.service (port 4320)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
@@ -14,8 +14,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust-0.5.0-rc1/opute-provider-k3s-linux-x64",
-    "sha256": "680e62f7ff36dde29e4e857fcedc590094642600f699771cb66215625eb3ca63"
+    "path": "${PARITY}/e2e/release/rust-0.5.3-rc1/opute-provider-k3s-linux-x64",
+    "sha256": "74686571cba88b347826167eb7f952e8ffb9fdf0b4ffa5e697594ca3c1d185ea"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",

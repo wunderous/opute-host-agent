@@ -13,6 +13,7 @@ is inactive, its port is closed and its tools leave tools/list.
 from __future__ import annotations
 
 import json
+import os
 
 import make_e2e1 as base
 import make_e2e3a as ha
@@ -30,6 +31,9 @@ UNIT_TEXT = ("[Unit]\nDescription=Opute k3s provider (e2e)\n\n[Service]\nEnviron
 PROVIDER = "com.opute.k3s"
 PORT_OPEN = ("for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; "
              "ss -ltnH 'sport = :4320' | wc -l")
+# the release the dev VM runs; E2E_CANDIDATE names its set (make_e2e1)
+VERSION = os.environ.get("E2E_VERSION", base.RUST_VERSION)
+AGENT = base.AGENT.replace(base.RUST_VERSION, VERSION)
 FILES = {**base.TOOL_FILES, "providerK3s": ha.FILES["providerK3s"], "activate": ha.FILES["activate"]}
 
 
@@ -124,7 +128,7 @@ def teardown() -> dict:
         "Pass: the teardown completes, the unit file is gone, the unit is inactive, its port is closed and the "
         "provider's tools leave tools/list.",
         reqs, steps, cleanup, allow=allow, minutes=10, optional=optional,
-        inputs={"agent": base.AGENT + ", with the Rust k3s provider 1.0.2 from the release as user unit "
+        inputs={"agent": AGENT + ", with the Rust k3s provider 1.0.2 from the release as user unit "
                                       f"{UNIT} (port 4320)", "files": FILES})
 
 

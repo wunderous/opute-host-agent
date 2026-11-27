@@ -53,8 +53,9 @@ VCPUS, MEMORY_MB, DISK = 8, 16384, "100G"
 SSH_PORT, MCP_PORT = 42222, 43014
 AGENT_ID = "e2e-devvm-agent"
 UNIT = "opute-bootstrap-mcp.service"
-# The Rust release the VM is built from (m28: the 0.5.0 candidate); Go stays v0.2.4.
-VERSION = "0.5.0"
+# The Rust release the VM is built from (m28: the 0.5.0 candidate; E2E_VERSION
+# names a later one, such as m30's 0.5.3); Go stays v0.2.4.
+VERSION = os.environ.get("E2E_VERSION", "0.5.0")
 # 0.4.0 and later reject `--mode`, and from 0.5.0 only `--allow-mutations` lets the
 # bearer mutate (D55): the VM installs the proposed 0.5.0 unit in place of Go's
 # (evidence/cutover/proposed-0.5.0/README.md); the sudoers file stays Go's.
