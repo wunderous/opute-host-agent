@@ -29,7 +29,7 @@ through the agent.
 | F2 | Every node succeeded, then activation failed with `runtime probe returned an error`. The probe was admitted as a new call next to its own run and refused with `host_capacity_saturated` (draft 2, rc2). | Defect, fixed: `activation-probe-inherits-run-reservation`. Failing-first test `openai_chat_activation_probes_under_the_run`. |
 | F3 | `stop_local_llm_runtime` leaves Ollama running: `stopped: false, shared: true`. | Recorded Go v0.2.4 behaviour for the shared runtime, not a defect. The journey stops the unit with `set_host_service_state`, and the docs say how. |
 | F4 | `remove_local_llm_model` keeps the model: `removed: false, shared: true`. | Recorded behaviour (`recorded-session-and-llm-tools`). The docs give the cleanup commands. |
-| F5 | `inspect_host_file` reads a whole file into memory to hash it: 1.5 GB for the archive's validate step. | Open observation, no change. |
+| F5 | `inspect_host_file` reads a whole file into memory to hash it: 1.5 GB for the archive's validate step. `remove_host_file` hashed the same way. | Fixed after 0.5.4: both stream the file through the hash in 64 KiB chunks. Failing-first test `inspect_hashes_a_file_larger_than_the_memory_limit` hashes a 384 MiB file in a child limited to 256 MiB of address space. Results and errors are unchanged, except that a failure while reading now names Go's `read` operation instead of `open`. |
 
 Drafts 1 to 3 are retired under `.parity/retired/m32/`. Draft 3 failed only on
 unused allowances, because the stopped unit leaves no processes or ports.

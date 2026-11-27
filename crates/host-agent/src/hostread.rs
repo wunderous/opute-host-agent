@@ -143,6 +143,22 @@ pub(crate) fn sha256_label(bytes: &[u8]) -> String {
     format!("sha256:{}", hex::encode(Sha256::digest(bytes)))
 }
 
+/// `sha256_label` of everything `reader` yields, read in fixed-size chunks so
+/// a large file is never held in memory.
+pub(crate) fn sha256_label_of(reader: &mut impl std::io::Read) -> std::io::Result<String> {
+    let mut hasher = Sha256::new();
+    let mut buf = vec![0u8; 64 << 10];
+    loop {
+        match reader.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => hasher.update(&buf[..n]),
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(format!("sha256:{}", hex::encode(hasher.finalize())))
+}
+
 /// `Service.InspectHostFile`. `expected_content` is taken raw (untrimmed).
 pub fn inspect_host_file(
     path: &str,
@@ -174,13 +190,14 @@ pub fn inspect_host_file(
     result.insert("executable".into(), J::Bool(regular && perm & 0o111 != 0));
     result.insert("mode".into(), J::from(format!("{perm:o}")));
     if regular {
-        let content = std::fs::read(&path).map_err(|e| {
+        let failed = |op: &str, e: std::io::Error| {
             format!(
                 "read inspected host file: {}",
-                crate::goerr::path_error("open", Path::new(&path), &e)
+                crate::goerr::path_error(op, Path::new(&path), &e)
             )
-        })?;
-        let observed = sha256_label(&content);
+        };
+        let mut file = std::fs::File::open(&path).map_err(|e| failed("open", e))?;
+        let observed = sha256_label_of(&mut file).map_err(|e| failed("read", e))?;
         let mut matches = true;
         let expected = expected_sha256.trim();
         if !expected.is_empty() {
@@ -599,6 +616,49 @@ fn host_services_from(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// F5 (m32): the hash is streamed. A child of this test binary runs
+    /// with an address-space limit smaller than the file, so a whole-file
+    /// read cannot succeed there.
+    #[test]
+    fn inspect_hashes_a_file_larger_than_the_memory_limit() {
+        const NAME: &str = "hostread::tests::inspect_hashes_a_file_larger_than_the_memory_limit";
+        if let Ok(path) = std::env::var("INSPECT_STREAM_PATH") {
+            let result = inspect_host_file(&path, "user", "", "").unwrap();
+            println!("observed {}", result["sha256"].as_str().unwrap());
+            return;
+        }
+        let home = tempfile::tempdir().unwrap();
+        let path = home.path().join("big.bin");
+        std::fs::File::create(&path)
+            .unwrap()
+            .set_len(384 << 20)
+            .unwrap();
+        let expected = std::process::Command::new("sha256sum")
+            .arg(&path)
+            .output()
+            .unwrap();
+        let expected = String::from_utf8(expected.stdout).unwrap();
+        let expected = expected.split_whitespace().next().unwrap();
+        let out = std::process::Command::new("sh")
+            .args([
+                "-c",
+                "ulimit -v 262144 && exec \"$0\" --exact \"$1\" --nocapture --test-threads=1",
+            ])
+            .arg(std::env::current_exe().unwrap())
+            .arg(NAME)
+            .env("HOME", home.path())
+            .env("INSPECT_STREAM_PATH", &path)
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            out.status.success() && stdout.contains(&format!("observed sha256:{expected}")),
+            "{}\n{stdout}\n{}",
+            out.status,
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
 
     /// D28 (Q7): the HTTP probe honours the proxy environment as Go's
     /// default transport does; a loopback endpoint is never proxied.
