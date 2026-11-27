@@ -8,4 +8,4 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 Journey `e2e8.local-llm` activates the m32 recipe on the dev VM.
+- [x] 3.1 Journey `e2e8.local-llm` activates the m32 recipe on the dev VM on `rust-0.5.4-rc3` (run `m32-r1`, gate `e2e-local-llm`).

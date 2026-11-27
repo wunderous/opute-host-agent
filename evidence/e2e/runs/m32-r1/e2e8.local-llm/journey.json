@@ -1,0 +1,529 @@
+{
+ "cleanup": [
+  {
+   "guest": "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user disable --now opute-ollama.service 2>/dev/null; rm -f /home/opute/.config/systemd/user/opute-ollama.service; runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user daemon-reload; loginctl disable-linger opute; rm -rf /home/opute/.ollama /home/opute/.cache/opute/ollama /home/opute/.local/share/opute/ollama /home/opute/m32 /home/opute/.config/opute/ollama-runtime.json; rmdir /home/opute/.cache/opute /home/opute/.cache /home/opute/.config/systemd/user/default.target.wants /home/opute/.config/systemd/user /home/opute/.config/systemd 2>/dev/null; true",
+   "id": "cleanLocalLlm"
+  }
+ ],
+ "description": "A real local LLM (m32): on a CPU-only host, the published recipe installs Ollama from its pinned upstream release, points the agent at it, pulls Qwen2.5-0.5B-Instruct Q4_K_M and activates the runtime after a streaming chat completion. Pass: the run completes and activates llm-serving, the pinned hashes match, a client's chat request is answered, and stop closes the runtime.",
+ "effects": {
+  "allow": [
+   "files//home/opute/m32",
+   "files//home/opute/m32/local-llm.recipe.yaml",
+   "files//home/opute/.local/share/opute/ollama*",
+   "files//home/opute/.ollama*",
+   "files//home/opute/.config/opute/ollama-runtime.json",
+   "files//home/opute/.config/systemd",
+   "files//home/opute/.config/systemd/user",
+   "files//home/opute/.config/systemd/user/opute-ollama.service",
+   "files//home/opute/.config/systemd/user/default.target.wants*",
+   "linger",
+   "files//var/lib/systemd/linger/opute",
+   "system/units/user@1001.service",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user-1001.slice",
+   "system/units/run-user-1001.mount",
+   "opute/running",
+   "mounts//run/user/1001 tmpfs",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope systemd",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon",
+   "opute/units/dbus.service",
+   "opute/units/dbus.socket",
+   "opute/units/dirmngr.socket",
+   "opute/units/gpg-agent-browser.socket",
+   "opute/units/gpg-agent-extra.socket",
+   "opute/units/gpg-agent-ssh.socket",
+   "opute/units/gpg-agent.socket",
+   "opute/units/init.scope",
+   "opute/units/keyboxd.socket",
+   "opute/units/launchpadlib-cache-clean.timer",
+   "opute/units/pk-debconf-helper.socket",
+   "opute/units/snapd.session-agent.socket"
+  ],
+  "optional": {
+   "opute/units/dbus.service": "the user manager starts D-Bus on demand",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon": "the user manager starts D-Bus on demand"
+  },
+  "persist": []
+ },
+ "gate": "e2e-local-llm",
+ "id": "e2e8.local-llm",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.4 release candidate binary, test identity e2e-devvm-agent, test token); Ollama v0.40.17 and the model are downloaded from upstream during the run",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "recipe": {
+    "path": "${REPO}/docs/recipes/local-llm.recipe.yaml",
+    "sha256": "5e6661581fc2a4e7deddd6aeba748ab37890e3e8dcad2330193d9bc8446434a6"
+   }
+  }
+ },
+ "maxMinutes": 30,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "supervisor"
+    },
+    {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "equals": "yes\nbus\n",
+     "path": "stdout",
+     "step": "linger"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "recipeOwner"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.structuredContent.ollamaBinaryPresent",
+     "step": "prereqBefore"
+    },
+    {
+     "equals": [
+      "ollama binary is not installed"
+     ],
+     "path": "response.body.result.structuredContent.blockers",
+     "step": "prereqBefore"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.valid",
+     "step": "validate"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "runCall"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "run"
+    },
+    {
+     "equals": "llm-serving",
+     "path": "response.body.result.structuredContent.activeRuntime.capability",
+     "step": "run"
+    },
+    {
+     "equals": "openai-chat.v1",
+     "path": "response.body.result.structuredContent.activeRuntime.servingContract",
+     "step": "run"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.activeRuntime.observation.streamingChatReady",
+     "step": "run"
+    },
+    {
+     "equals": "1df9d6228bac5a22e420b242708c0d10e5b886db97bab99d446a41760f4e79af\nbinary\n/home/opute/.local/share/opute/ollama/v0.40.17/bin/ollama\n74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db\n",
+     "path": "stdout",
+     "step": "installed"
+    },
+    {
+     "equals": "active\n1\n",
+     "path": "stdout",
+     "step": "serving"
+    },
+    {
+     "equals": 200,
+     "path": "json.status",
+     "step": "chat"
+    },
+    {
+     "equals": true,
+     "path": "json.answered",
+     "step": "chat"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.streamingChatReady",
+     "step": "probe"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.ollamaBinaryPresent",
+     "step": "prereqAfter"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.ollamaServiceActive",
+     "step": "prereqAfter"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "models"
+    }
+   ],
+   "requirement": "A real model runs on the host from the published recipe",
+   "scenario": "On a CPU-only host with no Ollama, run_runtime_recipe with activate installs Ollama v0.40.17 from its SHA-256-pinned upstream release, configures the agent to use it, pulls Qwen2.5-0.5B-Instruct Q4_K_M (the pulled GGUF matches its Hugging Face SHA-256), and activates llm-serving after a streaming chat completion; a client's own chat request is answered",
+   "spec": ".agents/goals/m32-local-llm.md (work 2 and 3)"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.structuredContent.stopped",
+     "step": "stop"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.shared",
+     "step": "stop"
+    },
+    {
+     "equals": "active\n",
+     "path": "stdout",
+     "step": "stillServing"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.status",
+     "step": "stopUnit"
+    },
+    {
+     "equals": "inactive\n0\n",
+     "path": "stdout",
+     "step": "stopped"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.structuredContent.removed",
+     "step": "removeModel"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.shared",
+     "step": "removeModel"
+    },
+    {
+     "matches": "kept /home/opute/.ollama/models/blobs/sha256-74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db\n",
+     "path": "stdout",
+     "step": "left"
+    }
+   ],
+   "requirement": "The legacy LLM wrappers act on the shared Ollama runtime",
+   "scenario": "stop_local_llm_runtime leaves the shared Ollama runtime running and says so; the unit stops through set_host_service_state and its port closes; remove_local_llm_model keeps the shared model and says so, so the pulled model stays on disk until the user removes it",
+   "spec": "openspec/changes/recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "recipe",
+   "id": "recipeCopy",
+   "mode": "0644",
+   "to": "/home/opute/m32/local-llm.recipe.yaml"
+  },
+  {
+   "guest": "chown -R opute:opute /home/opute/m32 && echo owned",
+   "id": "recipeOwner"
+  },
+  {
+   "id": "catalog",
+   "mcp": "tools/list"
+  },
+  {
+   "arguments": {},
+   "id": "supervisor",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; test -S /run/user/$(id -u opute)/bus && echo up",
+   "id": "userBus"
+  },
+  {
+   "arguments": {},
+   "id": "supervisorAgain",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "confirms": [
+    "supervisor",
+    "supervisorAgain"
+   ],
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "id": "linger"
+  },
+  {
+   "arguments": {},
+   "id": "prereqBefore",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "check_local_llm_prerequisites"
+  },
+  {
+   "arguments": {
+    "source": "/home/opute/m32/local-llm.recipe.yaml"
+   },
+   "id": "validate",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "validate_runtime_recipe"
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "source": "/home/opute/m32/local-llm.recipe.yaml"
+   },
+   "capture": {
+    "RUN": "response.body.result.structuredContent.runId"
+   },
+   "id": "runCall",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_runtime_recipe"
+  },
+  {
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "id": "run",
+   "interval": 5,
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 1500,
+   "tool": "get_runtime_recipe_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "confirms": [
+    "runCall"
+   ],
+   "guest": "sha256sum /home/opute/.cache/opute/ollama/ollama-v0.40.17-linux-amd64.tar.zst | cut -c1-64; test -x /home/opute/.local/share/opute/ollama/v0.40.17/bin/ollama && echo binary; python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[\"binaryPath\"])' /home/opute/.config/opute/ollama-runtime.json; sha256sum /home/opute/.ollama/models/blobs/sha256-74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db | cut -c1-64",
+   "id": "installed"
+  },
+  {
+   "confirms": [
+    "runCall"
+   ],
+   "guest": "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user is-active opute-ollama.service; ss -ltnH 'sport = :11434' | wc -l",
+   "id": "serving"
+  },
+  {
+   "confirms": [
+    "runCall"
+   ],
+   "guest": "python3 - <<'PY'\nimport json, time, urllib.request\nbody = {'model': 'hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M', 'stream': True, 'temperature': 0, 'max_tokens': 32, 'messages': [{'role': 'user', 'content': 'Reply with one word: what colour is the sky on a clear day?'}]}\nreq = urllib.request.Request('http://127.0.0.1:11434/v1/chat/completions', method='POST', data=json.dumps(body).encode(), headers={'Content-Type': 'application/json'})\nstart = time.monotonic(); first = None; text = ''\nwith urllib.request.urlopen(req, timeout=120) as r:\n    status = r.status\n    for line in r:\n        line = line.decode().strip()\n        if not line.startswith('data: ') or line == 'data: [DONE]':\n            continue\n        delta = json.loads(line[6:])['choices'][0].get('delta', {}).get('content') or ''\n        if delta and first is None:\n            first = time.monotonic()\n        text += delta\nend = time.monotonic()\nprint(json.dumps({'status': status, 'answered': bool(text.strip()), 'content': text.strip(), 'firstTokenMs': round((first - start) * 1000), 'totalMs': round((end - start) * 1000)}))\nPY",
+   "id": "chat"
+  },
+  {
+   "arguments": {
+    "endpoint": "http://127.0.0.1:11434",
+    "includeChat": true,
+    "modelRef": "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M"
+   },
+   "id": "probe",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "probe_openai_compatible_server"
+  },
+  {
+   "arguments": {},
+   "id": "prereqAfter",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "check_local_llm_prerequisites"
+  },
+  {
+   "arguments": {
+    "runtime": "ollama"
+   },
+   "id": "models",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "list_local_llm_models"
+  },
+  {
+   "arguments": {
+    "runtime": "ollama"
+   },
+   "capture": {
+    "TID_stop": "response.body.result.taskId"
+   },
+   "id": "stopCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "stop_local_llm_runtime"
+  },
+  {
+   "id": "stop",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_stop}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "confirms": [
+    "stop"
+   ],
+   "guest": "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user is-active opute-ollama.service",
+   "id": "stillServing"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "serviceName": "opute-ollama.service",
+    "state": "stop",
+    "uri": "host-service:local:system/dbus.service"
+   },
+   "id": "stopUnit",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "confirms": [
+    "stopUnit"
+   ],
+   "guest": "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user is-active opute-ollama.service; ss -ltnH 'sport = :11434' | wc -l",
+   "id": "stopped"
+  },
+  {
+   "arguments": {
+    "modelRef": "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M",
+    "purge": true
+   },
+   "capture": {
+    "TID_removeModel": "response.body.result.taskId"
+   },
+   "id": "removeModelCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "remove_local_llm_model"
+  },
+  {
+   "id": "removeModel",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_removeModel}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "confirms": [
+    "removeModel"
+   ],
+   "guest": "for p in /home/opute/.cache/opute/ollama/ollama-v0.40.17-linux-amd64.tar.zst /home/opute/.local/share/opute/ollama/v0.40.17/bin/ollama /home/opute/.config/opute/ollama-runtime.json /home/opute/.config/systemd/user/opute-ollama.service /home/opute/.ollama/models/blobs/sha256-74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db; do test -e $p && echo \"kept $p\"; done; du -sm /home/opute/.cache/opute/ollama /home/opute/.local/share/opute/ollama /home/opute/.ollama | cut -f1",
+   "id": "left"
+  }
+ ]
+}

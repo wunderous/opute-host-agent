@@ -8,4 +8,4 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 Journey `e2e8.local-llm` downloads the 1.5 GB Ollama archive through `ensure_host_artifact` on the dev VM, on a release candidate with this fix.
+- [x] 3.1 Journey `e2e8.local-llm` downloads the 1.5 GB Ollama archive through `ensure_host_artifact` on the dev VM in 234 s, on `rust-0.5.4-rc3` (run `m32-r1`, gate `e2e-local-llm`).

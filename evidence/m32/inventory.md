@@ -73,3 +73,16 @@ pulled blob's sha256 against the pin above.
    so the journey's client does, as a user's client would.
 4. What is left behind after stop, and can the recipe remove it with
    published tools?
+
+## Answers (journey e2e8.local-llm, run m32-r1)
+
+1. The recipe writes `binaryPath` into `~/.config/opute/ollama-runtime.json`,
+   which the agent reads on every call, so no restart and no `PATH` change is
+   needed.
+2. Not on 0.5.3: the download failed at 300 s (F1). With the fix it took 234 s.
+3. Yes: the client's streaming request got "blue", with the first token after
+   95 ms.
+4. The archive, the unpacked Ollama, the config, the unit file and the model
+   are left behind; no published tool removes them. The docs give the
+   cleanup commands.
+
