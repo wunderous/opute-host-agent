@@ -8,4 +8,4 @@
 
 ## 3. Release
 
-- [ ] 3.1 Shipped in the m30 release candidate with `reclaim-provider-host-service`.
+- [x] 3.1 Shipped in the m30 release candidate with `reclaim-provider-host-service`, published as 0.5.3.

@@ -365,9 +365,15 @@ fn run_with(
     log_info(stderr, "HTTP transport listening", &[("addr", &addr)]);
     inject_fault(fault, "listener")?;
     let result = serve(&addr, server.clone());
-    // HTTP has stopped accepting requests. Drain accepted task workers before
-    // checkpointing/closing the store; a terminal in-memory task may still
-    // have its final operation and snapshot writes pending.
+    close(&runtime, &server);
+    result
+}
+
+/// The shutdown after the transport has stopped accepting requests.
+fn close(runtime: &Runtime, server: &crate::transport::Server) {
+    // Drain accepted task workers before checkpointing/closing the store; a
+    // terminal in-memory task may still have its final operation and
+    // snapshot writes pending.
     if let Ok(mut workers) = server.task_workers.lock() {
         for worker in workers.drain(..) {
             let _ = worker.join();
@@ -382,6 +388,48 @@ fn run_with(
     if let Ok(mut state) = runtime.state.lock() {
         state.close();
     }
+}
+
+/// `app.NewRuntime` plus Go's `hostToolCaller`, for the CLI's operation
+/// commands: the server `run` serves, composed the same way but with no
+/// listener. `work` runs off the runtime thread, as a `tools/call` handler
+/// does, once the provider runtime is bound and restored providers have
+/// reconnected; the shutdown is `run`'s.
+pub fn with_local_server<T: Send + 'static>(
+    env: &Env,
+    work: impl FnOnce(&std::sync::Arc<crate::transport::Server>) -> T + Send + 'static,
+) -> Result<T> {
+    let runtime = new_runtime(env)?;
+    let cfg = runtime.config.clone();
+    let authz_dir = if cfg.standalone_state_dir.as_os_str().is_empty() {
+        cfg.instance_root.clone()
+    } else {
+        cfg.standalone_state_dir.clone()
+    };
+    let authz = AuthzStore::open(&authz_dir, &cfg.oauth_clients)?;
+    let server = http_server(&cfg, authz, runtime.state.clone())?;
+    let local = server.clone();
+    let result = std::thread::Builder::new()
+        .name("local".into())
+        .stack_size(256 << 20)
+        .spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_io()
+                .enable_time()
+                .build()
+                .map_err(|e| go_err!("start runtime: {e}"))?;
+            rt.block_on(async move {
+                local.providers.bind(&local);
+                local.providers.reconnect_restored().await;
+                tokio::task::spawn_blocking(move || work(&local))
+                    .await
+                    .map_err(|_| go_err!("local tool call panicked"))
+            })
+        })
+        .map_err(|e| go_err!("start runtime: {e}"))?
+        .join()
+        .unwrap_or_else(|_| Err(go_err!("local runtime panicked")));
+    close(&runtime, &server);
     result
 }
 
