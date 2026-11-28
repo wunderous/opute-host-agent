@@ -1,0 +1,61 @@
+name: readme-quickstart
+
+# README quickstart steps 1 and 3, read-only, with the published
+# @opute/host-agent on both release CPUs (m33). It checks what a newcomer
+# gets from npm today, so it does not depend on the code in this commit.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quickstart:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: "Quickstart 1: start the agent"
+        run: |
+          set -eo pipefail
+          export OPUTE_REMOTE_AGENT_ID="local-$(openssl rand -hex 8)"
+          export MCP_AUTH_TOKEN="$(openssl rand -hex 32)"
+          echo "::add-mask::$MCP_AUTH_TOKEN"
+          echo "MCP_AUTH_TOKEN=$MCP_AUTH_TOKEN" >> "$GITHUB_ENV"
+          npx -y @opute/host-agent start --background
+          npx @opute/host-agent status | tee status.json
+          jq -e '.running and .healthy' status.json
+      - name: "Quickstart 3: a read-only first answer"
+        run: |
+          set -eo pipefail
+          ss -ltnH 'sport = :3014' | awk '{print $4}' | sort -u | tee listen.txt
+          test "$(cat listen.txt)" = "127.0.0.1:3014"
+          pid=$(ss -ltnpH 'sport = :3014' | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2)
+          file -L "/proc/$pid/exe" | tee exe.txt
+          case "$(uname -m)" in
+            x86_64) grep -q 'x86-64' exe.txt ;;
+            aarch64) grep -q 'aarch64' exe.txt ;;
+            *) exit 1 ;;
+          esac
+          node docs/demo/mcp.mjs call get_host_info | tee info.json
+          jq -e '.uri | test(":local-[0-9a-f]{16}$")' info.json
+          node docs/demo/mcp.mjs tools | tail -1 | tee count.txt
+          grep -qx '(138 tools)' count.txt
+          # Safe by default: the bearer's change is refused and names the grant
+          if node docs/demo/mcp.mjs call create_vm '{"name":"sandbox"}' > refused.txt; then exit 1; fi
+          cat refused.txt
+          grep -q -- '--allow-mutations' refused.txt
+      - name: Stop
+        if: always()
+        run: npx @opute/host-agent stop || true
