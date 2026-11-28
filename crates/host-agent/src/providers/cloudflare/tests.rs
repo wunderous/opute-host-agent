@@ -105,6 +105,28 @@ fn tunnel_names_and_identifiers_are_checked() {
     assert!(!api::identifier_ok("not valid"));
 }
 
+#[test]
+fn a_tunnel_cname_keeps_the_apex_mail_records() {
+    let record = |id: &str, kind: &str, content: &str| api::Record {
+        id: id.into(),
+        kind: kind.into(),
+        name: "opute.io".into(),
+        content: content.into(),
+    };
+    let records = vec![
+        record("old", "CNAME", "0ld.cfargotunnel.com"),
+        record("v4", "A", "192.0.2.1"),
+        record("v6", "AAAA", "2001:db8::1"),
+        record("mx", "MX", "route1.mx.cloudflare.net"),
+        record("spf", "TXT", "v=spf1 include:_spf.mx.cloudflare.net ~all"),
+        record("same", "CNAME", "T1.cfargotunnel.com."),
+    ];
+    let (matching, replaced) = api::cname_replacements(records, "t1.cfargotunnel.com");
+    assert_eq!(matching.map(|r| r.id).as_deref(), Some("same"));
+    let replaced: Vec<String> = replaced.into_iter().map(|r| r.id).collect();
+    assert_eq!(replaced, ["old", "v4", "v6"]);
+}
+
 /// The typed refusal's code, or None when the call was not refused that way.
 fn refusal_code(result: Result<(), String>) -> Option<String> {
     let error = result.err()?;

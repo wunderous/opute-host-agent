@@ -532,6 +532,36 @@ fn list_hostname_records(token: &str, zone: &str, hostname: &str) -> Result<Vec<
         .collect())
 }
 
+/// Splits a hostname's records into the CNAME already pointing at `desired`
+/// and the address records (A, AAAA, CNAME) the tunnel's CNAME replaces.
+/// Every other record, such as the apex's MX and TXT, stays: if Cloudflare
+/// refuses the CNAME beside one of them, the upsert fails without deleting it.
+pub(super) fn cname_replacements(
+    records: Vec<Record>,
+    desired: &str,
+) -> (Option<Record>, Vec<Record>) {
+    let mut matching = None;
+    let mut replaced = Vec::new();
+    for record in records {
+        let cname = record.kind.eq_ignore_ascii_case("CNAME");
+        if cname
+            && record
+                .content
+                .strip_suffix('.')
+                .unwrap_or(&record.content)
+                .eq_ignore_ascii_case(desired)
+        {
+            matching = Some(record);
+        } else if cname
+            || record.kind.eq_ignore_ascii_case("A")
+            || record.kind.eq_ignore_ascii_case("AAAA")
+        {
+            replaced.push(record);
+        }
+    }
+    (matching, replaced)
+}
+
 pub(super) fn upsert_cname(
     token: &str,
     zone: &str,
@@ -540,18 +570,9 @@ pub(super) fn upsert_cname(
 ) -> Result<Record, String> {
     let desired = format!("{tunnel_id}.cfargotunnel.com");
     let base = api_base();
-    let mut matching = None;
-    for record in list_hostname_records(token, zone, hostname)? {
-        if record.kind.eq_ignore_ascii_case("CNAME")
-            && record
-                .content
-                .strip_suffix('.')
-                .unwrap_or(&record.content)
-                .eq_ignore_ascii_case(&desired)
-        {
-            matching = Some(record);
-            continue;
-        }
+    let (matching, replaced) =
+        cname_replacements(list_hostname_records(token, zone, hostname)?, &desired);
+    for record in replaced {
         delete(
             token,
             &format!("{base}/zones/{zone}/dns_records/{}", record.id),
