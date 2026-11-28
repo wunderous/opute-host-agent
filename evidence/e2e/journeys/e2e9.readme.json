@@ -1,0 +1,802 @@
+{
+ "id": "e2e9.readme",
+ "gate": "e2e-readme",
+ "description": "The README as written (m33): a fresh sudo user logged in over SSH follows the quickstart with the published @opute/host-agent (0.5.5), allows changes, has the sandbox VM created and removed through the tools an assistant calls, and runs the GitHub release binary checked against SHA256SUMS. Pass: every step the README promises holds on that path.",
+ "inputs": {
+  "agent": "the published @opute/host-agent (npm latest, 0.5.5) and the GitHub release v0.5.5, both downloaded during the run; the VM's own agent is stopped",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "node": {
+    "path": "${PARITY}/setup/node-v22.14.0-linux-x64.tar.xz",
+    "sha256": "69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec"
+   },
+   "candidate": {
+    "path": "${PARITY}/e2e/release/rust-0.5.5-rc1/host-agent-linux-x64",
+    "sha256": "12f2d0048ef45987d9e650a44c8b8c37dc3c46ba8aabdd90bccc669876c8da70"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "README.md at the commit under test (m33)",
+   "requirement": "Quickstart 1: start the agent with the published launcher",
+   "pass": [
+    {
+     "step": "user",
+     "path": "stdout",
+     "equals": "newcomer\n"
+    },
+    {
+     "step": "session",
+     "path": "stdout",
+     "equals": "active\nbus\n"
+    },
+    {
+     "step": "sudo",
+     "path": "stdout",
+     "equals": "sudo\nv22\n"
+    },
+    {
+     "step": "token",
+     "path": "stdout",
+     "equals": "64\n"
+    },
+    {
+     "step": "start",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "start",
+     "path": "stdout",
+     "contains": "http://127.0.0.1:3014/mcp"
+    },
+    {
+     "step": "status",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "status",
+     "path": "json.running",
+     "equals": true
+    },
+    {
+     "step": "status",
+     "path": "json.healthy",
+     "equals": true
+    },
+    {
+     "step": "health",
+     "path": "response.body.agentId",
+     "matches": "^local-[0-9a-f]{16}$"
+    },
+    {
+     "step": "listen",
+     "path": "json.addresses",
+     "equals": [
+      "127.0.0.1:3014"
+     ]
+    },
+    {
+     "step": "binary",
+     "path": "stdout",
+     "equals": "12f2d0048ef45987d9e650a44c8b8c37dc3c46ba8aabdd90bccc669876c8da70\nnewcomer\n0.5.5\n"
+    }
+   ],
+   "scenario": "A fresh sudo user with Node 22, logged in over SSH, runs the quickstart's three lines: npm `latest` starts the published 0.5.5 binary in the background on 127.0.0.1:3014 only, with the identity the README's line generates; status reports it running and healthy"
+  },
+  {
+   "spec": "README.md at the commit under test (m33)",
+   "requirement": "Quickstart 3 and Safe by default: a read-only first answer",
+   "pass": [
+    {
+     "step": "list",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent.uri",
+     "matches": ":local-[0-9a-f]{16}$"
+    },
+    {
+     "step": "hints",
+     "path": "json.tools",
+     "equals": 138
+    },
+    {
+     "step": "hints",
+     "path": "json.withoutReadOnlyHint",
+     "equals": 0
+    },
+    {
+     "step": "hints",
+     "path": "json.writeWithoutDestructiveHint",
+     "equals": 0
+    },
+    {
+     "step": "refused",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "refused",
+     "path": "response.body.result.content[0].text",
+     "matches": "--allow-mutations"
+    }
+   ],
+   "scenario": "The client lists the tools and calls get_host_info; every tool declares its effect hints; a change is refused to the bearer and the refusal names --allow-mutations"
+  },
+  {
+   "spec": "README.md at the commit under test (m33)",
+   "requirement": "Quickstart 4: allow changes, then the sandbox VM",
+   "pass": [
+    {
+     "step": "restart",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "slice",
+     "path": "stdout",
+     "equals": "slice\nloaded\n"
+    },
+    {
+     "step": "status2",
+     "path": "json.running",
+     "equals": true
+    },
+    {
+     "step": "status2",
+     "path": "json.healthy",
+     "equals": true
+    },
+    {
+     "step": "restart2",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "login",
+     "path": "stdout",
+     "equals": "bus\n"
+    },
+    {
+     "step": "agentGroup",
+     "path": "stdout",
+     "equals": "1\n"
+    },
+    {
+     "step": "virtAgain",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "virtState",
+     "path": "stdout",
+     "equals": "active\nincus\n"
+    },
+    {
+     "step": "sandbox",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "sandbox",
+     "path": "response.body.result.result.structuredContent.uri",
+     "matches": "^[a-z]+:local:sandbox$"
+    },
+    {
+     "step": "vms",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "sandboxState",
+     "path": "stdout",
+     "matches": "^sandbox,RUNNING\n"
+    },
+    {
+     "step": "deleteSandbox",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "sandboxGone",
+     "path": "stdout",
+     "equals": "0\n"
+    }
+   ],
+   "scenario": "Restarted with --allow-mutations, the launcher creates opute-workload.slice and the agent serves. After the newcomer logs out and back in and restarts the agent, as step 4 says, the agent holds incus-admin, install_virtualization_stack succeeds, and create_vm makes a running Ubuntu VM called sandbox, which delete_vm removes by the URI create_vm returned"
+  },
+  {
+   "spec": "openspec/changes/incus-access-refusal-names-the-remedy/specs/incus-access/spec.md",
+   "requirement": "A refused Incus socket names the remedy",
+   "pass": [
+    {
+     "step": "virt",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "virt",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "You don't have the needed permissions to talk to the incus daemon .*; newcomer is in incus-admin, but this agent started before that: log in again and restart the agent"
+    },
+    {
+     "step": "groups",
+     "path": "stdout",
+     "matches": "^(\\S+ )*incus-admin( |\\n)"
+    },
+    {
+     "step": "logout",
+     "path": "stdout",
+     "in": [
+      "closing\n",
+      "offline\n"
+     ]
+    }
+   ],
+   "scenario": "The newcomer's first install_virtualization_stack adds the user to incus-admin; the running agent can't use the new group, and its error says to log in again and restart it"
+  },
+  {
+   "spec": "README.md at the commit under test (m33)",
+   "requirement": "Install without npm: the GitHub release binary",
+   "pass": [
+    {
+     "step": "stop",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "stopped",
+     "path": "stdout",
+     "equals": "000"
+    },
+    {
+     "step": "noNpm",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "noNpm",
+     "path": "stdout",
+     "equals": "host-agent-linux-x64: OK\n0.5.4\n200\n"
+    },
+    {
+     "step": "noNpmInfo",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "noNpmStop",
+     "path": "stdout",
+     "equals": "000"
+    }
+   ],
+   "scenario": "The v0.5.4 x64 binary downloaded from the GitHub release matches SHA256SUMS, reports its version and serves MCP on 127.0.0.1:3014 with the same identity and token"
+  }
+ ],
+ "effects": {
+  "allow": [
+   "files//home/newcomer*",
+   "files//etc/sudoers.d/90-newcomer",
+   "files//opt/opute-e2e/node*",
+   "files//tmp/node-compile-cache*",
+   "files//etc/passwd*",
+   "files//etc/group*",
+   "files//etc/shadow*",
+   "files//etc/gshadow*",
+   "files//etc/subuid*",
+   "files//etc/subgid*",
+   "system/units/opute-bootstrap-mcp.service*",
+   "processes//system.slice/opute-bootstrap-mcp.service opute-host-agen",
+   "sockets/tcp 0.0.0.0:3014 opute-host-agen",
+   "system/units/e2e-qs-session*",
+   "system/unitFiles/e2e-qs-session*",
+   "processes//system.slice/e2e-qs-session* ssh",
+   "incus/images/*",
+   "incus/volumes/default/image/*",
+   "files//opt/opute-e2e/candidate*",
+   "processes//user.slice/user-1002.slice/session.scope sleep",
+   "processes//user.slice/user-1002.slice/session.scope sshd",
+   "processes//user.slice/user-1002.slice/user@1002.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1002.slice/user@1002.service/init.scope systemd",
+   "processes//user.slice/user-1002.slice/user@1002.service/session.slice/dbus.service dbus-daemon",
+   "mounts//run/user/1002 tmpfs",
+   "system/units/user@1002.service",
+   "system/units/user-runtime-dir@1002.service",
+   "system/units/user-1002.slice",
+   "system/units/run-user-1002.mount",
+   "files//var/lib/incus/virtual-machines-bitmaps",
+   "incus/storage/default/used_by",
+   "files//var/lib/apt/lists/*",
+   "files//opt/incus*",
+   "files//usr/lib/systemd/system/incus.service*",
+   "files//var/lib/dpkg/info/incus*",
+   "system/units/linstor-satellite.service",
+   "system/units/packagekit.service",
+   "files//var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble*",
+   "files//var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security*",
+   "files//var/lib/apt/lists/pkgs.zabbly.com_incus_stable_dists_noble*",
+   "files//var/lib/dpkg/status*",
+   "processes//system.slice/packagekit.service packagekitd",
+   "modules/tap",
+   "modules/vhost_net",
+   "files//etc/passwd-*",
+   "files//etc/group-*",
+   "files//etc/shadow-*",
+   "files//etc/gshadow-*"
+  ],
+  "persist": [
+   "files//etc/passwd-*",
+   "files//etc/group-*",
+   "files//etc/shadow-*",
+   "files//etc/gshadow-*",
+   "files//etc/subuid*",
+   "files//etc/subgid*",
+   "system/units/user@1002.service",
+   "system/units/user-runtime-dir@1002.service",
+   "system/units/user-1002.slice",
+   "files//var/lib/incus/virtual-machines-bitmaps",
+   "incus/storage/default/used_by",
+   "files//var/lib/apt/lists/*",
+   "files//opt/incus*",
+   "files//usr/lib/systemd/system/incus.service*",
+   "files//var/lib/dpkg/info/incus*",
+   "system/units/linstor-satellite.service",
+   "system/units/packagekit.service",
+   "files//var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble*",
+   "files//var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security*",
+   "files//var/lib/apt/lists/pkgs.zabbly.com_incus_stable_dists_noble*",
+   "files//var/lib/dpkg/status*",
+   "processes//system.slice/packagekit.service packagekitd",
+   "modules/tap",
+   "modules/vhost_net"
+  ],
+  "optional": {
+   "files//var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble*": "the archive's indexes depend on the mirror's state at run time",
+   "files//var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security*": "the archive's indexes depend on the mirror's state at run time",
+   "files//var/lib/apt/lists/pkgs.zabbly.com_incus_stable_dists_noble*": "the archive's indexes depend on the mirror's state at run time",
+   "processes//system.slice/packagekit.service packagekitd": "PackageKit exits on its own idle timer",
+   "files//var/lib/apt/lists/*": "the archive's indexes depend on the mirror",
+   "sockets/tcp 0.0.0.0:3014 opute-host-agen": "the VM's own agent is stopped only during the run",
+   "incus/storage/default/used_by": "Incus lists the cached image only while it exists",
+   "incus/images/*": "images:ubuntu/22.04's fingerprint changes with each upstream build",
+   "incus/volumes/default/image/*": "images:ubuntu/22.04's fingerprint changes with each upstream build"
+  }
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "nodeCopy",
+   "copy": "node",
+   "to": "/opt/opute-e2e/node.tar.xz"
+  },
+  {
+   "id": "node",
+   "guest": "mkdir -p /opt/opute-e2e/node && tar -xJf /opt/opute-e2e/node.tar.xz -C /opt/opute-e2e/node --strip-components=1 && rm /opt/opute-e2e/node.tar.xz && /opt/opute-e2e/node/bin/node --version"
+  },
+  {
+   "id": "user",
+   "guest": "useradd -m -s /bin/bash newcomer && printf 'newcomer ALL=(ALL) NOPASSWD:ALL\\n' > /etc/sudoers.d/90-newcomer && chmod 0440 /etc/sudoers.d/90-newcomer && visudo -cf /etc/sudoers.d/90-newcomer >/dev/null && install -d -m 0700 /opt/opute-e2e/guest/qs && ssh-keygen -q -t ed25519 -N '' -f /opt/opute-e2e/guest/qs/id && install -d -o newcomer -g newcomer -m 0700 /home/newcomer/.ssh && install -o newcomer -g newcomer -m 0600 /opt/opute-e2e/guest/qs/id.pub /home/newcomer/.ssh/authorized_keys && id -nG newcomer"
+  },
+  {
+   "id": "session",
+   "guest": "systemd-run --unit=e2e-qs-session --collect ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'exec sleep 1700' && for i in $(seq 120); do [ -S /run/user/$(id -u newcomer)/bus ] && [ \"$(loginctl show-user newcomer -p State --value)\" = active ] && break; sleep 0.25; done; loginctl show-user newcomer -p State --value; test -S /run/user/$(id -u newcomer)/bus && echo bus"
+  },
+  {
+   "id": "sudo",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; sudo -n true && echo sudo; node --version | cut -d. -f1'"
+  },
+  {
+   "id": "token",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; openssl rand -hex 32 | tr -d '\"'\"'\\n'\"'\"' | wc -c'"
+  },
+  {
+   "id": "candidateCopy",
+   "copy": "candidate",
+   "to": "/opt/opute-e2e/candidate/host-agent",
+   "mode": "0755"
+  },
+  {
+   "id": "vmAgentStop",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && systemctl is-active opute-bootstrap-mcp.service; true"
+  },
+  {
+   "id": "start",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; export OPUTE_HOST_AGENT_BINARY=/opt/opute-e2e/candidate/host-agent\nexport OPUTE_REMOTE_AGENT_ID=\"local-$(openssl rand -hex 8)\"   # this agent'\"'\"'s identity\nexport MCP_AUTH_TOKEN=\"${SECRET:qs}\"                           # the bearer token (harness secret)\nnpx -y @opute/host-agent start --background\n(umask 077; export -p | grep -E '\"'\"' (OPUTE_REMOTE_AGENT_ID|MCP_AUTH_TOKEN|OPUTE_HOST_AGENT_BINARY)='\"'\"' > ~/.qs-shell)'",
+   "timeout": 300
+  },
+  {
+   "id": "status",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; . ~/.qs-shell; npx @opute/host-agent status'"
+  },
+  {
+   "id": "health",
+   "health": true,
+   "port": 3014
+  },
+  {
+   "id": "listen",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3014"
+  },
+  {
+   "id": "binary",
+   "guest": "pid=$(ss -ltnpH 'sport = :3014' | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2); sha256sum /proc/$pid/exe | cut -c1-64; stat -c %U /proc/$pid; /proc/$pid/exe --version"
+  },
+  {
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3014,
+   "auth": "secret:qs"
+  },
+  {
+   "id": "info",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {},
+   "port": 3014,
+   "auth": "secret:qs",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "hints",
+   "guest": "python3 -c 'import sys, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\ntools = mcpwire.mcp(3014, sys.argv[1], \"tools/list\")[\"body\"][\"result\"][\"tools\"]\nann = [t.get(\"annotations\") or {} for t in tools]\nprint(json.dumps({\"tools\": len(tools), \"withoutReadOnlyHint\": sum(\"readOnlyHint\" not in x for x in ann), \"writeWithoutDestructiveHint\": sum(x.get(\"readOnlyHint\") is False and \"destructiveHint\" not in x for x in ann)}))' '${SECRET:qs}'"
+  },
+  {
+   "id": "refused",
+   "mcp": "tools/call",
+   "tool": "create_vm",
+   "arguments": {
+    "name": "sandbox"
+   },
+   "port": 3014,
+   "auth": "secret:qs",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "restart",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; . ~/.qs-shell; npx @opute/host-agent stop\nnpx -y @opute/host-agent start --background --allow-mutations'",
+   "timeout": 300
+  },
+  {
+   "id": "slice",
+   "guest": "test -f /home/newcomer/.config/systemd/user/opute-workload.slice && echo slice; ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; systemctl --user show -p LoadState --value opute-workload.slice'",
+   "confirms": [
+    "restart"
+   ]
+  },
+  {
+   "id": "status2",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; . ~/.qs-shell; npx @opute/host-agent status'"
+  },
+  {
+   "id": "virtCall",
+   "mcp": "tools/call",
+   "tool": "install_virtualization_stack",
+   "arguments": {},
+   "port": 3014,
+   "auth": "secret:qs",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_virt": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "virt",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_virt}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3014,
+   "auth": "secret:qs",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 900,
+   "interval": 3
+  },
+  {
+   "id": "groups",
+   "guest": "id -nG newcomer",
+   "confirms": [
+    "virt"
+   ]
+  },
+  {
+   "id": "logout",
+   "guest": "systemctl stop e2e-qs-session.service; for i in $(seq 120); do loginctl show-user newcomer >/dev/null 2>&1 || break; sleep 0.25; done; loginctl show-user newcomer -p State --value 2>/dev/null || echo offline"
+  },
+  {
+   "id": "login",
+   "guest": "systemd-run --unit=e2e-qs-session2 --collect ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'exec sleep 1500' && for i in $(seq 120); do [ -S /run/user/$(id -u newcomer)/bus ] && break; sleep 0.25; done; test -S /run/user/$(id -u newcomer)/bus && echo bus"
+  },
+  {
+   "id": "restart2",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; . ~/.qs-shell; npx @opute/host-agent stop\nnpx -y @opute/host-agent start --background --allow-mutations'",
+   "timeout": 300
+  },
+  {
+   "id": "agentGroup",
+   "guest": "gid=$(getent group incus-admin | cut -d: -f3); grep ^Groups: /proc/$(ss -ltnpH 'sport = :3014' | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2)/status | tr '\\t ' '\\n\\n' | grep -cx $gid",
+   "confirms": [
+    "restart2"
+   ]
+  },
+  {
+   "id": "virtAgainCall",
+   "mcp": "tools/call",
+   "tool": "install_virtualization_stack",
+   "arguments": {},
+   "port": 3014,
+   "auth": "secret:qs",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_virtAgain": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "virtAgain",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_virtAgain}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3014,
+   "auth": "secret:qs",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 900,
+   "interval": 3
+  },
+  {
+   "id": "virtState",
+   "guest": "systemctl is-active incus; incus version >/dev/null && echo incus",
+   "confirms": [
+    "virtAgain"
+   ]
+  },
+  {
+   "id": "sandboxCall",
+   "mcp": "tools/call",
+   "tool": "create_vm",
+   "arguments": {
+    "name": "sandbox"
+   },
+   "port": 3014,
+   "auth": "secret:qs",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_sandbox": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "sandbox",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_sandbox}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3014,
+   "auth": "secret:qs",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 900,
+   "interval": 3,
+   "capture": {
+    "SBX": "response.body.result.result.structuredContent.uri"
+   }
+  },
+  {
+   "id": "vms",
+   "mcp": "tools/call",
+   "tool": "list_vms",
+   "arguments": {},
+   "port": 3014,
+   "auth": "secret:qs",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "sandboxState",
+   "guest": "incus list sandbox -c ns -f csv; incus list --all-projects -c ns -f csv | grep -c sandbox; true",
+   "confirms": [
+    "sandbox"
+   ]
+  },
+  {
+   "id": "deleteSandboxCall",
+   "mcp": "tools/call",
+   "tool": "delete_vm",
+   "arguments": {
+    "uri": "${SBX}"
+   },
+   "port": 3014,
+   "auth": "secret:qs",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_deleteSandbox": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "deleteSandbox",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_deleteSandbox}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3014,
+   "auth": "secret:qs",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "sandboxGone",
+   "guest": "incus list --all-projects -c n -f csv | grep -c '^sandbox$'; true",
+   "confirms": [
+    "deleteSandbox"
+   ]
+  },
+  {
+   "id": "stop",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; . ~/.qs-shell; npx @opute/host-agent stop'"
+  },
+  {
+   "id": "stopped",
+   "guest": "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3014/health; true",
+   "confirms": [
+    "stop"
+   ]
+  },
+  {
+   "id": "noNpm",
+   "guest": "ssh -i /opt/opute-e2e/guest/qs/id -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/opt/opute-e2e/guest/qs/known_hosts -o LogLevel=ERROR newcomer@127.0.0.1 'export PATH=/opt/opute-e2e/node/bin:$PATH; . ~/.qs-shell; mkdir -p ~/rel && cd ~/rel && curl -fsSLO https://github.com/wunderous/opute-host-agent/releases/download/v0.5.4/host-agent-linux-x64 && curl -fsSLO https://github.com/wunderous/opute-host-agent/releases/download/v0.5.4/SHA256SUMS && sha256sum -c --ignore-missing SHA256SUMS && chmod +x host-agent-linux-x64 && ./host-agent-linux-x64 --version && (nohup ./host-agent-linux-x64 > agent.log 2>&1 < /dev/null &) && for i in $(seq 60); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; curl -s -o /dev/null -w '\"'\"'%{http_code}\\n'\"'\"' http://127.0.0.1:3014/health'",
+   "timeout": 300
+  },
+  {
+   "id": "noNpmInfo",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {},
+   "port": 3014,
+   "auth": "secret:qs",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "noNpmStop",
+   "guest": "pkill -u newcomer -f host-agent-linux-x64; for i in $(seq 40); do curl -fsS -o /dev/null http://127.0.0.1:3014/health || break; sleep 0.25; done; curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3014/health; true"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "cleanReadme",
+   "guest": "incus delete -f sandbox 2>/dev/null; incus image list -f json | python3 -c 'import json, sys; [print(i[\"fingerprint\"]) for i in json.load(sys.stdin) if i.get(\"cached\")]' | xargs -r -n1 incus image delete; systemctl stop e2e-qs-session.service e2e-qs-session2.service 2>/dev/null; loginctl terminate-user newcomer 2>/dev/null; pkill -KILL -u newcomer 2>/dev/null; systemctl stop user@$(id -u newcomer).service 2>/dev/null; for i in $(seq 80); do pgrep -u newcomer >/dev/null || break; sleep 0.25; done; userdel -r newcomer; rm -f /etc/sudoers.d/90-newcomer; rm -rf /opt/opute-e2e/guest/qs /opt/opute-e2e/node /opt/opute-e2e/candidate /tmp/node-compile-cache; systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; true"
+  }
+ ],
+ "maxMinutes": 30
+}
