@@ -223,10 +223,14 @@ def served_version():
 
 
 def latest_digest(sha=None):
-    """The digest of the site image built from host-agents main (its sha-<commit> tag), by anonymous pull."""
+    """The digest of a host-agents site image (its sha-<commit> tag), by anonymous pull. Without a commit, the
+    newest successful "Publish site image" run on main names it: that workflow is path-filtered, so main's
+    head has no image when a merge touched no site input."""
     if sha is None:
-        sha = subprocess.run(["git", "ls-remote", "https://github.com/wunderous/host-agents", "refs/heads/main"],
-                             capture_output=True, text=True, check=True).stdout.split()[0]
+        runs = ("https://api.github.com/repos/wunderous/host-agents/actions/workflows/publish-site-image.yml/runs"
+                "?branch=main&event=push&status=success&per_page=1")
+        with urlopen(Request(runs, headers={"Accept": "application/vnd.github+json"}), timeout=30) as reply:
+            sha = json.load(reply)["workflow_runs"][0]["head_sha"]
     scope = "repository:wunderous/host-agent-www:pull"
     with urlopen(f"https://ghcr.io/token?scope={scope}", timeout=30) as reply:
         pull = json.load(reply)["token"]

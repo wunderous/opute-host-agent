@@ -34,7 +34,7 @@ All of them use `E2E_INSTANCE=site` and the site-VM lease.
   4. runs both recipes;
   5. checks the three URLs, the served catalog version, and the apex MX and SPF records from 1.1.1.1 and 8.8.8.8.
 - [`site-deploy.py [--sha COMMIT]`](site-deploy.py) deploys the newest site image. It finds the image for host-agents main
-  (`sha-<commit>`, anonymous GHCR pull) and runs the docs recipe only when the digest differs from the last deploy. It waits
+  (the newest successful "Publish site image" run on main, `sha-<commit>`, anonymous GHCR pull) and runs the docs recipe only when the digest differs from the last deploy. It waits
   until the public install page pins that commit's catalog version, then checks the URLs. Each run appends one line to
   `.parity/site-vm/site-deploy.log`. When someone else holds the lease it skips with exit 0; a failure exits 1.
 - [`sitelib.py`](sitelib.py) holds what the two share. It talks to the agent only through typed MCP calls, and
@@ -62,7 +62,9 @@ All of them use `E2E_INSTANCE=site` and the site-VM lease.
 | S3 | Deploys reported success without checking what the public site served. | `site-deploy.py` waits for the public install page to pin the deployed commit's catalog version. |
 | S4 | After a VM reboot, running the recipes right away re-pushed the minimal image to a registry that was not up yet, and the run failed. Before the prerequisites, the agent has no active Kubernetes provider. | `site-restore.py` installs the prerequisites, then waits for every Deployment to be Available, then runs the recipes. |
 
-None of these is a product defect: S1 to S3 are in the m34 recipe and the scripts, and S4 is in the order of the scripts.
+| S5 | "Publish site image" is path-filtered: host-agents#50 (an openspec note) merged and built no image, so `sha-<main head>` did not exist and the deployer would have skipped forever. | Without `--sha`, the deployer takes the commit of the newest successful "Publish site image" run on main, through the anonymous GitHub API. After #50 it found `59499ed5` and skipped, since that image was already deployed. |
+
+None of these is a product defect: S1 and S2 are in the m34 recipe, and S3 to S5 are in the scripts.
 The objects recipe 1.0.0 left behind were deleted by typed calls. The namespace now holds one Deployment and one
 Service.
 

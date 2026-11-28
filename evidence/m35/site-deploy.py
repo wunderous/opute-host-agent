@@ -3,7 +3,7 @@
 
   site-deploy.py [--sha COMMIT]
 
-Finds the site image host-agents' "Publish site image" workflow built from main
+Finds the site image of the newest successful "Publish site image" run on host-agents main
 (tag sha-<commit>, anonymous pull), compares its digest with the one last
 deployed (.parity/site-vm/site-deployed.json), and only when it differs runs the
 docs recipe and checks the three URLs. Each run appends one JSON line to
