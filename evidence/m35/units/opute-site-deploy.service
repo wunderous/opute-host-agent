@@ -1,0 +1,11 @@
+# m35: deploy the newest www.opute.io image when host-agents main has a new one (see site-deploy.py).
+[Unit]
+Description=Opute site image deploy
+After=opute-site-vm.service
+
+[Service]
+Type=oneshot
+Environment=E2E_INSTANCE=site
+WorkingDirectory=/home/houman/github/wunderous/opute-host-agent
+ExecStart=/usr/bin/python3 evidence/m35/site-deploy.py
+TimeoutStartSec=1800

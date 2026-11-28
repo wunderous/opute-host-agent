@@ -11,6 +11,10 @@
 Every command except `lease` refuses to run without the dev-vm lease, which
 the T2 twins share (no twin starts while it is held).
 
+E2E_INSTANCE=site runs every command against the site VM instead (m35): the
+same golden and provisioning, under .parity/site-vm with its own lease
+(.parity/t2/site-vm.lease.json) and ports (ssh 42322, MCP 43114).
+
 Layout under .parity/e2e/devvm (never committed):
   base.qcow2   overlay of the pinned golden-incus, provisioned once, then
                read-only: the snapshot. The golden itself is never written.
@@ -49,9 +53,16 @@ GO_RELEASE = e2elib.PARITY / "releases/go-published-v0.2.4"
 SOURCE_LOCK = e2elib.REPO_ROOT / "baseline/source-lock.json"
 GO_DEPLOY = e2elib.PARITY / "go-src/deploy"
 DISTRIBUTION = e2elib.REPO_ROOT / "baseline/inventory/distribution.json"
-VCPUS, MEMORY_MB, DISK = 8, 16384, "100G"
-SSH_PORT, MCP_PORT = 42222, 43014
-AGENT_ID = "e2e-devvm-agent"
+# E2E_INSTANCE=site builds and runs the site VM (m35) from the same golden and
+# provisioning, smaller and on its own ports, directory and lease.
+if e2elib.INSTANCE == "devvm":
+    VCPUS, MEMORY_MB, DISK = 8, 16384, "100G"
+    SSH_PORT, MCP_PORT = 42222, 43014
+    AGENT_ID, QEMU_NAME = "e2e-devvm-agent", "opute-e2e-devvm"
+else:
+    VCPUS, MEMORY_MB, DISK = 4, 8192, "80G"
+    SSH_PORT, MCP_PORT = 42322, 43114
+    AGENT_ID, QEMU_NAME = "opute-site-agent", "opute-site-vm"
 UNIT = "opute-bootstrap-mcp.service"
 # The Rust release the VM is built from (m28: the 0.5.0 candidate; E2E_VERSION
 # names a later one, such as m30's 0.5.3); Go stays v0.2.4.
@@ -156,7 +167,7 @@ def boot(disk: Path) -> None:
         if not _port_free(port):
             raise SystemExit(f"refused: 127.0.0.1:{port} is in use")
     argv = ["qemu-system-x86_64", "-enable-kvm", "-cpu", "host", "-smp", str(VCPUS), "-m", str(MEMORY_MB),
-            "-name", "opute-e2e-devvm",
+            "-name", QEMU_NAME,
             "-drive", f"file={disk},if=virtio,format=qcow2",
             "-drive", f"file={DEV / 'seed.img'},if=virtio,format=raw,readonly=on",
             "-netdev", f"user,id=net0,hostfwd=tcp:127.0.0.1:{SSH_PORT}-:22,hostfwd=tcp:127.0.0.1:{MCP_PORT}-:3014",

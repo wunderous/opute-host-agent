@@ -820,6 +820,8 @@ def harness_hashes() -> dict:
 
 
 def run(journey_id: str, run_id: str) -> dict:
+    if e2elib.INSTANCE != "devvm":
+        raise SystemExit("refused: journeys run on the dev VM only, never on the site VM")
     import devvm
     lease = e2elib.require_lease()
     devvm.check_base()

@@ -1,0 +1,10 @@
+# m35: check for a new site image every 15 minutes.
+[Unit]
+Description=Check for a new www.opute.io image
+
+[Timer]
+OnBootSec=20min
+OnUnitInactiveSec=15min
+
+[Install]
+WantedBy=timers.target

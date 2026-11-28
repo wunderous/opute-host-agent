@@ -5,13 +5,18 @@
 # The image is the site image host-agents' "Publish site image" workflow builds from main, pinned to its
 # digest. Every node validates its effect, so a second run with the same inputs skips every action.
 #
+# 1.1.0 (m35): each deploy is a new siteVersion (the deployer adds a stamp to the digest), with its own Deployment
+# and Service. The workload is applied, so the tunnel node runs again and moves the tunnel's target to that
+# Service; get_cloudflare_tunnel_status reports DNS routing, not the target, so this is how a move is forced.
+# Once both URLs answer, the previous version (retiredVersion) is deleted.
+#
 # Ownership: namespace host-agent-site (the site), namespace host-agent-www-tunnel (its connector) and the
 # tunnel opute-www-opute-io with its two hostnames. The minimal site's namespaces and tunnel are not touched.
 # The tunnel's CNAMEs replace only A, AAAA and CNAME records, so the apex keeps its mail records
 # (tunnel-cname-keeps-other-records).
 contractVersion: host-recipe.v1
 recipeId: com.opute.host-agent.opute-io-site
-recipeVersion: 1.0.0
+recipeVersion: 1.1.0
 execution:
   coordinator: host-agent
   mode: local
@@ -19,6 +24,7 @@ compatibility:
   requiredTools:
     - apply_manifest
     - get_cluster_resource_status
+    - delete_cluster_resource
     - ensure_cloudflared_tunnel
     - get_cloudflare_tunnel_status
     - probe_http_endpoint
@@ -33,7 +39,11 @@ inputs:
     schema: {type: string, pattern: '^ghcr\.io/wunderous/host-agent-www@sha256:[a-f0-9]{64}$'}
   siteVersion:
     required: true
-    description: Names this image's Deployment; a new image needs a new version (for example its digest's first 12 digits).
+    description: Names this deploy's Deployment and Service; every deploy needs a new one (the digest's first 12 digits and a stamp).
+    schema: {type: string, pattern: '^[a-z0-9][a-z0-9-]{0,40}$'}
+  retiredVersion:
+    default: none
+    description: The siteVersion this deploy replaces; its Deployment and Service are deleted once both URLs answer.
     schema: {type: string, pattern: '^[a-z0-9][a-z0-9-]{0,40}$'}
   tunnelName:
     default: opute-www-opute-io
@@ -50,8 +60,9 @@ plan:
   defaults:
     timeoutMs: 900000
   nodes:
-    # Assertion values are not interpolated, so the version is in the Deployment's name: a new image is a new
-    # Deployment, and the Service's selector moves to it.
+    # Assertion values are not interpolated, so the version is in the Deployment's and the Service's names: a new
+    # image is a new Deployment and Service, and the tunnel's target moves to that Service (m35: moving a shared
+    # Service's selector left cloudflared's kept-alive connections on the old pod, which still runs).
     - id: workload
       timeoutMs: 600000
       action:
@@ -96,7 +107,7 @@ plan:
             apiVersion: v1
             kind: Service
             metadata:
-              name: host-agent-www
+              name: www-${vars.inputs.siteVersion}
               namespace: host-agent-site
             spec:
               selector: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}
@@ -109,7 +120,8 @@ plan:
           - {path: /status, op: eq, value: ready}
         pollIntervalMs: 5000
         timeoutMs: 300000
-    # The connector runs in the cluster and sends both hostnames to the site's Service.
+    # The connector runs in the cluster and sends both hostnames to this version's Service. Going back to an
+    # earlier version finds its workload in place and moves only the tunnel's target.
     - id: tunnel
       dependsOn: [workload]
       timeoutMs: 600000
@@ -120,7 +132,7 @@ plan:
           hostname: www.opute.io
           hostnames: [www.opute.io, opute.io]
           tunnelName: '${vars.inputs.tunnelName}'
-          localTarget: 'http://host-agent-www.host-agent-site.svc.cluster.local:80'
+          localTarget: 'http://www-${vars.inputs.siteVersion}.host-agent-site.svc.cluster.local:80'
           placement: kubernetes
           targetUri: '${vars.inputs.clusterUri}'
           namespace: host-agent-www-tunnel
@@ -161,3 +173,33 @@ plan:
           - {path: /statusCode, op: eq, value: 200}
         pollIntervalMs: 10000
         timeoutMs: 600000
+    # The previous deploy's Deployment and Service, once the new one serves. "none" (the first deploy) is missing,
+    # so both nodes are satisfied without a delete.
+    - id: retire-workload
+      dependsOn: [www, apex]
+      action:
+        tool: delete_cluster_resource
+        args: {uri: '${vars.inputs.clusterUri}', kind: Deployment, namespace: host-agent-site,
+          resourceName: 'www-${vars.inputs.retiredVersion}'}
+      validate:
+        tool: get_cluster_resource_status
+        args: {uri: '${vars.inputs.clusterUri}', resourceKind: Deployment, namespace: host-agent-site,
+          resourceName: 'www-${vars.inputs.retiredVersion}'}
+        assert:
+          - {path: /status, op: eq, value: missing}
+        pollIntervalMs: 5000
+        timeoutMs: 120000
+    - id: retire-service
+      dependsOn: [www, apex]
+      action:
+        tool: delete_cluster_resource
+        args: {uri: '${vars.inputs.clusterUri}', kind: Service, namespace: host-agent-site,
+          resourceName: 'www-${vars.inputs.retiredVersion}'}
+      validate:
+        tool: get_cluster_resource_status
+        args: {uri: '${vars.inputs.clusterUri}', resourceKind: Service, namespace: host-agent-site,
+          resourceName: 'www-${vars.inputs.retiredVersion}'}
+        assert:
+          - {path: /status, op: eq, value: missing}
+        pollIntervalMs: 5000
+        timeoutMs: 120000
