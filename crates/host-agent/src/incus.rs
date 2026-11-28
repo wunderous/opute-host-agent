@@ -29,6 +29,41 @@ pub struct Incus {
     pub network_address: String,
 }
 
+/// The Incus client's refusal when the caller may not use the daemon's socket.
+const SOCKET_DENIED: &str = "You don't have the needed permissions to talk to the incus daemon";
+
+/// What to do about `SOCKET_DENIED` (m33 R1): `member` is the group database's
+/// answer for incus-admin, `process_has_group` this process's, which keeps the
+/// groups it started with.
+fn daemon_access_hint(user: &str, member: bool, process_has_group: bool) -> String {
+    match (member, process_has_group) {
+        (true, false) => format!(
+            "{user} is in incus-admin, but this agent started before that: \
+             log in again and restart the agent"
+        ),
+        (false, _) => format!(
+            "{user} is not in incus-admin: install_virtualization_stack adds it, or run \
+             `sudo usermod -aG incus-admin {user}`; then log in again and restart the agent"
+        ),
+        (true, true) => String::new(),
+    }
+}
+
+/// `daemon_access_hint` for this process's user.
+fn this_process_access_hint() -> String {
+    use nix::unistd::{getegid, getgroups, getuid, Group, User};
+    let user = User::from_uid(getuid()).ok().flatten();
+    let name = user
+        .as_ref()
+        .map_or_else(|| "this user".to_string(), |u| u.name.clone());
+    let Ok(Some(group)) = Group::from_name("incus-admin") else {
+        return daemon_access_hint(&name, false, false);
+    };
+    let member = group.mem.contains(&name) || user.is_some_and(|u| u.gid == group.gid);
+    let process = getegid() == group.gid || getgroups().is_ok_and(|g| g.contains(&group.gid));
+    daemon_access_hint(&name, member, process)
+}
+
 /// `Runtime.ProviderBinary`.
 pub fn provider_binary(env: &Env) -> String {
     for key in ["OPUTE_INCUS_BINARY_PATH", "OPUTE_VM_BINARY_PATH"] {
@@ -248,9 +283,15 @@ impl Incus {
             argv.extend(args.iter().map(|s| s.to_string()));
         }
         let deadline = (!timeout.is_zero()).then(|| std::time::Instant::now() + timeout);
-        Ok(crate::hostobs::run_command_with(
-            &self.env, &argv, stdin, deadline, timeout, ctx,
-        ))
+        let mut res =
+            crate::hostobs::run_command_with(&self.env, &argv, stdin, deadline, timeout, ctx);
+        if res.exit_code != 0 && res.stderr.contains(SOCKET_DENIED) {
+            let hint = this_process_access_hint();
+            if !hint.is_empty() {
+                res.stderr = format!("{}; {hint}\n", res.stderr.trim_end());
+            }
+        }
+        Ok(res)
     }
 
     fn ownership_enforced(&self) -> bool {
@@ -1068,6 +1109,52 @@ mod tests {
             res.stdout,
             "query -X PATCH --wait /1.0/instances?recursion=1&project=default -d {}\n"
         );
+    }
+
+    /// m33 R1: a refused socket names what to do. install_virtualization_stack
+    /// adds the user to incus-admin, but a running process keeps the groups it
+    /// started with.
+    #[test]
+    fn a_refused_incus_socket_says_how_to_get_access() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("incus");
+        std::fs::write(
+            &fake,
+            "#!/bin/sh\necho \"Error: You don't have the needed permissions to talk to the incus daemon \
+             (socket path: /var/lib/incus/unix.socket)\" >&2\nexit 1\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let incus = Incus {
+            env: Env::from_pairs([("PATH", "/usr/bin:/bin")]),
+            binary: fake.display().to_string(),
+            instance_id: String::new(),
+            ownership_mode: String::new(),
+            agent_id: String::new(),
+            tenant_id: String::new(),
+            network_name: String::new(),
+            network_address: String::new(),
+        };
+        let res = incus.run(&["list"], Duration::ZERO).unwrap();
+        assert_eq!(res.exit_code, 1);
+        assert!(
+            res.stderr.contains("log in again and restart the agent"),
+            "{}",
+            res.stderr
+        );
+
+        assert_eq!(
+            daemon_access_hint("alice", true, false),
+            "alice is in incus-admin, but this agent started before that: \
+             log in again and restart the agent"
+        );
+        assert_eq!(
+            daemon_access_hint("alice", false, false),
+            "alice is not in incus-admin: install_virtualization_stack adds it, or run \
+             `sudo usermod -aG incus-admin alice`; then log in again and restart the agent"
+        );
+        assert_eq!(daemon_access_hint("alice", true, true), "");
     }
 
     #[test]

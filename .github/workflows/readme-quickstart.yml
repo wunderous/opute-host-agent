@@ -20,12 +20,18 @@ jobs:
       fail-fast: false
       matrix:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        node: ["22"]
+        include:
+          # the README's floor ("Node.js 18 or newer")
+          - runner: ubuntu-24.04
+            node: "18"
     runs-on: ${{ matrix.runner }}
+    name: quickstart (${{ matrix.runner }}, node ${{ matrix.node }})
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ matrix.node }}
       - name: "Quickstart 1: start the agent"
         run: |
           set -eo pipefail

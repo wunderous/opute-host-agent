@@ -35,7 +35,7 @@ is visible. With Claude or Cursor, the assistant makes these calls for you.*
   runs durably, with idempotency, cancellation and a recorded result for each
   step.
 
-The 0.5.0 catalog has 138 tools. The
+The 0.5.4 catalog has 138 tools. The
 [capability reference](https://www.opute.io/docs/capabilities/) lists them,
 and your client sees the live list through `tools/list`.
 
@@ -118,7 +118,10 @@ which a normal desktop or SSH login has.
 
 Then try *"Install Incus and create a small Ubuntu VM called sandbox."* VM and
 cluster tools need Incus, and `install_virtualization_stack` installs it when
-the host user has the privileges to.
+the host user has the privileges to. If your user wasn't in the `incus-admin`
+group yet, the install adds it, but the running agent can't use the new group
+until it restarts, and its error says so. Log out and back in, restart the
+agent as above, and ask again.
 
 ## Example: a website from one recipe
 
