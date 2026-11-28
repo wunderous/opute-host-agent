@@ -1,0 +1,163 @@
+# m34: the www.opute.io documentation site, served from a K3s cluster this Host Agent already runs (on the dev
+# machine, the minimal site's cluster) and published at www.opute.io and the apex opute.io through the site's
+# dedicated Cloudflare tunnel, by one run_host_local_recipe.
+#
+# The image is the site image host-agents' "Publish site image" workflow builds from main, pinned to its
+# digest. Every node validates its effect, so a second run with the same inputs skips every action.
+#
+# Ownership: namespace host-agent-site (the site), namespace host-agent-www-tunnel (its connector) and the
+# tunnel opute-www-opute-io with its two hostnames. The minimal site's namespaces and tunnel are not touched.
+# The tunnel's CNAMEs replace only A, AAAA and CNAME records, so the apex keeps its mail records
+# (tunnel-cname-keeps-other-records).
+contractVersion: host-recipe.v1
+recipeId: com.opute.host-agent.opute-io-site
+recipeVersion: 1.0.0
+execution:
+  coordinator: host-agent
+  mode: local
+compatibility:
+  requiredTools:
+    - apply_manifest
+    - get_cluster_resource_status
+    - ensure_cloudflared_tunnel
+    - get_cloudflare_tunnel_status
+    - probe_http_endpoint
+inputs:
+  clusterUri:
+    required: true
+    description: The K3s cluster that serves the site.
+    schema: {type: string, pattern: '^cluster:local:[a-z][a-z0-9-]{0,30}$'}
+  image:
+    required: true
+    description: The public site image, pinned to its manifest digest.
+    schema: {type: string, pattern: '^ghcr\.io/wunderous/host-agent-www@sha256:[a-f0-9]{64}$'}
+  siteVersion:
+    required: true
+    description: Names this image's Deployment; a new image needs a new version (for example its digest's first 12 digits).
+    schema: {type: string, pattern: '^[a-z0-9][a-z0-9-]{0,40}$'}
+  tunnelName:
+    default: opute-www-opute-io
+    schema: {type: string, enum: [opute-www-opute-io]}
+  runNonce:
+    default: default
+    description: A new value starts a new run with the same inputs; it finds every effect in place and skips.
+    schema: {type: string, minLength: 1, maxLength: 128}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.host-agent.opute-io-site
+  generation: 1
+  idempotencyKey: com.opute.host-agent.opute-io-site-${vars.inputs.clusterUri}-${vars.inputs.siteVersion}-${vars.inputs.runNonce}
+  defaults:
+    timeoutMs: 900000
+  nodes:
+    # Assertion values are not interpolated, so the version is in the Deployment's name: a new image is a new
+    # Deployment, and the Service's selector moves to it.
+    - id: workload
+      timeoutMs: 600000
+      action:
+        tool: apply_manifest
+        args:
+          uri: '${vars.inputs.clusterUri}'
+          manifest: |
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: host-agent-site
+              labels: {app.kubernetes.io/part-of: opute-host-agent}
+            ---
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: www-${vars.inputs.siteVersion}
+              namespace: host-agent-site
+            spec:
+              replicas: 1
+              selector:
+                matchLabels: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}
+              template:
+                metadata:
+                  labels: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}
+                spec:
+                  containers:
+                    - name: www
+                      image: ${vars.inputs.image}
+                      ports: [{name: http, containerPort: 80}]
+                      readinessProbe:
+                        httpGet: {path: /healthz, port: http}
+                        periodSeconds: 5
+                      livenessProbe:
+                        httpGet: {path: /healthz, port: http}
+                        initialDelaySeconds: 5
+                        periodSeconds: 15
+                      resources:
+                        requests: {cpu: 25m, memory: 32Mi}
+                        limits: {cpu: 200m, memory: 128Mi}
+            ---
+            apiVersion: v1
+            kind: Service
+            metadata:
+              name: host-agent-www
+              namespace: host-agent-site
+            spec:
+              selector: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}
+              ports: [{name: http, port: 80, targetPort: http}]
+      validate:
+        tool: get_cluster_resource_status
+        args: {uri: '${vars.inputs.clusterUri}', resourceKind: Deployment, namespace: host-agent-site,
+          resourceName: 'www-${vars.inputs.siteVersion}'}
+        assert:
+          - {path: /status, op: eq, value: ready}
+        pollIntervalMs: 5000
+        timeoutMs: 300000
+    # The connector runs in the cluster and sends both hostnames to the site's Service.
+    - id: tunnel
+      dependsOn: [workload]
+      timeoutMs: 600000
+      action:
+        tool: ensure_cloudflared_tunnel
+        args: &tunnel
+          bindingId: www-opute-io
+          hostname: www.opute.io
+          hostnames: [www.opute.io, opute.io]
+          tunnelName: '${vars.inputs.tunnelName}'
+          localTarget: 'http://host-agent-www.host-agent-site.svc.cluster.local:80'
+          placement: kubernetes
+          targetUri: '${vars.inputs.clusterUri}'
+          namespace: host-agent-www-tunnel
+          name: cloudflared-www
+          manageHostConnector: true
+      validate:
+        tool: get_cloudflare_tunnel_status
+        args: *tunnel
+        assert:
+          - {path: /routed, op: eq, value: true}
+    # Validation only: the connector the tunnel node installed is running.
+    - id: connector
+      dependsOn: [tunnel]
+      validate:
+        tool: get_cluster_resource_status
+        args: {uri: '${vars.inputs.clusterUri}', resourceKind: Deployment, namespace: host-agent-www-tunnel,
+          resourceName: cloudflared-www}
+        assert:
+          - {path: /status, op: eq, value: ready}
+        pollIntervalMs: 5000
+        timeoutMs: 300000
+    # Validation only: both public URLs answer over TLS the agent verifies.
+    - id: www
+      dependsOn: [connector]
+      validate:
+        tool: probe_http_endpoint
+        args: {endpoint: 'https://www.opute.io/'}
+        assert:
+          - {path: /statusCode, op: eq, value: 200}
+        pollIntervalMs: 10000
+        timeoutMs: 600000
+    - id: apex
+      dependsOn: [connector]
+      validate:
+        tool: probe_http_endpoint
+        args: {endpoint: 'https://opute.io/'}
+        assert:
+          - {path: /statusCode, op: eq, value: 200}
+        pollIntervalMs: 10000
+        timeoutMs: 600000
