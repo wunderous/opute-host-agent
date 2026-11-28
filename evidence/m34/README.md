@@ -46,6 +46,7 @@ the providers were installed by typed calls. The minimal site recipe then ran on
 | [`f9b896a4…`](www-run-1.json) | image `sha256:ebd3f1a8…` (host-agents `76b52345`) | completed in 33 s: `workload` and `tunnel` applied; `connector`, `www` and `apex` satisfied |
 | [`718204ee…`](www-run-2.json) | the same, `runNonce: m34-second` | completed in 1 s: every node satisfied |
 | [`d4b9f117…`](www-run-3.json) | image `sha256:81a2761a…` (host-agents `59efab17`, the 0.5.5 catalog) | completed in 24 s: the new version's `workload` applied and `tunnel` reapplied; the site shows 0.5.5 |
+| [`7dee7e96…`](www-run-4.json) | image `sha256:a3523953…` (host-agents `59499ed5`, the 0.5.6 catalog, after 0.5.6 was published from this candidate) | completed in 18 s: the new version's `workload` applied and `tunnel` reapplied; the site shows 0.5.6 |
 
 Checked from this workstation afterwards:
 - https://www.opute.io/ and https://opute.io/ answer 200 with the documentation site, and
