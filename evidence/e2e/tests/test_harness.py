@@ -491,6 +491,30 @@ class Lease(unittest.TestCase):
             t2.WORK = saved
 
 
+class SiteInstance(unittest.TestCase):
+    """E2E_INSTANCE=site is the m35 site VM: its own directory, lease and ports; no journey runs on it."""
+
+    def probe(self, instance, code):
+        import subprocess
+        env = {**os.environ, "E2E_INSTANCE": instance}
+        done = subprocess.run([sys.executable, "-c", code], cwd=E2E, env=env, capture_output=True, text=True)
+        return done.returncode, done.stdout.strip(), done.stderr
+
+    def test_site_instance_has_its_own_directory_lease_and_ports(self):
+        code = ("import sys; sys.path[:0] = ['.', 'devvm']; import e2elib, devvm; "
+                "print(e2elib.DEV.name, e2elib.LEASE.name, devvm.SSH_PORT, devvm.MCP_PORT, devvm.QEMU_NAME)")
+        self.assertEqual(self.probe("site", code)[1], "site-vm site-vm.lease.json 42322 43114 opute-site-vm")
+        self.assertEqual(self.probe("devvm", code)[1], "devvm dev-vm.lease.json 42222 43014 opute-e2e-devvm")
+
+    def test_journeys_refuse_the_site_vm(self):
+        rc, _, err = self.probe("site", "import run; run.run('e2e1.install', 'never')")
+        self.assertNotEqual(rc, 0)
+        self.assertIn("journeys run on the dev VM only", err)
+
+    def test_unknown_instance_refused(self):
+        self.assertNotEqual(self.probe("prod", "import e2elib")[0], 0)
+
+
 class Extensions(unittest.TestCase):
     def ctx(self):
         return {"token": "e2e-test-token-" + "a" * 48, "vars": {"RUN": "r-1"}, "secrets": {}}

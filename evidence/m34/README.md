@@ -64,3 +64,10 @@ Checked from this workstation afterwards:
   Deployments stay until they are deleted.
 - The private controller's OpenSpec change in host-agents still describes the old
   deployment.
+
+## Since m35
+
+The sites moved to a VM of their own (`.parity/site-vm`), and the recipe is now 1.1.0. Version 1.0.0 moved a shared Service's
+selector, which left live traffic on the old pod. In 1.1.0 each deploy has its own Deployment and Service, the
+tunnel's target names that Service, and the previous deploy is retired. See
+[`evidence/m35/README.md`](../m35/README.md) (findings S1 and S2).

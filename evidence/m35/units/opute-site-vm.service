@@ -1,0 +1,20 @@
+# m35: start the site VM after a login session starts (with lingering, after boot) and bring the
+# three public sites back. site-restore.py boots the VM's existing overlay and reruns the two site
+# recipes, which skip every effect already in place. Installed by the owner, not by the agent.
+[Unit]
+Description=Opute site VM (minimal.opute.io, www.opute.io, opute.io)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=E2E_INSTANCE=site
+WorkingDirectory=/home/houman/github/wunderous/opute-host-agent
+ExecStartPre=/usr/bin/python3 evidence/e2e/devvm/devvm.py lease acquire --holder site-boot --hours 1
+ExecStart=/usr/bin/python3 evidence/m35/site-restore.py
+ExecStopPost=/usr/bin/python3 evidence/e2e/devvm/devvm.py lease release --holder site-boot
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=default.target

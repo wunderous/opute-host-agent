@@ -31,10 +31,15 @@ def _parity_dir() -> Path:
 
 PARITY = _parity_dir()
 T2 = PARITY / "t2"
-DEV = PARITY / "e2e" / "devvm"
+# E2E_INSTANCE picks the VM: the journey dev VM (the default), or the site VM
+# that serves the public sites (m35). Journeys never run on the site VM.
+INSTANCE = os.environ.get("E2E_INSTANCE", "devvm")
+if INSTANCE not in ("devvm", "site"):
+    raise SystemExit(f"refused: E2E_INSTANCE must be devvm or site, not {INSTANCE!r}")
+DEV = PARITY / "e2e" / "devvm" if INSTANCE == "devvm" else PARITY / "site-vm"
 # The one lease the dev VM and the T2 twins share (tools/parity/parity/t2.py
-# reads the same file): while it is held, no twin starts.
-LEASE = T2 / "dev-vm.lease.json"
+# reads the same file): while it is held, no twin starts. The site VM has its own.
+LEASE = T2 / ("dev-vm.lease.json" if INSTANCE == "devvm" else "site-vm.lease.json")
 LEASE_MAX_HOURS = 12
 
 
@@ -93,14 +98,15 @@ def acquire_lease(holder: str, hours: float) -> dict:
     held = lease_status()
     if held and held["holder"] != holder:
         raise SystemExit(f"refused: the dev-vm lease is held by {held['holder']} until {held['expires']}")
-    twins = running_t2_twins()
+    twins = running_t2_twins() if INSTANCE == "devvm" else []
     if twins:
         raise SystemExit(f"refused: T2 twins are running (pids {', '.join(twins)}); they share the runtime")
     T2.mkdir(parents=True, exist_ok=True)
     expires = time.time() + hours * 3600
     lease = {"holder": holder, "acquired": now(), "expiresEpoch": expires,
              "expires": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(expires)),
-             "scope": "E2E dev VM: one qemu/KVM VM, 8 vCPU, 16 GiB, 100 GiB; T2 twins do not start while held"}
+             "scope": "E2E dev VM: one qemu/KVM VM, 8 vCPU, 16 GiB, 100 GiB; T2 twins do not start while held"
+             if INSTANCE == "devvm" else "Site VM: one qemu/KVM VM, 4 vCPU, 8 GiB, 80 GiB, serving the public sites"}
     tmp = LEASE.with_suffix(".tmp")
     tmp.write_text(json.dumps(lease, indent=1) + "\n")
     tmp.replace(LEASE)
