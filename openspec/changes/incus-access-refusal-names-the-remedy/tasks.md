@@ -9,4 +9,4 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 Journey `e2e9.readme`: the newcomer's first `install_virtualization_stack` names the remedy; after a new login and a restart, `create_vm` makes the sandbox VM.
+- [x] 3.1 Journey `e2e9.readme`: the newcomer's first `install_virtualization_stack` names the remedy; after a new login and a restart, `create_vm` makes the sandbox VM. Passes on `rust-0.5.5-rc1` (run `m33-r3`, gate `e2e-readme`); on 0.5.4 only the remedy is missing (`m33-before-r3`).
