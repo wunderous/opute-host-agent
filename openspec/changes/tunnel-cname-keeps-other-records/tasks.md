@@ -8,4 +8,4 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 www.opute.io and opute.io are served from the dev machine's K3s by `docs/recipes/opute-io-site.recipe.yaml`, and the apex keeps its MX and TXT records (`evidence/m34`).
+- [x] 3.1 www.opute.io and opute.io are served from the dev machine's K3s by `docs/recipes/opute-io-site.recipe.yaml`, and the apex keeps its MX and TXT records (`evidence/m34`).

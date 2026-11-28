@@ -1,0 +1,2129 @@
+{
+ "catalogRevision": "sha256:c01fa1094f351a4e71cb3af227ce29a399544c0d70edc196e98784400e46f9cc",
+ "createdAt": "2026-11-28T05:20:15.179110357Z",
+ "documentHash": "sha256:9b91089a9bee2b4a934e1ad649a21f208500ed4948a151c43e5ea8b17d230266",
+ "generation": 1,
+ "idempotencyKey": "com.opute.host-agent.opute-io-site-cluster:local:minimal-k1-ebd3f1a834c8-m34-second",
+ "nodes": {
+  "apex": {
+   "completedAt": "2026-11-28T05:20:16.474489625Z",
+   "id": "apex",
+   "observed": {
+    "endpoint": "https://opute.io/",
+    "ready": true,
+    "statusCode": 200
+   },
+   "output": {
+    "endpoint": "https://opute.io/",
+    "ready": true,
+    "statusCode": 200
+   },
+   "startedAt": "2026-11-28T05:20:16.085119506Z",
+   "status": "satisfied"
+  },
+  "connector": {
+   "completedAt": "2026-11-28T05:20:16.076450367Z",
+   "id": "connector",
+   "observed": {
+    "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+    "kind": "Deployment",
+    "message": "Kubernetes resource status returned.",
+    "namespace": "host-agent-www-tunnel",
+    "resource": {
+     "apiVersion": "apps/v1",
+     "kind": "Deployment",
+     "metadata": {
+      "annotations": {
+       "deployment.kubernetes.io/revision": "1",
+       "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"cloudflared-www\",\"namespace\":\"host-agent-www-tunnel\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"cloudflared-www\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"cloudflared-www\"}},\"spec\":{\"containers\":[{\"args\":[\"tunnel\",\"--no-autoupdate\",\"run\",\"--token-file\",\"/etc/cloudflared/tunnel-token\"],\"image\":\"cloudflare/cloudflared:2026.7.2\",\"name\":\"cloudflared\",\"readinessProbe\":{\"exec\":{\"command\":[\"cloudflared\",\"--version\"]},\"initialDelaySeconds\":5,\"periodSeconds\":10},\"volumeMounts\":[{\"mountPath\":\"/etc/cloudflared/tunnel-token\",\"name\":\"tunnel-token\",\"readOnly\":true,\"subPath\":\"tunnel-token\"}]}],\"volumes\":[{\"name\":\"tunnel-token\",\"secret\":{\"defaultMode\":292,\"items\":[{\"key\":\"token\",\"path\":\"tunnel-token\"}],\"secretName\":\"cloudflared-www-token\"}}]}}}}\n"
+      },
+      "creationTimestamp": "2026-11-28T05:19:26Z",
+      "generation": 1,
+      "name": "cloudflared-www",
+      "namespace": "host-agent-www-tunnel",
+      "resourceVersion": "1209",
+      "uid": "0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e"
+     },
+     "spec": {
+      "progressDeadlineSeconds": 600,
+      "replicas": 1,
+      "revisionHistoryLimit": 10,
+      "selector": {
+       "matchLabels": {
+        "app": "cloudflared-www"
+       }
+      },
+      "strategy": {
+       "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+       },
+       "type": "RollingUpdate"
+      },
+      "template": {
+       "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+         "app": "cloudflared-www"
+        }
+       },
+       "spec": {
+        "containers": [
+         {
+          "args": [
+           "tunnel",
+           "--no-autoupdate",
+           "run",
+           "--token-file",
+           "/etc/cloudflared/tunnel-token"
+          ],
+          "image": "cloudflare/cloudflared:2026.7.2",
+          "imagePullPolicy": "IfNotPresent",
+          "name": "cloudflared",
+          "readinessProbe": {
+           "exec": {
+            "command": [
+             "cloudflared",
+             "--version"
+            ]
+           },
+           "failureThreshold": 3,
+           "initialDelaySeconds": 5,
+           "periodSeconds": 10,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "resources": {},
+          "terminationMessagePath": "/dev/termination-log",
+          "terminationMessagePolicy": "File",
+          "volumeMounts": [
+           {
+            "mountPath": "/etc/cloudflared/tunnel-token",
+            "name": "tunnel-token",
+            "readOnly": true,
+            "subPath": "tunnel-token"
+           }
+          ]
+         }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30,
+        "volumes": [
+         {
+          "name": "tunnel-token",
+          "secret": {
+           "defaultMode": 292,
+           "items": [
+            {
+             "key": "token",
+             "path": "tunnel-token"
+            }
+           ],
+           "secretName": "cloudflared-www-token"
+          }
+         }
+        ]
+       }
+      }
+     },
+     "status": {
+      "availableReplicas": 1,
+      "conditions": [
+       {
+        "lastTransitionTime": "2026-11-28T05:19:37Z",
+        "lastUpdateTime": "2026-11-28T05:19:37Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+       },
+       {
+        "lastTransitionTime": "2026-11-28T05:19:26Z",
+        "lastUpdateTime": "2026-11-28T05:19:37Z",
+        "message": "ReplicaSet \"cloudflared-www-594b7f59fc\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+       }
+      ],
+      "observedGeneration": 1,
+      "readyReplicas": 1,
+      "replicas": 1,
+      "updatedReplicas": 1
+     }
+    },
+    "resourceName": "cloudflared-www",
+    "status": "ready",
+    "targetUri": "cluster:local:minimal-k1",
+    "uri": "cluster:local:minimal-k1",
+    "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+   },
+   "output": {
+    "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+    "kind": "Deployment",
+    "message": "Kubernetes resource status returned.",
+    "namespace": "host-agent-www-tunnel",
+    "resource": {
+     "apiVersion": "apps/v1",
+     "kind": "Deployment",
+     "metadata": {
+      "annotations": {
+       "deployment.kubernetes.io/revision": "1",
+       "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"cloudflared-www\",\"namespace\":\"host-agent-www-tunnel\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"cloudflared-www\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"cloudflared-www\"}},\"spec\":{\"containers\":[{\"args\":[\"tunnel\",\"--no-autoupdate\",\"run\",\"--token-file\",\"/etc/cloudflared/tunnel-token\"],\"image\":\"cloudflare/cloudflared:2026.7.2\",\"name\":\"cloudflared\",\"readinessProbe\":{\"exec\":{\"command\":[\"cloudflared\",\"--version\"]},\"initialDelaySeconds\":5,\"periodSeconds\":10},\"volumeMounts\":[{\"mountPath\":\"/etc/cloudflared/tunnel-token\",\"name\":\"tunnel-token\",\"readOnly\":true,\"subPath\":\"tunnel-token\"}]}],\"volumes\":[{\"name\":\"tunnel-token\",\"secret\":{\"defaultMode\":292,\"items\":[{\"key\":\"token\",\"path\":\"tunnel-token\"}],\"secretName\":\"cloudflared-www-token\"}}]}}}}\n"
+      },
+      "creationTimestamp": "2026-11-28T05:19:26Z",
+      "generation": 1,
+      "name": "cloudflared-www",
+      "namespace": "host-agent-www-tunnel",
+      "resourceVersion": "1209",
+      "uid": "0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e"
+     },
+     "spec": {
+      "progressDeadlineSeconds": 600,
+      "replicas": 1,
+      "revisionHistoryLimit": 10,
+      "selector": {
+       "matchLabels": {
+        "app": "cloudflared-www"
+       }
+      },
+      "strategy": {
+       "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+       },
+       "type": "RollingUpdate"
+      },
+      "template": {
+       "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+         "app": "cloudflared-www"
+        }
+       },
+       "spec": {
+        "containers": [
+         {
+          "args": [
+           "tunnel",
+           "--no-autoupdate",
+           "run",
+           "--token-file",
+           "/etc/cloudflared/tunnel-token"
+          ],
+          "image": "cloudflare/cloudflared:2026.7.2",
+          "imagePullPolicy": "IfNotPresent",
+          "name": "cloudflared",
+          "readinessProbe": {
+           "exec": {
+            "command": [
+             "cloudflared",
+             "--version"
+            ]
+           },
+           "failureThreshold": 3,
+           "initialDelaySeconds": 5,
+           "periodSeconds": 10,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "resources": {},
+          "terminationMessagePath": "/dev/termination-log",
+          "terminationMessagePolicy": "File",
+          "volumeMounts": [
+           {
+            "mountPath": "/etc/cloudflared/tunnel-token",
+            "name": "tunnel-token",
+            "readOnly": true,
+            "subPath": "tunnel-token"
+           }
+          ]
+         }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30,
+        "volumes": [
+         {
+          "name": "tunnel-token",
+          "secret": {
+           "defaultMode": 292,
+           "items": [
+            {
+             "key": "token",
+             "path": "tunnel-token"
+            }
+           ],
+           "secretName": "cloudflared-www-token"
+          }
+         }
+        ]
+       }
+      }
+     },
+     "status": {
+      "availableReplicas": 1,
+      "conditions": [
+       {
+        "lastTransitionTime": "2026-11-28T05:19:37Z",
+        "lastUpdateTime": "2026-11-28T05:19:37Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+       },
+       {
+        "lastTransitionTime": "2026-11-28T05:19:26Z",
+        "lastUpdateTime": "2026-11-28T05:19:37Z",
+        "message": "ReplicaSet \"cloudflared-www-594b7f59fc\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+       }
+      ],
+      "observedGeneration": 1,
+      "readyReplicas": 1,
+      "replicas": 1,
+      "updatedReplicas": 1
+     }
+    },
+    "resourceName": "cloudflared-www",
+    "status": "ready",
+    "targetUri": "cluster:local:minimal-k1",
+    "uri": "cluster:local:minimal-k1",
+    "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+   },
+   "startedAt": "2026-11-28T05:20:15.901062561Z",
+   "status": "satisfied"
+  },
+  "tunnel": {
+   "completedAt": "2026-11-28T05:20:15.882835915Z",
+   "id": "tunnel",
+   "observed": {
+    "bindingId": "www-opute-io",
+    "contractVersion": "opute.capability.tunneling.v1",
+    "hostname": "www.opute.io",
+    "hostnames": [
+     "www.opute.io",
+     "opute.io"
+    ],
+    "placement": "kubernetes",
+    "probe": [
+     {
+      "endpoint": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+      "error": "Get \"http://host-agent-www.host-agent-site.svc.cluster.local:80\": dial tcp4: lookup host-agent-www.host-agent-site.svc.cluster.local: no such host",
+      "ready": false
+     },
+     {
+      "authenticated": false,
+      "authorizationMode": "unverified",
+      "endpoint": "https://www.opute.io/mcp",
+      "ready": false,
+      "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+      "servingContract": "mcp-exposure.v1",
+      "verified": false
+     },
+     {
+      "authenticated": false,
+      "authorizationMode": "unverified",
+      "endpoint": "https://opute.io/mcp",
+      "ready": false,
+      "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+      "servingContract": "mcp-exposure.v1",
+      "verified": false
+     }
+    ],
+    "ready": false,
+    "routed": true,
+    "routedHostnames": [
+     "www.opute.io",
+     "opute.io"
+    ],
+    "tunnelId": "a6ddf3c5-1e27-4145-b559-4e82f7b96835"
+   },
+   "output": {
+    "bindingId": "www-opute-io",
+    "contractVersion": "opute.capability.tunneling.v1",
+    "hostname": "www.opute.io",
+    "hostnames": [
+     "www.opute.io",
+     "opute.io"
+    ],
+    "placement": "kubernetes",
+    "probe": [
+     {
+      "endpoint": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+      "error": "Get \"http://host-agent-www.host-agent-site.svc.cluster.local:80\": dial tcp4: lookup host-agent-www.host-agent-site.svc.cluster.local: no such host",
+      "ready": false
+     },
+     {
+      "authenticated": false,
+      "authorizationMode": "unverified",
+      "endpoint": "https://www.opute.io/mcp",
+      "ready": false,
+      "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+      "servingContract": "mcp-exposure.v1",
+      "verified": false
+     },
+     {
+      "authenticated": false,
+      "authorizationMode": "unverified",
+      "endpoint": "https://opute.io/mcp",
+      "ready": false,
+      "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+      "servingContract": "mcp-exposure.v1",
+      "verified": false
+     }
+    ],
+    "ready": false,
+    "routed": true,
+    "routedHostnames": [
+     "www.opute.io",
+     "opute.io"
+    ],
+    "tunnelId": "a6ddf3c5-1e27-4145-b559-4e82f7b96835"
+   },
+   "startedAt": "2026-11-28T05:20:15.398426069Z",
+   "status": "satisfied"
+  },
+  "workload": {
+   "completedAt": "2026-11-28T05:20:15.382689893Z",
+   "id": "workload",
+   "observed": {
+    "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+    "kind": "Deployment",
+    "message": "Kubernetes resource status returned.",
+    "namespace": "host-agent-site",
+    "resource": {
+     "apiVersion": "apps/v1",
+     "kind": "Deployment",
+     "metadata": {
+      "annotations": {
+       "deployment.kubernetes.io/revision": "1",
+       "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"www-ebd3f1a834c8\",\"namespace\":\"host-agent-site\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"template\":{\"metadata\":{\"labels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"spec\":{\"containers\":[{\"image\":\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\"livenessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"initialDelaySeconds\":5,\"periodSeconds\":15},\"name\":\"www\",\"ports\":[{\"containerPort\":80,\"name\":\"http\"}],\"readinessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"periodSeconds\":5},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"25m\",\"memory\":\"32Mi\"}}}]}}}}\n"
+      },
+      "creationTimestamp": "2026-11-28T05:19:08Z",
+      "generation": 1,
+      "name": "www-ebd3f1a834c8",
+      "namespace": "host-agent-site",
+      "resourceVersion": "1122",
+      "uid": "7081d95d-2ab1-4679-9a8b-0dffd5d63300"
+     },
+     "spec": {
+      "progressDeadlineSeconds": 600,
+      "replicas": 1,
+      "revisionHistoryLimit": 10,
+      "selector": {
+       "matchLabels": {
+        "app.kubernetes.io/name": "host-agent-www",
+        "app.kubernetes.io/version": "ebd3f1a834c8"
+       }
+      },
+      "strategy": {
+       "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+       },
+       "type": "RollingUpdate"
+      },
+      "template": {
+       "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+         "app.kubernetes.io/name": "host-agent-www",
+         "app.kubernetes.io/version": "ebd3f1a834c8"
+        }
+       },
+       "spec": {
+        "containers": [
+         {
+          "image": "ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a",
+          "imagePullPolicy": "IfNotPresent",
+          "livenessProbe": {
+           "failureThreshold": 3,
+           "httpGet": {
+            "path": "/healthz",
+            "port": "http",
+            "scheme": "HTTP"
+           },
+           "initialDelaySeconds": 5,
+           "periodSeconds": 15,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "name": "www",
+          "ports": [
+           {
+            "containerPort": 80,
+            "name": "http",
+            "protocol": "TCP"
+           }
+          ],
+          "readinessProbe": {
+           "failureThreshold": 3,
+           "httpGet": {
+            "path": "/healthz",
+            "port": "http",
+            "scheme": "HTTP"
+           },
+           "periodSeconds": 5,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "resources": {
+           "limits": {
+            "cpu": "200m",
+            "memory": "128Mi"
+           },
+           "requests": {
+            "cpu": "25m",
+            "memory": "32Mi"
+           }
+          },
+          "terminationMessagePath": "/dev/termination-log",
+          "terminationMessagePolicy": "File"
+         }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30
+       }
+      }
+     },
+     "status": {
+      "availableReplicas": 1,
+      "conditions": [
+       {
+        "lastTransitionTime": "2026-11-28T05:19:14Z",
+        "lastUpdateTime": "2026-11-28T05:19:14Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+       },
+       {
+        "lastTransitionTime": "2026-11-28T05:19:08Z",
+        "lastUpdateTime": "2026-11-28T05:19:14Z",
+        "message": "ReplicaSet \"www-ebd3f1a834c8-5bd8d64cb\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+       }
+      ],
+      "observedGeneration": 1,
+      "readyReplicas": 1,
+      "replicas": 1,
+      "updatedReplicas": 1
+     }
+    },
+    "resourceName": "www-ebd3f1a834c8",
+    "status": "ready",
+    "targetUri": "cluster:local:minimal-k1",
+    "uri": "cluster:local:minimal-k1",
+    "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+   },
+   "output": {
+    "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+    "kind": "Deployment",
+    "message": "Kubernetes resource status returned.",
+    "namespace": "host-agent-site",
+    "resource": {
+     "apiVersion": "apps/v1",
+     "kind": "Deployment",
+     "metadata": {
+      "annotations": {
+       "deployment.kubernetes.io/revision": "1",
+       "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"www-ebd3f1a834c8\",\"namespace\":\"host-agent-site\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"template\":{\"metadata\":{\"labels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"spec\":{\"containers\":[{\"image\":\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\"livenessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"initialDelaySeconds\":5,\"periodSeconds\":15},\"name\":\"www\",\"ports\":[{\"containerPort\":80,\"name\":\"http\"}],\"readinessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"periodSeconds\":5},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"25m\",\"memory\":\"32Mi\"}}}]}}}}\n"
+      },
+      "creationTimestamp": "2026-11-28T05:19:08Z",
+      "generation": 1,
+      "name": "www-ebd3f1a834c8",
+      "namespace": "host-agent-site",
+      "resourceVersion": "1122",
+      "uid": "7081d95d-2ab1-4679-9a8b-0dffd5d63300"
+     },
+     "spec": {
+      "progressDeadlineSeconds": 600,
+      "replicas": 1,
+      "revisionHistoryLimit": 10,
+      "selector": {
+       "matchLabels": {
+        "app.kubernetes.io/name": "host-agent-www",
+        "app.kubernetes.io/version": "ebd3f1a834c8"
+       }
+      },
+      "strategy": {
+       "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+       },
+       "type": "RollingUpdate"
+      },
+      "template": {
+       "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+         "app.kubernetes.io/name": "host-agent-www",
+         "app.kubernetes.io/version": "ebd3f1a834c8"
+        }
+       },
+       "spec": {
+        "containers": [
+         {
+          "image": "ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a",
+          "imagePullPolicy": "IfNotPresent",
+          "livenessProbe": {
+           "failureThreshold": 3,
+           "httpGet": {
+            "path": "/healthz",
+            "port": "http",
+            "scheme": "HTTP"
+           },
+           "initialDelaySeconds": 5,
+           "periodSeconds": 15,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "name": "www",
+          "ports": [
+           {
+            "containerPort": 80,
+            "name": "http",
+            "protocol": "TCP"
+           }
+          ],
+          "readinessProbe": {
+           "failureThreshold": 3,
+           "httpGet": {
+            "path": "/healthz",
+            "port": "http",
+            "scheme": "HTTP"
+           },
+           "periodSeconds": 5,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "resources": {
+           "limits": {
+            "cpu": "200m",
+            "memory": "128Mi"
+           },
+           "requests": {
+            "cpu": "25m",
+            "memory": "32Mi"
+           }
+          },
+          "terminationMessagePath": "/dev/termination-log",
+          "terminationMessagePolicy": "File"
+         }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30
+       }
+      }
+     },
+     "status": {
+      "availableReplicas": 1,
+      "conditions": [
+       {
+        "lastTransitionTime": "2026-11-28T05:19:14Z",
+        "lastUpdateTime": "2026-11-28T05:19:14Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+       },
+       {
+        "lastTransitionTime": "2026-11-28T05:19:08Z",
+        "lastUpdateTime": "2026-11-28T05:19:14Z",
+        "message": "ReplicaSet \"www-ebd3f1a834c8-5bd8d64cb\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+       }
+      ],
+      "observedGeneration": 1,
+      "readyReplicas": 1,
+      "replicas": 1,
+      "updatedReplicas": 1
+     }
+    },
+    "resourceName": "www-ebd3f1a834c8",
+    "status": "ready",
+    "targetUri": "cluster:local:minimal-k1",
+    "uri": "cluster:local:minimal-k1",
+    "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+   },
+   "startedAt": "2026-11-28T05:20:15.213349011Z",
+   "status": "satisfied"
+  },
+  "www": {
+   "completedAt": "2026-11-28T05:20:16.513637884Z",
+   "id": "www",
+   "observed": {
+    "endpoint": "https://www.opute.io/",
+    "ready": true,
+    "statusCode": 200
+   },
+   "output": {
+    "endpoint": "https://www.opute.io/",
+    "ready": true,
+    "statusCode": 200
+   },
+   "startedAt": "2026-11-28T05:20:16.085214390Z",
+   "status": "satisfied"
+  }
+ },
+ "planId": "com.opute.host-agent.opute-io-site",
+ "recipe": {
+  "contractVersion": "host-recipe.v1",
+  "execution": {
+   "coordinator": "host-agent",
+   "mode": "local"
+  },
+  "expandedPlan": {
+   "contractVersion": "host-plan.v1",
+   "converge": {},
+   "defaults": {
+    "retry": {},
+    "timeoutMs": 900000
+   },
+   "generation": 1,
+   "idempotencyKey": "com.opute.host-agent.opute-io-site-cluster:local:minimal-k1-ebd3f1a834c8-m34-second",
+   "nodes": [
+    {
+     "action": {
+      "args": {
+       "manifest": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: host-agent-site\n  labels: {app.kubernetes.io/part-of: opute-host-agent}\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: www-${vars.inputs.siteVersion}\n  namespace: host-agent-site\nspec:\n  replicas: 1\n  selector:\n    matchLabels: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}\n  template:\n    metadata:\n      labels: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}\n    spec:\n      containers:\n        - name: www\n          image: ${vars.inputs.image}\n          ports: [{name: http, containerPort: 80}]\n          readinessProbe:\n            httpGet: {path: /healthz, port: http}\n            periodSeconds: 5\n          livenessProbe:\n            httpGet: {path: /healthz, port: http}\n            initialDelaySeconds: 5\n            periodSeconds: 15\n          resources:\n            requests: {cpu: 25m, memory: 32Mi}\n            limits: {cpu: 200m, memory: 128Mi}\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: host-agent-www\n  namespace: host-agent-site\nspec:\n  selector: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}\n  ports: [{name: http, port: 80, targetPort: http}]\n",
+       "uri": "${vars.inputs.clusterUri}"
+      },
+      "tool": "apply_manifest"
+     },
+     "id": "workload",
+     "retry": {},
+     "timeoutMs": 600000,
+     "validate": {
+      "args": {
+       "namespace": "host-agent-site",
+       "resourceKind": "Deployment",
+       "resourceName": "www-${vars.inputs.siteVersion}",
+       "uri": "${vars.inputs.clusterUri}"
+      },
+      "assert": [
+       {
+        "op": "eq",
+        "path": "/status",
+        "value": "ready"
+       }
+      ],
+      "pollIntervalMs": 5000,
+      "timeoutMs": 300000,
+      "tool": "get_cluster_resource_status"
+     }
+    },
+    {
+     "action": {
+      "args": {
+       "bindingId": "www-opute-io",
+       "hostname": "www.opute.io",
+       "hostnames": [
+        "www.opute.io",
+        "opute.io"
+       ],
+       "localTarget": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+       "manageHostConnector": true,
+       "name": "cloudflared-www",
+       "namespace": "host-agent-www-tunnel",
+       "placement": "kubernetes",
+       "targetUri": "${vars.inputs.clusterUri}",
+       "tunnelName": "${vars.inputs.tunnelName}"
+      },
+      "tool": "ensure_cloudflared_tunnel"
+     },
+     "dependsOn": [
+      "workload"
+     ],
+     "id": "tunnel",
+     "retry": {},
+     "timeoutMs": 600000,
+     "validate": {
+      "args": {
+       "bindingId": "www-opute-io",
+       "hostname": "www.opute.io",
+       "hostnames": [
+        "www.opute.io",
+        "opute.io"
+       ],
+       "localTarget": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+       "manageHostConnector": true,
+       "name": "cloudflared-www",
+       "namespace": "host-agent-www-tunnel",
+       "placement": "kubernetes",
+       "targetUri": "${vars.inputs.clusterUri}",
+       "tunnelName": "${vars.inputs.tunnelName}"
+      },
+      "assert": [
+       {
+        "op": "eq",
+        "path": "/routed",
+        "value": true
+       }
+      ],
+      "tool": "get_cloudflare_tunnel_status"
+     }
+    },
+    {
+     "dependsOn": [
+      "tunnel"
+     ],
+     "id": "connector",
+     "retry": {},
+     "validate": {
+      "args": {
+       "namespace": "host-agent-www-tunnel",
+       "resourceKind": "Deployment",
+       "resourceName": "cloudflared-www",
+       "uri": "${vars.inputs.clusterUri}"
+      },
+      "assert": [
+       {
+        "op": "eq",
+        "path": "/status",
+        "value": "ready"
+       }
+      ],
+      "pollIntervalMs": 5000,
+      "timeoutMs": 300000,
+      "tool": "get_cluster_resource_status"
+     }
+    },
+    {
+     "dependsOn": [
+      "connector"
+     ],
+     "id": "www",
+     "retry": {},
+     "validate": {
+      "args": {
+       "endpoint": "https://www.opute.io/"
+      },
+      "assert": [
+       {
+        "op": "eq",
+        "path": "/statusCode",
+        "value": 200
+       }
+      ],
+      "pollIntervalMs": 10000,
+      "timeoutMs": 600000,
+      "tool": "probe_http_endpoint"
+     }
+    },
+    {
+     "dependsOn": [
+      "connector"
+     ],
+     "id": "apex",
+     "retry": {},
+     "validate": {
+      "args": {
+       "endpoint": "https://opute.io/"
+      },
+      "assert": [
+       {
+        "op": "eq",
+        "path": "/statusCode",
+        "value": 200
+       }
+      ],
+      "pollIntervalMs": 10000,
+      "timeoutMs": 600000,
+      "tool": "probe_http_endpoint"
+     }
+    }
+   ],
+   "planId": "com.opute.host-agent.opute-io-site",
+   "variables": {
+    "inputs": {
+     "clusterUri": "cluster:local:minimal-k1",
+     "image": "ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a",
+     "runNonce": "m34-second",
+     "siteVersion": "ebd3f1a834c8",
+     "tunnelName": "opute-www-opute-io"
+    },
+    "tenantId": "local"
+   }
+  },
+  "inputs": {
+   "clusterUri": "cluster:local:minimal-k1",
+   "image": "ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a",
+   "runNonce": "m34-second",
+   "siteVersion": "ebd3f1a834c8",
+   "tunnelName": "opute-www-opute-io"
+  },
+  "outputMapping": {},
+  "recipeDocument": {
+   "compatibility": {
+    "requiredTools": [
+     "apply_manifest",
+     "get_cluster_resource_status",
+     "ensure_cloudflared_tunnel",
+     "get_cloudflare_tunnel_status",
+     "probe_http_endpoint"
+    ]
+   },
+   "contractVersion": "host-recipe.v1",
+   "execution": {
+    "coordinator": "host-agent",
+    "mode": "local"
+   },
+   "inputs": {
+    "clusterUri": {
+     "description": "The K3s cluster that serves the site.",
+     "required": true,
+     "schema": {
+      "pattern": "^cluster:local:[a-z][a-z0-9-]{0,30}$",
+      "type": "string"
+     }
+    },
+    "image": {
+     "description": "The public site image, pinned to its manifest digest.",
+     "required": true,
+     "schema": {
+      "pattern": "^ghcr\\.io/wunderous/host-agent-www@sha256:[a-f0-9]{64}$",
+      "type": "string"
+     }
+    },
+    "runNonce": {
+     "default": "default",
+     "description": "A new value starts a new run with the same inputs; it finds every effect in place and skips.",
+     "schema": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+     }
+    },
+    "siteVersion": {
+     "description": "Names this image's Deployment; a new image needs a new version (for example its digest's first 12 digits).",
+     "required": true,
+     "schema": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,40}$",
+      "type": "string"
+     }
+    },
+    "tunnelName": {
+     "default": "opute-www-opute-io",
+     "schema": {
+      "enum": [
+       "opute-www-opute-io"
+      ],
+      "type": "string"
+     }
+    }
+   },
+   "plan": {
+    "contractVersion": "host-plan.v1",
+    "converge": {},
+    "defaults": {
+     "retry": {},
+     "timeoutMs": 900000
+    },
+    "generation": 1,
+    "idempotencyKey": "com.opute.host-agent.opute-io-site-${vars.inputs.clusterUri}-${vars.inputs.siteVersion}-${vars.inputs.runNonce}",
+    "nodes": [
+     {
+      "action": {
+       "args": {
+        "manifest": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: host-agent-site\n  labels: {app.kubernetes.io/part-of: opute-host-agent}\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: www-${vars.inputs.siteVersion}\n  namespace: host-agent-site\nspec:\n  replicas: 1\n  selector:\n    matchLabels: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}\n  template:\n    metadata:\n      labels: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}\n    spec:\n      containers:\n        - name: www\n          image: ${vars.inputs.image}\n          ports: [{name: http, containerPort: 80}]\n          readinessProbe:\n            httpGet: {path: /healthz, port: http}\n            periodSeconds: 5\n          livenessProbe:\n            httpGet: {path: /healthz, port: http}\n            initialDelaySeconds: 5\n            periodSeconds: 15\n          resources:\n            requests: {cpu: 25m, memory: 32Mi}\n            limits: {cpu: 200m, memory: 128Mi}\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: host-agent-www\n  namespace: host-agent-site\nspec:\n  selector: {app.kubernetes.io/name: host-agent-www, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}\n  ports: [{name: http, port: 80, targetPort: http}]\n",
+        "uri": "${vars.inputs.clusterUri}"
+       },
+       "tool": "apply_manifest"
+      },
+      "id": "workload",
+      "retry": {},
+      "timeoutMs": 600000,
+      "validate": {
+       "args": {
+        "namespace": "host-agent-site",
+        "resourceKind": "Deployment",
+        "resourceName": "www-${vars.inputs.siteVersion}",
+        "uri": "${vars.inputs.clusterUri}"
+       },
+       "assert": [
+        {
+         "op": "eq",
+         "path": "/status",
+         "value": "ready"
+        }
+       ],
+       "pollIntervalMs": 5000,
+       "timeoutMs": 300000,
+       "tool": "get_cluster_resource_status"
+      }
+     },
+     {
+      "action": {
+       "args": {
+        "bindingId": "www-opute-io",
+        "hostname": "www.opute.io",
+        "hostnames": [
+         "www.opute.io",
+         "opute.io"
+        ],
+        "localTarget": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+        "manageHostConnector": true,
+        "name": "cloudflared-www",
+        "namespace": "host-agent-www-tunnel",
+        "placement": "kubernetes",
+        "targetUri": "${vars.inputs.clusterUri}",
+        "tunnelName": "${vars.inputs.tunnelName}"
+       },
+       "tool": "ensure_cloudflared_tunnel"
+      },
+      "dependsOn": [
+       "workload"
+      ],
+      "id": "tunnel",
+      "retry": {},
+      "timeoutMs": 600000,
+      "validate": {
+       "args": {
+        "bindingId": "www-opute-io",
+        "hostname": "www.opute.io",
+        "hostnames": [
+         "www.opute.io",
+         "opute.io"
+        ],
+        "localTarget": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+        "manageHostConnector": true,
+        "name": "cloudflared-www",
+        "namespace": "host-agent-www-tunnel",
+        "placement": "kubernetes",
+        "targetUri": "${vars.inputs.clusterUri}",
+        "tunnelName": "${vars.inputs.tunnelName}"
+       },
+       "assert": [
+        {
+         "op": "eq",
+         "path": "/routed",
+         "value": true
+        }
+       ],
+       "tool": "get_cloudflare_tunnel_status"
+      }
+     },
+     {
+      "dependsOn": [
+       "tunnel"
+      ],
+      "id": "connector",
+      "retry": {},
+      "validate": {
+       "args": {
+        "namespace": "host-agent-www-tunnel",
+        "resourceKind": "Deployment",
+        "resourceName": "cloudflared-www",
+        "uri": "${vars.inputs.clusterUri}"
+       },
+       "assert": [
+        {
+         "op": "eq",
+         "path": "/status",
+         "value": "ready"
+        }
+       ],
+       "pollIntervalMs": 5000,
+       "timeoutMs": 300000,
+       "tool": "get_cluster_resource_status"
+      }
+     },
+     {
+      "dependsOn": [
+       "connector"
+      ],
+      "id": "www",
+      "retry": {},
+      "validate": {
+       "args": {
+        "endpoint": "https://www.opute.io/"
+       },
+       "assert": [
+        {
+         "op": "eq",
+         "path": "/statusCode",
+         "value": 200
+        }
+       ],
+       "pollIntervalMs": 10000,
+       "timeoutMs": 600000,
+       "tool": "probe_http_endpoint"
+      }
+     },
+     {
+      "dependsOn": [
+       "connector"
+      ],
+      "id": "apex",
+      "retry": {},
+      "validate": {
+       "args": {
+        "endpoint": "https://opute.io/"
+       },
+       "assert": [
+        {
+         "op": "eq",
+         "path": "/statusCode",
+         "value": 200
+        }
+       ],
+       "pollIntervalMs": 10000,
+       "timeoutMs": 600000,
+       "tool": "probe_http_endpoint"
+      }
+     }
+    ],
+    "planId": "com.opute.host-agent.opute-io-site"
+   },
+   "recipeId": "com.opute.host-agent.opute-io-site",
+   "recipeVersion": "1.0.0"
+  },
+  "recipeHash": "sha256:431aca8dbf2233f484916a2d327a1a5c5042185a1c3765fb79eaea0209e98206",
+  "recipeId": "com.opute.host-agent.opute-io-site",
+  "recipeKind": "host-local",
+  "recipeVersion": "1.0.0",
+  "secretInputs": [],
+  "source": {
+   "kind": "path",
+   "rawSha256": "sha256:63c33a9533042ff88ed61966602e6b4c2f9ff8f53c17359c426092f8b760751a",
+   "recipeHash": "sha256:431aca8dbf2233f484916a2d327a1a5c5042185a1c3765fb79eaea0209e98206",
+   "source": "/home/opute/.config/opute-m20/opute-io-site.recipe.yaml"
+  }
+ },
+ "runId": "718204ee-bb87-4731-968e-4f232c086fa0",
+ "state": {
+  "context": {},
+  "error": "",
+  "generation": 1,
+  "nodes": {
+   "apex": {
+    "completedAt": "2026-11-28T05:20:16.474489625Z",
+    "id": "apex",
+    "observed": {
+     "endpoint": "https://opute.io/",
+     "ready": true,
+     "statusCode": 200
+    },
+    "output": {
+     "endpoint": "https://opute.io/",
+     "ready": true,
+     "statusCode": 200
+    },
+    "startedAt": "2026-11-28T05:20:16.085119506Z",
+    "status": "satisfied"
+   },
+   "connector": {
+    "completedAt": "2026-11-28T05:20:16.076450367Z",
+    "id": "connector",
+    "observed": {
+     "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+     "kind": "Deployment",
+     "message": "Kubernetes resource status returned.",
+     "namespace": "host-agent-www-tunnel",
+     "resource": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+       "annotations": {
+        "deployment.kubernetes.io/revision": "1",
+        "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"cloudflared-www\",\"namespace\":\"host-agent-www-tunnel\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"cloudflared-www\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"cloudflared-www\"}},\"spec\":{\"containers\":[{\"args\":[\"tunnel\",\"--no-autoupdate\",\"run\",\"--token-file\",\"/etc/cloudflared/tunnel-token\"],\"image\":\"cloudflare/cloudflared:2026.7.2\",\"name\":\"cloudflared\",\"readinessProbe\":{\"exec\":{\"command\":[\"cloudflared\",\"--version\"]},\"initialDelaySeconds\":5,\"periodSeconds\":10},\"volumeMounts\":[{\"mountPath\":\"/etc/cloudflared/tunnel-token\",\"name\":\"tunnel-token\",\"readOnly\":true,\"subPath\":\"tunnel-token\"}]}],\"volumes\":[{\"name\":\"tunnel-token\",\"secret\":{\"defaultMode\":292,\"items\":[{\"key\":\"token\",\"path\":\"tunnel-token\"}],\"secretName\":\"cloudflared-www-token\"}}]}}}}\n"
+       },
+       "creationTimestamp": "2026-11-28T05:19:26Z",
+       "generation": 1,
+       "name": "cloudflared-www",
+       "namespace": "host-agent-www-tunnel",
+       "resourceVersion": "1209",
+       "uid": "0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e"
+      },
+      "spec": {
+       "progressDeadlineSeconds": 600,
+       "replicas": 1,
+       "revisionHistoryLimit": 10,
+       "selector": {
+        "matchLabels": {
+         "app": "cloudflared-www"
+        }
+       },
+       "strategy": {
+        "rollingUpdate": {
+         "maxSurge": "25%",
+         "maxUnavailable": "25%"
+        },
+        "type": "RollingUpdate"
+       },
+       "template": {
+        "metadata": {
+         "creationTimestamp": null,
+         "labels": {
+          "app": "cloudflared-www"
+         }
+        },
+        "spec": {
+         "containers": [
+          {
+           "args": [
+            "tunnel",
+            "--no-autoupdate",
+            "run",
+            "--token-file",
+            "/etc/cloudflared/tunnel-token"
+           ],
+           "image": "cloudflare/cloudflared:2026.7.2",
+           "imagePullPolicy": "IfNotPresent",
+           "name": "cloudflared",
+           "readinessProbe": {
+            "exec": {
+             "command": [
+              "cloudflared",
+              "--version"
+             ]
+            },
+            "failureThreshold": 3,
+            "initialDelaySeconds": 5,
+            "periodSeconds": 10,
+            "successThreshold": 1,
+            "timeoutSeconds": 1
+           },
+           "resources": {},
+           "terminationMessagePath": "/dev/termination-log",
+           "terminationMessagePolicy": "File",
+           "volumeMounts": [
+            {
+             "mountPath": "/etc/cloudflared/tunnel-token",
+             "name": "tunnel-token",
+             "readOnly": true,
+             "subPath": "tunnel-token"
+            }
+           ]
+          }
+         ],
+         "dnsPolicy": "ClusterFirst",
+         "restartPolicy": "Always",
+         "schedulerName": "default-scheduler",
+         "securityContext": {},
+         "terminationGracePeriodSeconds": 30,
+         "volumes": [
+          {
+           "name": "tunnel-token",
+           "secret": {
+            "defaultMode": 292,
+            "items": [
+             {
+              "key": "token",
+              "path": "tunnel-token"
+             }
+            ],
+            "secretName": "cloudflared-www-token"
+           }
+          }
+         ]
+        }
+       }
+      },
+      "status": {
+       "availableReplicas": 1,
+       "conditions": [
+        {
+         "lastTransitionTime": "2026-11-28T05:19:37Z",
+         "lastUpdateTime": "2026-11-28T05:19:37Z",
+         "message": "Deployment has minimum availability.",
+         "reason": "MinimumReplicasAvailable",
+         "status": "True",
+         "type": "Available"
+        },
+        {
+         "lastTransitionTime": "2026-11-28T05:19:26Z",
+         "lastUpdateTime": "2026-11-28T05:19:37Z",
+         "message": "ReplicaSet \"cloudflared-www-594b7f59fc\" has successfully progressed.",
+         "reason": "NewReplicaSetAvailable",
+         "status": "True",
+         "type": "Progressing"
+        }
+       ],
+       "observedGeneration": 1,
+       "readyReplicas": 1,
+       "replicas": 1,
+       "updatedReplicas": 1
+      }
+     },
+     "resourceName": "cloudflared-www",
+     "status": "ready",
+     "targetUri": "cluster:local:minimal-k1",
+     "uri": "cluster:local:minimal-k1",
+     "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+    },
+    "output": {
+     "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+     "kind": "Deployment",
+     "message": "Kubernetes resource status returned.",
+     "namespace": "host-agent-www-tunnel",
+     "resource": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+       "annotations": {
+        "deployment.kubernetes.io/revision": "1",
+        "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"cloudflared-www\",\"namespace\":\"host-agent-www-tunnel\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"cloudflared-www\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"cloudflared-www\"}},\"spec\":{\"containers\":[{\"args\":[\"tunnel\",\"--no-autoupdate\",\"run\",\"--token-file\",\"/etc/cloudflared/tunnel-token\"],\"image\":\"cloudflare/cloudflared:2026.7.2\",\"name\":\"cloudflared\",\"readinessProbe\":{\"exec\":{\"command\":[\"cloudflared\",\"--version\"]},\"initialDelaySeconds\":5,\"periodSeconds\":10},\"volumeMounts\":[{\"mountPath\":\"/etc/cloudflared/tunnel-token\",\"name\":\"tunnel-token\",\"readOnly\":true,\"subPath\":\"tunnel-token\"}]}],\"volumes\":[{\"name\":\"tunnel-token\",\"secret\":{\"defaultMode\":292,\"items\":[{\"key\":\"token\",\"path\":\"tunnel-token\"}],\"secretName\":\"cloudflared-www-token\"}}]}}}}\n"
+       },
+       "creationTimestamp": "2026-11-28T05:19:26Z",
+       "generation": 1,
+       "name": "cloudflared-www",
+       "namespace": "host-agent-www-tunnel",
+       "resourceVersion": "1209",
+       "uid": "0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e"
+      },
+      "spec": {
+       "progressDeadlineSeconds": 600,
+       "replicas": 1,
+       "revisionHistoryLimit": 10,
+       "selector": {
+        "matchLabels": {
+         "app": "cloudflared-www"
+        }
+       },
+       "strategy": {
+        "rollingUpdate": {
+         "maxSurge": "25%",
+         "maxUnavailable": "25%"
+        },
+        "type": "RollingUpdate"
+       },
+       "template": {
+        "metadata": {
+         "creationTimestamp": null,
+         "labels": {
+          "app": "cloudflared-www"
+         }
+        },
+        "spec": {
+         "containers": [
+          {
+           "args": [
+            "tunnel",
+            "--no-autoupdate",
+            "run",
+            "--token-file",
+            "/etc/cloudflared/tunnel-token"
+           ],
+           "image": "cloudflare/cloudflared:2026.7.2",
+           "imagePullPolicy": "IfNotPresent",
+           "name": "cloudflared",
+           "readinessProbe": {
+            "exec": {
+             "command": [
+              "cloudflared",
+              "--version"
+             ]
+            },
+            "failureThreshold": 3,
+            "initialDelaySeconds": 5,
+            "periodSeconds": 10,
+            "successThreshold": 1,
+            "timeoutSeconds": 1
+           },
+           "resources": {},
+           "terminationMessagePath": "/dev/termination-log",
+           "terminationMessagePolicy": "File",
+           "volumeMounts": [
+            {
+             "mountPath": "/etc/cloudflared/tunnel-token",
+             "name": "tunnel-token",
+             "readOnly": true,
+             "subPath": "tunnel-token"
+            }
+           ]
+          }
+         ],
+         "dnsPolicy": "ClusterFirst",
+         "restartPolicy": "Always",
+         "schedulerName": "default-scheduler",
+         "securityContext": {},
+         "terminationGracePeriodSeconds": 30,
+         "volumes": [
+          {
+           "name": "tunnel-token",
+           "secret": {
+            "defaultMode": 292,
+            "items": [
+             {
+              "key": "token",
+              "path": "tunnel-token"
+             }
+            ],
+            "secretName": "cloudflared-www-token"
+           }
+          }
+         ]
+        }
+       }
+      },
+      "status": {
+       "availableReplicas": 1,
+       "conditions": [
+        {
+         "lastTransitionTime": "2026-11-28T05:19:37Z",
+         "lastUpdateTime": "2026-11-28T05:19:37Z",
+         "message": "Deployment has minimum availability.",
+         "reason": "MinimumReplicasAvailable",
+         "status": "True",
+         "type": "Available"
+        },
+        {
+         "lastTransitionTime": "2026-11-28T05:19:26Z",
+         "lastUpdateTime": "2026-11-28T05:19:37Z",
+         "message": "ReplicaSet \"cloudflared-www-594b7f59fc\" has successfully progressed.",
+         "reason": "NewReplicaSetAvailable",
+         "status": "True",
+         "type": "Progressing"
+        }
+       ],
+       "observedGeneration": 1,
+       "readyReplicas": 1,
+       "replicas": 1,
+       "updatedReplicas": 1
+      }
+     },
+     "resourceName": "cloudflared-www",
+     "status": "ready",
+     "targetUri": "cluster:local:minimal-k1",
+     "uri": "cluster:local:minimal-k1",
+     "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+    },
+    "startedAt": "2026-11-28T05:20:15.901062561Z",
+    "status": "satisfied"
+   },
+   "tunnel": {
+    "completedAt": "2026-11-28T05:20:15.882835915Z",
+    "id": "tunnel",
+    "observed": {
+     "bindingId": "www-opute-io",
+     "contractVersion": "opute.capability.tunneling.v1",
+     "hostname": "www.opute.io",
+     "hostnames": [
+      "www.opute.io",
+      "opute.io"
+     ],
+     "placement": "kubernetes",
+     "probe": [
+      {
+       "endpoint": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+       "error": "Get \"http://host-agent-www.host-agent-site.svc.cluster.local:80\": dial tcp4: lookup host-agent-www.host-agent-site.svc.cluster.local: no such host",
+       "ready": false
+      },
+      {
+       "authenticated": false,
+       "authorizationMode": "unverified",
+       "endpoint": "https://www.opute.io/mcp",
+       "ready": false,
+       "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+       "servingContract": "mcp-exposure.v1",
+       "verified": false
+      },
+      {
+       "authenticated": false,
+       "authorizationMode": "unverified",
+       "endpoint": "https://opute.io/mcp",
+       "ready": false,
+       "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+       "servingContract": "mcp-exposure.v1",
+       "verified": false
+      }
+     ],
+     "ready": false,
+     "routed": true,
+     "routedHostnames": [
+      "www.opute.io",
+      "opute.io"
+     ],
+     "tunnelId": "a6ddf3c5-1e27-4145-b559-4e82f7b96835"
+    },
+    "output": {
+     "bindingId": "www-opute-io",
+     "contractVersion": "opute.capability.tunneling.v1",
+     "hostname": "www.opute.io",
+     "hostnames": [
+      "www.opute.io",
+      "opute.io"
+     ],
+     "placement": "kubernetes",
+     "probe": [
+      {
+       "endpoint": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+       "error": "Get \"http://host-agent-www.host-agent-site.svc.cluster.local:80\": dial tcp4: lookup host-agent-www.host-agent-site.svc.cluster.local: no such host",
+       "ready": false
+      },
+      {
+       "authenticated": false,
+       "authorizationMode": "unverified",
+       "endpoint": "https://www.opute.io/mcp",
+       "ready": false,
+       "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+       "servingContract": "mcp-exposure.v1",
+       "verified": false
+      },
+      {
+       "authenticated": false,
+       "authorizationMode": "unverified",
+       "endpoint": "https://opute.io/mcp",
+       "ready": false,
+       "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+       "servingContract": "mcp-exposure.v1",
+       "verified": false
+      }
+     ],
+     "ready": false,
+     "routed": true,
+     "routedHostnames": [
+      "www.opute.io",
+      "opute.io"
+     ],
+     "tunnelId": "a6ddf3c5-1e27-4145-b559-4e82f7b96835"
+    },
+    "startedAt": "2026-11-28T05:20:15.398426069Z",
+    "status": "satisfied"
+   },
+   "workload": {
+    "completedAt": "2026-11-28T05:20:15.382689893Z",
+    "id": "workload",
+    "observed": {
+     "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+     "kind": "Deployment",
+     "message": "Kubernetes resource status returned.",
+     "namespace": "host-agent-site",
+     "resource": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+       "annotations": {
+        "deployment.kubernetes.io/revision": "1",
+        "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"www-ebd3f1a834c8\",\"namespace\":\"host-agent-site\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"template\":{\"metadata\":{\"labels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"spec\":{\"containers\":[{\"image\":\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\"livenessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"initialDelaySeconds\":5,\"periodSeconds\":15},\"name\":\"www\",\"ports\":[{\"containerPort\":80,\"name\":\"http\"}],\"readinessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"periodSeconds\":5},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"25m\",\"memory\":\"32Mi\"}}}]}}}}\n"
+       },
+       "creationTimestamp": "2026-11-28T05:19:08Z",
+       "generation": 1,
+       "name": "www-ebd3f1a834c8",
+       "namespace": "host-agent-site",
+       "resourceVersion": "1122",
+       "uid": "7081d95d-2ab1-4679-9a8b-0dffd5d63300"
+      },
+      "spec": {
+       "progressDeadlineSeconds": 600,
+       "replicas": 1,
+       "revisionHistoryLimit": 10,
+       "selector": {
+        "matchLabels": {
+         "app.kubernetes.io/name": "host-agent-www",
+         "app.kubernetes.io/version": "ebd3f1a834c8"
+        }
+       },
+       "strategy": {
+        "rollingUpdate": {
+         "maxSurge": "25%",
+         "maxUnavailable": "25%"
+        },
+        "type": "RollingUpdate"
+       },
+       "template": {
+        "metadata": {
+         "creationTimestamp": null,
+         "labels": {
+          "app.kubernetes.io/name": "host-agent-www",
+          "app.kubernetes.io/version": "ebd3f1a834c8"
+         }
+        },
+        "spec": {
+         "containers": [
+          {
+           "image": "ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a",
+           "imagePullPolicy": "IfNotPresent",
+           "livenessProbe": {
+            "failureThreshold": 3,
+            "httpGet": {
+             "path": "/healthz",
+             "port": "http",
+             "scheme": "HTTP"
+            },
+            "initialDelaySeconds": 5,
+            "periodSeconds": 15,
+            "successThreshold": 1,
+            "timeoutSeconds": 1
+           },
+           "name": "www",
+           "ports": [
+            {
+             "containerPort": 80,
+             "name": "http",
+             "protocol": "TCP"
+            }
+           ],
+           "readinessProbe": {
+            "failureThreshold": 3,
+            "httpGet": {
+             "path": "/healthz",
+             "port": "http",
+             "scheme": "HTTP"
+            },
+            "periodSeconds": 5,
+            "successThreshold": 1,
+            "timeoutSeconds": 1
+           },
+           "resources": {
+            "limits": {
+             "cpu": "200m",
+             "memory": "128Mi"
+            },
+            "requests": {
+             "cpu": "25m",
+             "memory": "32Mi"
+            }
+           },
+           "terminationMessagePath": "/dev/termination-log",
+           "terminationMessagePolicy": "File"
+          }
+         ],
+         "dnsPolicy": "ClusterFirst",
+         "restartPolicy": "Always",
+         "schedulerName": "default-scheduler",
+         "securityContext": {},
+         "terminationGracePeriodSeconds": 30
+        }
+       }
+      },
+      "status": {
+       "availableReplicas": 1,
+       "conditions": [
+        {
+         "lastTransitionTime": "2026-11-28T05:19:14Z",
+         "lastUpdateTime": "2026-11-28T05:19:14Z",
+         "message": "Deployment has minimum availability.",
+         "reason": "MinimumReplicasAvailable",
+         "status": "True",
+         "type": "Available"
+        },
+        {
+         "lastTransitionTime": "2026-11-28T05:19:08Z",
+         "lastUpdateTime": "2026-11-28T05:19:14Z",
+         "message": "ReplicaSet \"www-ebd3f1a834c8-5bd8d64cb\" has successfully progressed.",
+         "reason": "NewReplicaSetAvailable",
+         "status": "True",
+         "type": "Progressing"
+        }
+       ],
+       "observedGeneration": 1,
+       "readyReplicas": 1,
+       "replicas": 1,
+       "updatedReplicas": 1
+      }
+     },
+     "resourceName": "www-ebd3f1a834c8",
+     "status": "ready",
+     "targetUri": "cluster:local:minimal-k1",
+     "uri": "cluster:local:minimal-k1",
+     "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+    },
+    "output": {
+     "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+     "kind": "Deployment",
+     "message": "Kubernetes resource status returned.",
+     "namespace": "host-agent-site",
+     "resource": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+       "annotations": {
+        "deployment.kubernetes.io/revision": "1",
+        "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"www-ebd3f1a834c8\",\"namespace\":\"host-agent-site\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"template\":{\"metadata\":{\"labels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"spec\":{\"containers\":[{\"image\":\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\"livenessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"initialDelaySeconds\":5,\"periodSeconds\":15},\"name\":\"www\",\"ports\":[{\"containerPort\":80,\"name\":\"http\"}],\"readinessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"periodSeconds\":5},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"25m\",\"memory\":\"32Mi\"}}}]}}}}\n"
+       },
+       "creationTimestamp": "2026-11-28T05:19:08Z",
+       "generation": 1,
+       "name": "www-ebd3f1a834c8",
+       "namespace": "host-agent-site",
+       "resourceVersion": "1122",
+       "uid": "7081d95d-2ab1-4679-9a8b-0dffd5d63300"
+      },
+      "spec": {
+       "progressDeadlineSeconds": 600,
+       "replicas": 1,
+       "revisionHistoryLimit": 10,
+       "selector": {
+        "matchLabels": {
+         "app.kubernetes.io/name": "host-agent-www",
+         "app.kubernetes.io/version": "ebd3f1a834c8"
+        }
+       },
+       "strategy": {
+        "rollingUpdate": {
+         "maxSurge": "25%",
+         "maxUnavailable": "25%"
+        },
+        "type": "RollingUpdate"
+       },
+       "template": {
+        "metadata": {
+         "creationTimestamp": null,
+         "labels": {
+          "app.kubernetes.io/name": "host-agent-www",
+          "app.kubernetes.io/version": "ebd3f1a834c8"
+         }
+        },
+        "spec": {
+         "containers": [
+          {
+           "image": "ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a",
+           "imagePullPolicy": "IfNotPresent",
+           "livenessProbe": {
+            "failureThreshold": 3,
+            "httpGet": {
+             "path": "/healthz",
+             "port": "http",
+             "scheme": "HTTP"
+            },
+            "initialDelaySeconds": 5,
+            "periodSeconds": 15,
+            "successThreshold": 1,
+            "timeoutSeconds": 1
+           },
+           "name": "www",
+           "ports": [
+            {
+             "containerPort": 80,
+             "name": "http",
+             "protocol": "TCP"
+            }
+           ],
+           "readinessProbe": {
+            "failureThreshold": 3,
+            "httpGet": {
+             "path": "/healthz",
+             "port": "http",
+             "scheme": "HTTP"
+            },
+            "periodSeconds": 5,
+            "successThreshold": 1,
+            "timeoutSeconds": 1
+           },
+           "resources": {
+            "limits": {
+             "cpu": "200m",
+             "memory": "128Mi"
+            },
+            "requests": {
+             "cpu": "25m",
+             "memory": "32Mi"
+            }
+           },
+           "terminationMessagePath": "/dev/termination-log",
+           "terminationMessagePolicy": "File"
+          }
+         ],
+         "dnsPolicy": "ClusterFirst",
+         "restartPolicy": "Always",
+         "schedulerName": "default-scheduler",
+         "securityContext": {},
+         "terminationGracePeriodSeconds": 30
+        }
+       }
+      },
+      "status": {
+       "availableReplicas": 1,
+       "conditions": [
+        {
+         "lastTransitionTime": "2026-11-28T05:19:14Z",
+         "lastUpdateTime": "2026-11-28T05:19:14Z",
+         "message": "Deployment has minimum availability.",
+         "reason": "MinimumReplicasAvailable",
+         "status": "True",
+         "type": "Available"
+        },
+        {
+         "lastTransitionTime": "2026-11-28T05:19:08Z",
+         "lastUpdateTime": "2026-11-28T05:19:14Z",
+         "message": "ReplicaSet \"www-ebd3f1a834c8-5bd8d64cb\" has successfully progressed.",
+         "reason": "NewReplicaSetAvailable",
+         "status": "True",
+         "type": "Progressing"
+        }
+       ],
+       "observedGeneration": 1,
+       "readyReplicas": 1,
+       "replicas": 1,
+       "updatedReplicas": 1
+      }
+     },
+     "resourceName": "www-ebd3f1a834c8",
+     "status": "ready",
+     "targetUri": "cluster:local:minimal-k1",
+     "uri": "cluster:local:minimal-k1",
+     "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+    },
+    "startedAt": "2026-11-28T05:20:15.213349011Z",
+    "status": "satisfied"
+   },
+   "www": {
+    "completedAt": "2026-11-28T05:20:16.513637884Z",
+    "id": "www",
+    "observed": {
+     "endpoint": "https://www.opute.io/",
+     "ready": true,
+     "statusCode": 200
+    },
+    "output": {
+     "endpoint": "https://www.opute.io/",
+     "ready": true,
+     "statusCode": 200
+    },
+    "startedAt": "2026-11-28T05:20:16.085214390Z",
+    "status": "satisfied"
+   }
+  },
+  "outputs": {
+   "apex": {
+    "endpoint": "https://opute.io/",
+    "ready": true,
+    "statusCode": 200
+   },
+   "connector": {
+    "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+    "kind": "Deployment",
+    "message": "Kubernetes resource status returned.",
+    "namespace": "host-agent-www-tunnel",
+    "resource": {
+     "apiVersion": "apps/v1",
+     "kind": "Deployment",
+     "metadata": {
+      "annotations": {
+       "deployment.kubernetes.io/revision": "1",
+       "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"cloudflared-www\",\"namespace\":\"host-agent-www-tunnel\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"cloudflared-www\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"cloudflared-www\"}},\"spec\":{\"containers\":[{\"args\":[\"tunnel\",\"--no-autoupdate\",\"run\",\"--token-file\",\"/etc/cloudflared/tunnel-token\"],\"image\":\"cloudflare/cloudflared:2026.7.2\",\"name\":\"cloudflared\",\"readinessProbe\":{\"exec\":{\"command\":[\"cloudflared\",\"--version\"]},\"initialDelaySeconds\":5,\"periodSeconds\":10},\"volumeMounts\":[{\"mountPath\":\"/etc/cloudflared/tunnel-token\",\"name\":\"tunnel-token\",\"readOnly\":true,\"subPath\":\"tunnel-token\"}]}],\"volumes\":[{\"name\":\"tunnel-token\",\"secret\":{\"defaultMode\":292,\"items\":[{\"key\":\"token\",\"path\":\"tunnel-token\"}],\"secretName\":\"cloudflared-www-token\"}}]}}}}\n"
+      },
+      "creationTimestamp": "2026-11-28T05:19:26Z",
+      "generation": 1,
+      "name": "cloudflared-www",
+      "namespace": "host-agent-www-tunnel",
+      "resourceVersion": "1209",
+      "uid": "0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e"
+     },
+     "spec": {
+      "progressDeadlineSeconds": 600,
+      "replicas": 1,
+      "revisionHistoryLimit": 10,
+      "selector": {
+       "matchLabels": {
+        "app": "cloudflared-www"
+       }
+      },
+      "strategy": {
+       "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+       },
+       "type": "RollingUpdate"
+      },
+      "template": {
+       "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+         "app": "cloudflared-www"
+        }
+       },
+       "spec": {
+        "containers": [
+         {
+          "args": [
+           "tunnel",
+           "--no-autoupdate",
+           "run",
+           "--token-file",
+           "/etc/cloudflared/tunnel-token"
+          ],
+          "image": "cloudflare/cloudflared:2026.7.2",
+          "imagePullPolicy": "IfNotPresent",
+          "name": "cloudflared",
+          "readinessProbe": {
+           "exec": {
+            "command": [
+             "cloudflared",
+             "--version"
+            ]
+           },
+           "failureThreshold": 3,
+           "initialDelaySeconds": 5,
+           "periodSeconds": 10,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "resources": {},
+          "terminationMessagePath": "/dev/termination-log",
+          "terminationMessagePolicy": "File",
+          "volumeMounts": [
+           {
+            "mountPath": "/etc/cloudflared/tunnel-token",
+            "name": "tunnel-token",
+            "readOnly": true,
+            "subPath": "tunnel-token"
+           }
+          ]
+         }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30,
+        "volumes": [
+         {
+          "name": "tunnel-token",
+          "secret": {
+           "defaultMode": 292,
+           "items": [
+            {
+             "key": "token",
+             "path": "tunnel-token"
+            }
+           ],
+           "secretName": "cloudflared-www-token"
+          }
+         }
+        ]
+       }
+      }
+     },
+     "status": {
+      "availableReplicas": 1,
+      "conditions": [
+       {
+        "lastTransitionTime": "2026-11-28T05:19:37Z",
+        "lastUpdateTime": "2026-11-28T05:19:37Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+       },
+       {
+        "lastTransitionTime": "2026-11-28T05:19:26Z",
+        "lastUpdateTime": "2026-11-28T05:19:37Z",
+        "message": "ReplicaSet \"cloudflared-www-594b7f59fc\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+       }
+      ],
+      "observedGeneration": 1,
+      "readyReplicas": 1,
+      "replicas": 1,
+      "updatedReplicas": 1
+     }
+    },
+    "resourceName": "cloudflared-www",
+    "status": "ready",
+    "targetUri": "cluster:local:minimal-k1",
+    "uri": "cluster:local:minimal-k1",
+    "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"cloudflared-www\\\",\\\"namespace\\\":\\\"host-agent-www-tunnel\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app\\\":\\\"cloudflared-www\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"args\\\":[\\\"tunnel\\\",\\\"--no-autoupdate\\\",\\\"run\\\",\\\"--token-file\\\",\\\"/etc/cloudflared/tunnel-token\\\"],\\\"image\\\":\\\"cloudflare/cloudflared:2026.7.2\\\",\\\"name\\\":\\\"cloudflared\\\",\\\"readinessProbe\\\":{\\\"exec\\\":{\\\"command\\\":[\\\"cloudflared\\\",\\\"--version\\\"]},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":10},\\\"volumeMounts\\\":[{\\\"mountPath\\\":\\\"/etc/cloudflared/tunnel-token\\\",\\\"name\\\":\\\"tunnel-token\\\",\\\"readOnly\\\":true,\\\"subPath\\\":\\\"tunnel-token\\\"}]}],\\\"volumes\\\":[{\\\"name\\\":\\\"tunnel-token\\\",\\\"secret\\\":{\\\"defaultMode\\\":292,\\\"items\\\":[{\\\"key\\\":\\\"token\\\",\\\"path\\\":\\\"tunnel-token\\\"}],\\\"secretName\\\":\\\"cloudflared-www-token\\\"}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:26Z\",\n        \"generation\": 1,\n        \"name\": \"cloudflared-www\",\n        \"namespace\": \"host-agent-www-tunnel\",\n        \"resourceVersion\": \"1209\",\n        \"uid\": \"0eb2a0b6-2243-4060-9a0e-5932e9dfaf4e\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app\": \"cloudflared-www\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app\": \"cloudflared-www\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"args\": [\n                            \"tunnel\",\n                            \"--no-autoupdate\",\n                            \"run\",\n                            \"--token-file\",\n                            \"/etc/cloudflared/tunnel-token\"\n                        ],\n                        \"image\": \"cloudflare/cloudflared:2026.7.2\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"name\": \"cloudflared\",\n                        \"readinessProbe\": {\n                            \"exec\": {\n                                \"command\": [\n                                    \"cloudflared\",\n                                    \"--version\"\n                                ]\n                            },\n                            \"failureThreshold\": 3,\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 10,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {},\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\",\n                        \"volumeMounts\": [\n                            {\n                                \"mountPath\": \"/etc/cloudflared/tunnel-token\",\n                                \"name\": \"tunnel-token\",\n                                \"readOnly\": true,\n                                \"subPath\": \"tunnel-token\"\n                            }\n                        ]\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30,\n                \"volumes\": [\n                    {\n                        \"name\": \"tunnel-token\",\n                        \"secret\": {\n                            \"defaultMode\": 292,\n                            \"items\": [\n                                {\n                                    \"key\": \"token\",\n                                    \"path\": \"tunnel-token\"\n                                }\n                            ],\n                            \"secretName\": \"cloudflared-www-token\"\n                        }\n                    }\n                ]\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:37Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:26Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:37Z\",\n                \"message\": \"ReplicaSet \\\"cloudflared-www-594b7f59fc\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+   },
+   "tunnel": {
+    "bindingId": "www-opute-io",
+    "contractVersion": "opute.capability.tunneling.v1",
+    "hostname": "www.opute.io",
+    "hostnames": [
+     "www.opute.io",
+     "opute.io"
+    ],
+    "placement": "kubernetes",
+    "probe": [
+     {
+      "endpoint": "http://host-agent-www.host-agent-site.svc.cluster.local:80",
+      "error": "Get \"http://host-agent-www.host-agent-site.svc.cluster.local:80\": dial tcp4: lookup host-agent-www.host-agent-site.svc.cluster.local: no such host",
+      "ready": false
+     },
+     {
+      "authenticated": false,
+      "authorizationMode": "unverified",
+      "endpoint": "https://www.opute.io/mcp",
+      "ready": false,
+      "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+      "servingContract": "mcp-exposure.v1",
+      "verified": false
+     },
+     {
+      "authenticated": false,
+      "authorizationMode": "unverified",
+      "endpoint": "https://opute.io/mcp",
+      "ready": false,
+      "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+      "servingContract": "mcp-exposure.v1",
+      "verified": false
+     }
+    ],
+    "ready": false,
+    "routed": true,
+    "routedHostnames": [
+     "www.opute.io",
+     "opute.io"
+    ],
+    "tunnelId": "a6ddf3c5-1e27-4145-b559-4e82f7b96835"
+   },
+   "workload": {
+    "json": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n",
+    "kind": "Deployment",
+    "message": "Kubernetes resource status returned.",
+    "namespace": "host-agent-site",
+    "resource": {
+     "apiVersion": "apps/v1",
+     "kind": "Deployment",
+     "metadata": {
+      "annotations": {
+       "deployment.kubernetes.io/revision": "1",
+       "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"www-ebd3f1a834c8\",\"namespace\":\"host-agent-site\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"template\":{\"metadata\":{\"labels\":{\"app.kubernetes.io/name\":\"host-agent-www\",\"app.kubernetes.io/version\":\"ebd3f1a834c8\"}},\"spec\":{\"containers\":[{\"image\":\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\"livenessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"initialDelaySeconds\":5,\"periodSeconds\":15},\"name\":\"www\",\"ports\":[{\"containerPort\":80,\"name\":\"http\"}],\"readinessProbe\":{\"httpGet\":{\"path\":\"/healthz\",\"port\":\"http\"},\"periodSeconds\":5},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"25m\",\"memory\":\"32Mi\"}}}]}}}}\n"
+      },
+      "creationTimestamp": "2026-11-28T05:19:08Z",
+      "generation": 1,
+      "name": "www-ebd3f1a834c8",
+      "namespace": "host-agent-site",
+      "resourceVersion": "1122",
+      "uid": "7081d95d-2ab1-4679-9a8b-0dffd5d63300"
+     },
+     "spec": {
+      "progressDeadlineSeconds": 600,
+      "replicas": 1,
+      "revisionHistoryLimit": 10,
+      "selector": {
+       "matchLabels": {
+        "app.kubernetes.io/name": "host-agent-www",
+        "app.kubernetes.io/version": "ebd3f1a834c8"
+       }
+      },
+      "strategy": {
+       "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+       },
+       "type": "RollingUpdate"
+      },
+      "template": {
+       "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+         "app.kubernetes.io/name": "host-agent-www",
+         "app.kubernetes.io/version": "ebd3f1a834c8"
+        }
+       },
+       "spec": {
+        "containers": [
+         {
+          "image": "ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a",
+          "imagePullPolicy": "IfNotPresent",
+          "livenessProbe": {
+           "failureThreshold": 3,
+           "httpGet": {
+            "path": "/healthz",
+            "port": "http",
+            "scheme": "HTTP"
+           },
+           "initialDelaySeconds": 5,
+           "periodSeconds": 15,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "name": "www",
+          "ports": [
+           {
+            "containerPort": 80,
+            "name": "http",
+            "protocol": "TCP"
+           }
+          ],
+          "readinessProbe": {
+           "failureThreshold": 3,
+           "httpGet": {
+            "path": "/healthz",
+            "port": "http",
+            "scheme": "HTTP"
+           },
+           "periodSeconds": 5,
+           "successThreshold": 1,
+           "timeoutSeconds": 1
+          },
+          "resources": {
+           "limits": {
+            "cpu": "200m",
+            "memory": "128Mi"
+           },
+           "requests": {
+            "cpu": "25m",
+            "memory": "32Mi"
+           }
+          },
+          "terminationMessagePath": "/dev/termination-log",
+          "terminationMessagePolicy": "File"
+         }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30
+       }
+      }
+     },
+     "status": {
+      "availableReplicas": 1,
+      "conditions": [
+       {
+        "lastTransitionTime": "2026-11-28T05:19:14Z",
+        "lastUpdateTime": "2026-11-28T05:19:14Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+       },
+       {
+        "lastTransitionTime": "2026-11-28T05:19:08Z",
+        "lastUpdateTime": "2026-11-28T05:19:14Z",
+        "message": "ReplicaSet \"www-ebd3f1a834c8-5bd8d64cb\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+       }
+      ],
+      "observedGeneration": 1,
+      "readyReplicas": 1,
+      "replicas": 1,
+      "updatedReplicas": 1
+     }
+    },
+    "resourceName": "www-ebd3f1a834c8",
+    "status": "ready",
+    "targetUri": "cluster:local:minimal-k1",
+    "uri": "cluster:local:minimal-k1",
+    "yaml": "{\n    \"apiVersion\": \"apps/v1\",\n    \"kind\": \"Deployment\",\n    \"metadata\": {\n        \"annotations\": {\n            \"deployment.kubernetes.io/revision\": \"1\",\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"apps/v1\\\",\\\"kind\\\":\\\"Deployment\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"www-ebd3f1a834c8\\\",\\\"namespace\\\":\\\"host-agent-site\\\"},\\\"spec\\\":{\\\"replicas\\\":1,\\\"selector\\\":{\\\"matchLabels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"app.kubernetes.io/name\\\":\\\"host-agent-www\\\",\\\"app.kubernetes.io/version\\\":\\\"ebd3f1a834c8\\\"}},\\\"spec\\\":{\\\"containers\\\":[{\\\"image\\\":\\\"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\\\",\\\"livenessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"initialDelaySeconds\\\":5,\\\"periodSeconds\\\":15},\\\"name\\\":\\\"www\\\",\\\"ports\\\":[{\\\"containerPort\\\":80,\\\"name\\\":\\\"http\\\"}],\\\"readinessProbe\\\":{\\\"httpGet\\\":{\\\"path\\\":\\\"/healthz\\\",\\\"port\\\":\\\"http\\\"},\\\"periodSeconds\\\":5},\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"200m\\\",\\\"memory\\\":\\\"128Mi\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"25m\\\",\\\"memory\\\":\\\"32Mi\\\"}}}]}}}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-28T05:19:08Z\",\n        \"generation\": 1,\n        \"name\": \"www-ebd3f1a834c8\",\n        \"namespace\": \"host-agent-site\",\n        \"resourceVersion\": \"1122\",\n        \"uid\": \"7081d95d-2ab1-4679-9a8b-0dffd5d63300\"\n    },\n    \"spec\": {\n        \"progressDeadlineSeconds\": 600,\n        \"replicas\": 1,\n        \"revisionHistoryLimit\": 10,\n        \"selector\": {\n            \"matchLabels\": {\n                \"app.kubernetes.io/name\": \"host-agent-www\",\n                \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n            }\n        },\n        \"strategy\": {\n            \"rollingUpdate\": {\n                \"maxSurge\": \"25%\",\n                \"maxUnavailable\": \"25%\"\n            },\n            \"type\": \"RollingUpdate\"\n        },\n        \"template\": {\n            \"metadata\": {\n                \"creationTimestamp\": null,\n                \"labels\": {\n                    \"app.kubernetes.io/name\": \"host-agent-www\",\n                    \"app.kubernetes.io/version\": \"ebd3f1a834c8\"\n                }\n            },\n            \"spec\": {\n                \"containers\": [\n                    {\n                        \"image\": \"ghcr.io/wunderous/host-agent-www@sha256:ebd3f1a834c8f8ca9175c118d12874512248cc90486175486593377f78bd041a\",\n                        \"imagePullPolicy\": \"IfNotPresent\",\n                        \"livenessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"initialDelaySeconds\": 5,\n                            \"periodSeconds\": 15,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"name\": \"www\",\n                        \"ports\": [\n                            {\n                                \"containerPort\": 80,\n                                \"name\": \"http\",\n                                \"protocol\": \"TCP\"\n                            }\n                        ],\n                        \"readinessProbe\": {\n                            \"failureThreshold\": 3,\n                            \"httpGet\": {\n                                \"path\": \"/healthz\",\n                                \"port\": \"http\",\n                                \"scheme\": \"HTTP\"\n                            },\n                            \"periodSeconds\": 5,\n                            \"successThreshold\": 1,\n                            \"timeoutSeconds\": 1\n                        },\n                        \"resources\": {\n                            \"limits\": {\n                                \"cpu\": \"200m\",\n                                \"memory\": \"128Mi\"\n                            },\n                            \"requests\": {\n                                \"cpu\": \"25m\",\n                                \"memory\": \"32Mi\"\n                            }\n                        },\n                        \"terminationMessagePath\": \"/dev/termination-log\",\n                        \"terminationMessagePolicy\": \"File\"\n                    }\n                ],\n                \"dnsPolicy\": \"ClusterFirst\",\n                \"restartPolicy\": \"Always\",\n                \"schedulerName\": \"default-scheduler\",\n                \"securityContext\": {},\n                \"terminationGracePeriodSeconds\": 30\n            }\n        }\n    },\n    \"status\": {\n        \"availableReplicas\": 1,\n        \"conditions\": [\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:14Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"Deployment has minimum availability.\",\n                \"reason\": \"MinimumReplicasAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Available\"\n            },\n            {\n                \"lastTransitionTime\": \"2026-11-28T05:19:08Z\",\n                \"lastUpdateTime\": \"2026-11-28T05:19:14Z\",\n                \"message\": \"ReplicaSet \\\"www-ebd3f1a834c8-5bd8d64cb\\\" has successfully progressed.\",\n                \"reason\": \"NewReplicaSetAvailable\",\n                \"status\": \"True\",\n                \"type\": \"Progressing\"\n            }\n        ],\n        \"observedGeneration\": 1,\n        \"readyReplicas\": 1,\n        \"replicas\": 1,\n        \"updatedReplicas\": 1\n    }\n}\n"
+   },
+   "www": {
+    "endpoint": "https://www.opute.io/",
+    "ready": true,
+    "statusCode": 200
+   }
+  },
+  "planId": "com.opute.host-agent.opute-io-site",
+  "runId": "718204ee-bb87-4731-968e-4f232c086fa0",
+  "status": "completed"
+ },
+ "status": "completed",
+ "updatedAt": "2026-11-28T05:20:16.564352445Z"
+}
